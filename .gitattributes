@@ -1,0 +1,12 @@
+# .gitattributes – tells git how to treat certain files.
+# Windows and Mac/Linux use different "end of line" characters. These rules make sure
+# each script keeps the right one, so gradlew works on every operating system.
+
+# Mac/Linux script: must use LF line endings
+gradlew text eol=lf
+
+# Windows scripts: must use CRLF line endings
+*.bat text eol=crlf
+
+# Binary files: never touch them
+*.jar binary

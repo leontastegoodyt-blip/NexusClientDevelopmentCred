@@ -1,0 +1,6 @@
+{
+  "about": "Built-in server rules. Each server (domain) lists the Nexus mod ids it doesn't allow, or \"*blockable\" for every server-blockable mod. Subdomains are included (\"example.net\" also covers \"play.example.net\"). Servers can also send their own rules on the nexusclient:rules channel. Partner Servers are added here (and later from the Nexus backend).",
+  "servers": {
+    "nexus-rules-test.invalid": { "block": ["minimap", "freelook"] }
+  }
+}

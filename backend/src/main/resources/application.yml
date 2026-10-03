@@ -1,0 +1,20 @@
+# Settings for the Nexus backend.
+# These are the SAFE defaults used everywhere. application-dev.yml (development) and
+# application-prod.yml (the real server) change a few of them.
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: nexus-backend
+  jpa:
+    hibernate:
+      ddl-auto: none        # Flyway creates the tables (src/main/resources/db/migration)
+    open-in-view: false
+
+nexus:
+  dev-auth: false           # the test sign-in without Mojang – never on the real server
+  session-days: 30
+  admins: []                # the owner's Minecraft UUID goes here
+  moderators: []

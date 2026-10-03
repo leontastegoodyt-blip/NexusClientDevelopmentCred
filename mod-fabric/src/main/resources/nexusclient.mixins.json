@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.nexusclient.fabric.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "CameraMixin",
+    "DfrMixin",
+    "ChatComponentMixin",
+    "LevelMixin",
+    "LightmapMixin",
+    "MouseHandlerAccessor",
+    "MouseHandlerMixin",
+    "PlayerInfoMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

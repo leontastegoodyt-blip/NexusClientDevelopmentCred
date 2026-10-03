@@ -1,0 +1,116 @@
+{
+  "_comment": "Known Minecraft/mod errors for the Game Error Scan. Each has patterns (regular expressions searched in the game's logs), a plain-English title and explanation, and a fix. {1}, {2}... in the text are replaced by what the pattern's brackets captured (e.g. a mod's id). 'modGroup' says which capture is the mod to blame. Add new errors at the end - this list grows with every Nexus update.",
+  "errors": [
+    {
+      "id": "out-of-memory",
+      "patterns": ["java\\.lang\\.OutOfMemoryError"],
+      "title": "Minecraft ran out of memory",
+      "explanation": "The game used up all the memory (RAM) it was given and had to stop. This happens with big modpacks, high render distances or large worlds.",
+      "fix": "RAISE_RAM",
+      "fixLabel": "Give Minecraft 1 GB more memory"
+    },
+    {
+      "id": "heap-too-big",
+      "patterns": ["Could not reserve enough space for (?:the )?object heap", "Invalid maximum heap size"],
+      "title": "Minecraft was given more memory than it can use",
+      "explanation": "The memory setting is higher than this PC (or its Java) can give. Lowering it lets the game start.",
+      "fix": "LOWER_RAM",
+      "fixLabel": "Lower the memory setting"
+    },
+    {
+      "id": "missing-dependency",
+      "patterns": ["Mod '([^']+)' \\(([a-z0-9_\\-]+)\\) \\S+ requires .*? of (?:mod )?'?([^'\\s,(]+)'?(?: \\(([^)]+)\\))?,? which is missing"],
+      "title": "A mod needs another mod that isn't installed",
+      "explanation": "The mod \"{1}\" needs \"{3}\" to work, but it isn't installed.",
+      "fix": "INSTALL_DEPENDENCY",
+      "modGroup": 3,
+      "fallbackModGroup": 4,
+      "fixLabel": "Install the missing mod from Modrinth"
+    },
+    {
+      "id": "incompatible-mod",
+      "patterns": ["Mod '([^']+)' \\(([a-z0-9_\\-]+)\\) \\S+ is incompatible with", "Mod '([^']+)' \\(([a-z0-9_\\-]+)\\) \\S+ (?:breaks|conflicts with)"],
+      "title": "Two mods don't work together",
+      "explanation": "The mod \"{1}\" doesn't work together with another installed mod.",
+      "fix": "DISABLE_MOD",
+      "modGroup": 2,
+      "fixLabel": "Switch off \"{1}\""
+    },
+    {
+      "id": "wrong-minecraft-version",
+      "patterns": ["Mod '([^']+)' \\(([a-z0-9_\\-]+)\\) \\S+ requires (?:version|any version) .*? of '?Minecraft'?"],
+      "title": "A mod is made for a different Minecraft version",
+      "explanation": "The mod \"{1}\" was made for another version of Minecraft, so it can't load in this one.",
+      "fix": "UPDATE_OR_DISABLE_MOD",
+      "modGroup": 2,
+      "fixLabel": "Update \"{1}\" (or switch it off if there's no update)"
+    },
+    {
+      "id": "duplicate-mod",
+      "patterns": ["Found duplicate mods?:? .*?([a-z0-9_\\-]+)", "Mod ([a-z0-9_\\-]+) is (?:loaded|present) (?:from|in) multiple"],
+      "title": "The same mod is installed twice",
+      "explanation": "The mod \"{1}\" is in the mods folder more than once (probably two versions of it).",
+      "fix": "DISABLE_DUPLICATE",
+      "modGroup": 1,
+      "fixLabel": "Switch off the older copy"
+    },
+    {
+      "id": "mixin-failed",
+      "patterns": ["Mixin apply(?:ing)? (?:for|failed for) mod ([a-z0-9_\\-]+)", "in config \\[([a-z0-9_\\-]+?)(?:\\.client)?\\.mixins\\.json\\]"],
+      "title": "A mod crashed while loading",
+      "explanation": "The mod \"{1}\" failed to load - usually it's outdated, or doesn't work with another mod.",
+      "fix": "UPDATE_OR_DISABLE_MOD",
+      "modGroup": 1,
+      "fixLabel": "Update \"{1}\" (or switch it off)"
+    },
+    {
+      "id": "shader-error",
+      "patterns": ["(?i)(?:iris|oculus).{0,80}(?:shader|compil).{0,40}(?:fail|error)", "Shader compilation failed", "Failed to (?:load|create) shader"],
+      "title": "The shaders crashed the game",
+      "explanation": "The shader pack failed, often because the graphics card or its driver can't handle it.",
+      "fix": "TURN_OFF_SHADERS",
+      "fixLabel": "Turn shaders off"
+    },
+    {
+      "id": "graphics-driver",
+      "patterns": ["Pixel format not accelerated", "WGL: The driver does not appear to support OpenGL", "GLFW error 6554[23]", "Could not create context", "Failed to create (?:the )?window", "EXCEPTION_ACCESS_VIOLATION.*(?:ig[0-9a-z]+icd|atio6axx|nvoglv)"],
+      "title": "The graphics driver had a problem",
+      "explanation": "Minecraft couldn't talk to the graphics card properly. Updating your graphics driver (from NVIDIA, AMD or Intel's website) usually fixes this.",
+      "fix": "NONE",
+      "fixLabel": ""
+    },
+    {
+      "id": "java-too-old",
+      "patterns": ["UnsupportedClassVersionError", "has been compiled by a more recent version of the Java Runtime"],
+      "title": "Something needs a newer Java",
+      "explanation": "A mod (or the game) was made for a newer Java than the one being used. This usually means a mod is for a different Minecraft version.",
+      "fix": "REDOWNLOAD_FILES",
+      "fixLabel": "Re-download the game and its Java"
+    },
+    {
+      "id": "missing-natives",
+      "patterns": ["no lwjgl(?:64)? in java\\.library\\.path", "UnsatisfiedLinkError"],
+      "title": "Some game system files are missing",
+      "explanation": "Files the game needs to open its window and play sound are missing or damaged.",
+      "fix": "REDOWNLOAD_FILES",
+      "fixLabel": "Re-download the missing files"
+    },
+    {
+      "id": "corrupt-files",
+      "patterns": ["java\\.util\\.zip\\.ZipException", "Invalid or corrupt jarfile", "ClassNotFoundException: net\\.minecraft\\.client\\.main\\.Main", "Error: Could not find or load main class"],
+      "title": "Game files are damaged",
+      "explanation": "Some of Minecraft's files are damaged or incomplete (for example, after a download was interrupted).",
+      "fix": "REDOWNLOAD_FILES",
+      "fixLabel": "Re-download the game files"
+    },
+    {
+      "id": "broken-config",
+      "patterns": ["(?:Failed|Unable|Couldn't) to (?:load|read|parse) (?:config|configuration).{0,120}?(config[/\\\\][^\\s'\"]+)", "JsonSyntaxException.{0,200}?(config[/\\\\][^\\s'\"]+\\.json)"],
+      "title": "A mod's settings file is broken",
+      "explanation": "The settings file \"{1}\" is damaged, so the mod can't read it. Resetting it gives the mod fresh default settings.",
+      "fix": "RESET_CONFIG",
+      "fileGroup": 1,
+      "fixLabel": "Reset \"{1}\""
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+# .gitignore – files and folders git should NOT save.
+# These are all generated automatically, so there's no point storing them.
+
+# Gradle's working files and build output
+.gradle/
+build/
+
+# Output folders made by IDEs (VS Code's Java extension, IntelliJ, Eclipse)
+bin/
+out/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# Operating system junk
+.DS_Store
+Thumbs.db
+
+# Keep the Gradle Wrapper's jar file – it is needed to run gradlew
+!gradle/wrapper/gradle-wrapper.jar
+
+# The Fabric mod's test game folder (gradlew :mod-fabric:runClient)
+mod-fabric/run/
+
+# The backend's development database (a local file, made by gradlew :backend:bootRun)
+backend/data/

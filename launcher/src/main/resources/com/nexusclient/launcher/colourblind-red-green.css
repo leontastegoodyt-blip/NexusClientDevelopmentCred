@@ -1,0 +1,14 @@
+/* colourblind-red-green.css – for protanopia/deuteranopia (red and green are hard to tell apart).
+   Swaps red/green signals for blue/orange, which stay easy to tell apart. */
+.ping-good { -fx-text-fill: #4DA3FF; }
+.ping-ok   { -fx-text-fill: #FFD166; }
+.ping-bad  { -fx-text-fill: #FF8A00; }
+.danger-button {
+    -fx-text-fill: #FF8A00;
+    -fx-border-color: rgba(255, 138, 0, 0.6);
+    -fx-background-color: rgba(255, 138, 0, 0.10);
+}
+.launch-button.stop-mode { -fx-border-color: rgba(255, 138, 0, 0.6); -fx-text-fill: #FF8A00; }
+.launch-button.stop-mode .icon { -fx-fill: #FF8A00; }
+.toast-error { -fx-border-color: #23233A #23233A #23233A #FF8A00; }
+.menu-remove.confirm, .menu-remove:hover { -fx-text-fill: #FF8A00; -fx-border-color: rgba(255, 138, 0, 0.6); }

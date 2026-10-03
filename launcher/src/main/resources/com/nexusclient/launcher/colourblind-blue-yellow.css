@@ -1,0 +1,7 @@
+/* colourblind-blue-yellow.css – for tritanopia (blue/green and yellow/pink are hard to tell apart).
+   The accent colour becomes pink (see Theme.java), and signals use red/white/pink. */
+.ping-good { -fx-text-fill: #FF4FA3; }
+.ping-ok   { -fx-text-fill: #E4E4EE; }
+.ping-bad  { -fx-text-fill: #FF3B30; }
+.torcher-tip { -fx-text-fill: #FF8FB1; }
+.tier-low { -fx-text-fill: #FF3B30; -fx-border-color: rgba(255, 59, 48, 0.6); }

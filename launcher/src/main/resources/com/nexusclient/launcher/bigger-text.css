@@ -1,0 +1,17 @@
+/* bigger-text.css – added on top of theme.css when Settings → Accessibility → "Bigger text" is on.
+   Makes the text about 15% bigger everywhere. */
+.root                               { -fx-font-size: 16px; }
+.nav-button                         { -fx-font-size: 12px; }
+.panel-title, .stat-caption         { -fx-font-size: 12px; }
+.instance-name, .mod-title          { -fx-font-size: 16px; }
+.instance-version, .mod-meta, .mod-author, .mod-description,
+.news-text, .launch-status, .preview-note, .hardware-name, .hardware-value,
+.chip, .account-name, .menu-hint, .torcher-tip { -fx-font-size: 14px; }
+.torcher-text, .page-description, .banner-text, .change-name, .change-value,
+.tab-strip-button, .text-field, .check-box, .radio-button, .toast { -fx-font-size: 15px; }
+.news-title, .section-title         { -fx-font-size: 18px; }
+.launch-instance                    { -fx-font-size: 20px; }
+.page-title                         { -fx-font-size: 28px; }
+.torcher-title                      { -fx-font-size: 25px; }
+.disclaimer                         { -fx-font-size: 12px; }
+.version-combo .list-cell           { -fx-font-size: 13px; }

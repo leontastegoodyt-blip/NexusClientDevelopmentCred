@@ -1,0 +1,22 @@
+# Words hidden in Nexus DMs and party chat (one per line, lowercase).
+# Capitals, repeated letters and number swaps (a→4, e→3, i→1, o→0, s→5, t→7) are caught
+# automatically, so only list the plain spelling. Endings like "-ing" or "-s" need their own line.
+# The owner should extend this with a maintained list before release.
+fuck
+fucking
+fucker
+shit
+bitch
+cunt
+dick
+pussy
+asshole
+bastard
+whore
+slut
+nigger
+nigga
+faggot
+fag
+retard
+kys

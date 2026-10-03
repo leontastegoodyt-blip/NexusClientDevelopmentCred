@@ -1,0 +1,11 @@
+# Development settings (used by `gradlew :backend:bootRun` and the tests).
+# The database is a small file in backend/data/ (H2, pretending to be PostgreSQL).
+
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/nexus-dev;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: nexus
+    password: nexus
+
+nexus:
+  dev-auth: true            # allows POST /api/auth/dev for testing without a Microsoft account

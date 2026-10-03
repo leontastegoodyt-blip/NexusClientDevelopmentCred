@@ -1,0 +1,14 @@
+# The real server. Start it with:  java -jar backend.jar --spring.profiles.active=prod
+# The database login comes from environment variables, never from this file:
+#   NEXUS_DB_URL       e.g. jdbc:postgresql://localhost:5432/nexus
+#   NEXUS_DB_USER
+#   NEXUS_DB_PASSWORD
+
+spring:
+  datasource:
+    url: ${NEXUS_DB_URL}
+    username: ${NEXUS_DB_USER}
+    password: ${NEXUS_DB_PASSWORD}
+
+nexus:
+  dev-auth: false

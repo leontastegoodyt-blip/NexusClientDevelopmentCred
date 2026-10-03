@@ -1,0 +1,226 @@
+package com.nexusclient.fabric;
+
+import com.nexusclient.core.NexusCore;
+import com.nexusclient.core.hud.InputTracker;
+import com.nexusclient.core.hud.SessionStats;
+import com.nexusclient.core.module.Mods;
+import com.nexusclient.core.ui.HudEditor;
+import com.nexusclient.core.ui.ModMenu;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.loader.api.FabricLoader;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+/**
+ * NexusFabric – where the Nexus mod starts inside Minecraft 26.3 (Fabric calls onInitializeClient
+ * when the game opens). It connects the shared mod-core code to the game:
+ *  - Right Shift opens the mod menu, C zooms
+ *  - draws the HUD mods and the custom crosshair
+ *  - runs the every-tick mods (toggle sprint/sneak, no hurt-cam, combo counter…)
+ * Other hooks that need to reach deeper into the game live in the mixin package.
+ */
+public class NexusFabric implements ClientModInitializer {
+
+    /** The zoom key (read by the zoom mixins). */
+    public static KeyMapping zoomKey;
+    public static KeyMapping menuKey;
+    private static KeyMapping clipKey;
+
+    private boolean wasZooming;
+    private int lastHurtTime;
+    private Double savedTiltStrength; // the player's own hurt-cam setting, while No Hurt-Cam is on
+    private boolean sprintHeldByUs;
+    private boolean sneakHeldByUs;
+    /** Players we hit in the last few seconds (entity id → when), to count kills for PvP stats. */
+    private final Map<Integer, Long> recentlyHit = new HashMap<>();
+    private boolean wasDead;
+
+    @Override
+    public void onInitializeClient() {
+        Minecraft mc = Minecraft.getInstance();
+        NexusCore core = NexusCore.get();
+        core.init(new FabricGameInfo(), new FabricPlatform(), FabricLoader.getInstance().getGameDir().toFile());
+
+        // Mods this version doesn't do yet – the menu shows them as "Coming soon".
+        core.markUnsupported("hitColor", "blockOutline", "oldAnimations", "hitboxes", "smallItems",
+                "itemPhysics", "lowFire", "particles", "enchantGlint", "motionBlur", "freelook", "timeChanger",
+                "nametags", "waypoints", "minimap", "copyChat", "screenshotUploader", "streamerMode");
+
+        // Keys (players can change them in Minecraft's Controls menu, under "Nexus Client").
+        KeyMapping.Category category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("nexusclient", "main"));
+        menuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.open_menu", InputConstants.KEY_RSHIFT, category));
+        zoomKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.hold_zoom", InputConstants.KEY_C, category));
+        clipKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.save_clip", InputConstants.KEY_F8, category));
+
+        // HUD: draw every switched-on HUD mod on top of the normal game HUD.
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("nexusclient", "hud"), (graphics, delta) -> {
+            if (mc.gui.screen() instanceof NexusScreenWrapper wrapper && wrapper.screen() instanceof HudEditor) {
+                return; // the HUD editor draws the HUD itself (so it can be dragged around)
+            }
+            core.renderHud(new FabricRenderer(graphics));
+        });
+
+        // Custom crosshair: replaces Minecraft's own one while the Crosshair mod is on.
+        HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, original -> (graphics, delta) -> {
+            Mods.Crosshair crosshair = core.get(Mods.Crosshair.class);
+            if (crosshair.isActive() && mc.options.getCameraType().isFirstPerson()) {
+                crosshair.draw(new FabricRenderer(graphics), graphics.guiWidth() / 2, graphics.guiHeight() / 2);
+            } else {
+                original.extractRenderState(graphics, delta);
+            }
+        });
+
+        // Combo counter: count our hits on other players/mobs.
+        AttackEntityCallback.EVENT.register((player, level, hand, entity, hitResult) -> {
+            if (level.isClientSide()) {
+                InputTracker.hitSomething();
+                if (entity instanceof Player target && target != player) {
+                    recentlyHit.put(target.getId(), System.currentTimeMillis()); // for PvP stats kills
+                }
+            }
+            return InteractionResult.PASS;
+        });
+
+        // Server-safe system: tell Nexus which server we're on (per-server HUD layouts + that
+        // server's rules), and listen for the server's own rules message.
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
+                core.joinedServer(client.getCurrentServer() == null ? "" : client.getCurrentServer().ip));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(() -> core.joinedServer("")));
+        PayloadTypeRegistry.clientboundPlay().register(RulesPayload.TYPE, RulesPayload.CODEC);
+        ClientPlayNetworking.registerGlobalReceiver(RulesPayload.TYPE,
+                (payload, context) -> core.serverRulesMessage(payload.json()));
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> tick(client, core));
+    }
+
+    /** Runs 20 times a second. */
+    private void tick(Minecraft mc, NexusCore core) {
+        if (SelfTest.enabled()) {
+            SelfTest.tick(mc);
+        }
+        Cosmetics.tick(mc); // Nexus capes on Nexus players
+        while (menuKey.consumeClick()) {
+            if (mc.gui.screen() == null) {
+                core.platform().openScreen(new ModMenu());
+            }
+        }
+
+        while (clipKey.consumeClick()) {
+            core.saveClip();
+        }
+
+        // Zoom: each new press starts at the zoom level from the settings.
+        Mods.Zoom zoom = core.get(Mods.Zoom.class);
+        boolean zooming = zoomKey.isDown();
+        if (zooming && !wasZooming) {
+            zoom.target = zoom.factor.get();
+        }
+        wasZooming = zooming;
+
+        if (mc.player == null) {
+            return;
+        }
+
+        // Combo counter: being hit ends your combo.
+        if (mc.player.hurtTime > lastHurtTime) {
+            InputTracker.gotHit();
+        }
+        lastHurtTime = mc.player.hurtTime;
+
+        pvpStats(mc);
+        toggleSprintAndSneak(mc, core);
+        noHurtCam(mc, core);
+        core.tick();
+    }
+
+    /**
+     * PvP stats: a kill is a player we hit in the last 5 seconds who then dies; a death is us
+     * dying. (Other players' health is sent to every nearby client, so we can see them die.)
+     */
+    private void pvpStats(Minecraft mc) {
+        boolean dead = mc.player.isDeadOrDying();
+        if (dead && !wasDead) {
+            SessionStats.death();
+        }
+        wasDead = dead;
+
+        long now = System.currentTimeMillis();
+        Iterator<Map.Entry<Integer, Long>> it = recentlyHit.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer, Long> hit = it.next();
+            Entity entity = mc.level.getEntity(hit.getKey());
+            if (entity instanceof Player target && target.isDeadOrDying()) {
+                SessionStats.kill();
+                it.remove();
+            } else if (now - hit.getValue() > 5000 || entity == null) {
+                it.remove(); // too long ago, or they left – not our kill
+            }
+        }
+    }
+
+    /** Toggle sprint/sneak: tap the key once, and Nexus keeps it "held down" until you tap again. */
+    private void toggleSprintAndSneak(Minecraft mc, NexusCore core) {
+        Mods.ToggleSprint sprint = core.get(Mods.ToggleSprint.class);
+        if (sprint.isActive()) {
+            while (mc.options.keySprint.consumeClick()) {
+                sprint.toggled = !sprint.toggled;
+                if (!sprint.toggled) {
+                    mc.options.keySprint.setDown(false);
+                }
+            }
+            if (sprint.toggled) {
+                mc.options.keySprint.setDown(true);
+            }
+            sprintHeldByUs = sprint.toggled;
+        } else if (sprintHeldByUs) {
+            mc.options.keySprint.setDown(false); // the mod was just turned off – let go of the key
+            sprintHeldByUs = false;
+        }
+
+        Mods.ToggleSneak sneak = core.get(Mods.ToggleSneak.class);
+        if (sneak.isActive()) {
+            while (mc.options.keyShift.consumeClick()) {
+                sneak.toggled = !sneak.toggled;
+                if (!sneak.toggled) {
+                    mc.options.keyShift.setDown(false);
+                }
+            }
+            if (sneak.toggled) {
+                mc.options.keyShift.setDown(true);
+            }
+            sneakHeldByUs = sneak.toggled;
+        } else if (sneakHeldByUs) {
+            mc.options.keyShift.setDown(false);
+            sneakHeldByUs = false;
+        }
+    }
+
+    /** No hurt-cam: sets Minecraft's "Damage Tilt" to 0 while on, and puts the old value back after. */
+    private void noHurtCam(Minecraft mc, NexusCore core) {
+        boolean on = core.get(Mods.NoHurtCam.class).isActive();
+        if (on && savedTiltStrength == null) {
+            savedTiltStrength = mc.options.damageTiltStrength().get();
+            mc.options.damageTiltStrength().set(0.0);
+        } else if (!on && savedTiltStrength != null) {
+            mc.options.damageTiltStrength().set(savedTiltStrength);
+            savedTiltStrength = null;
+        }
+    }
+}

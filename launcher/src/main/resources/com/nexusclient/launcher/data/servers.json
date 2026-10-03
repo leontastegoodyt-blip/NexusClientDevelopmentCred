@@ -1,0 +1,10 @@
+{
+  "_comment": "Servers shown in the launcher. 'featured' = well-known public servers picked as defaults (the owner can change this list). 'partners' = Nexus Partner Servers (build step 15).",
+  "featured": [
+    { "name": "Hypixel", "address": "mc.hypixel.net", "description": "The biggest minigame network: SkyBlock, Bed Wars, SkyWars and more." },
+    { "name": "Wynncraft", "address": "play.wynncraft.com", "description": "A huge fantasy MMORPG with quests, dungeons and classes." },
+    { "name": "MCC Island", "address": "play.mccisland.net", "description": "Minigames from the makers of MC Championship." },
+    { "name": "Minemen Club", "address": "minemen.club", "description": "Competitive PvP: practice, ranked duels and events." }
+  ],
+  "partners": []
+}

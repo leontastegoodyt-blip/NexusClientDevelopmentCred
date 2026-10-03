@@ -1,0 +1,8 @@
+{
+  "_comment": "The news cards on the Home page. Newest first. Later this can be downloaded from the Nexus website instead.",
+  "news": [
+    { "tag": "UPDATE", "title": "Servers & settings", "text": "Live server list with one-click join, Quick Play, themes, accessibility and more." },
+    { "tag": "UPDATE", "title": "Mods & modpacks", "text": "Browse Modrinth for mods, resource packs, shaders and modpacks – installed in one click." },
+    { "tag": "UPDATE", "title": "TorcherRig", "text": "Nexus scans your PC and sets the game up to match it. You see every change first." }
+  ]
+}
