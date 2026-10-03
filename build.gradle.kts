@@ -20,7 +20,7 @@ subprojects {
     }
 
     // Build everything with Java 21 unless a module says otherwise.
-    // (mod-legacy will switch to Java 8 later, because Minecraft 1.8.9 needs it.)
+    // (mod-legacy is a separate build that makes Java 8 files, because Minecraft 1.8.9 needs them.)
     extensions.configure<JavaPluginExtension> {
         toolchain {
             languageVersion.set(JavaLanguageVersion.of(21))

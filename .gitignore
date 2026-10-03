@@ -26,3 +26,13 @@ mod-fabric/run/
 
 # The backend's development database (a local file, made by gradlew :backend:bootRun)
 backend/data/
+
+# The 1.8.9 mod's test game folder (gradlew :mod-legacy:runClient)
+mod-legacy/run/
+
+# The modern Fabric builds' test game folders (gradlew :mod-fabric-<version>:runClient)
+mod-fabric-modern/*/run/
+
+# Memory dumps Java writes if it runs out of memory
+*.hprof
+

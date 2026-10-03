@@ -22,5 +22,5 @@ Legend: ✅ done · 🟡 partly done / needs a decision · ⛔ needs the owner (
 | Extend the chat filter word list (`backend/.../chat-filter.txt`) | ⛔ |
 | Test Microsoft sign-in end to end (after Azure approval) | ⛔ then 🟡 |
 | Translate remaining launcher text (only tabs/titles are in translation files so far) | 🟡 |
-| Mod versions for 1.20.x (Fabric), Forge and 1.8.9 – only Fabric 26.3 exists now | 🟡 |
+| Mod versions: ✅ Fabric 1.20.x, 1.21.4, 1.21.11, 26.3 and Legacy Fabric 1.8.9 (Vanilla instances secretly use them too). Still to do: Forge, and DFR/capes on the older versions | 🟡 |
 | Payments for Nexus Premium (price + provider) | ⛔ |

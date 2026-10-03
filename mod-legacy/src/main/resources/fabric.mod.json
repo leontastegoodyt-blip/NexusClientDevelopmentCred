@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "nexusclient",
+  "version": "${version}",
+  "name": "Nexus Client",
+  "description": "The Nexus Client in-game mod for 1.8.9: mod menu (Right Shift), HUD editor, HUD, PvP, visual, chat and utility mods.",
+  "authors": ["Nexus Client"],
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.nexusclient.legacy.NexusLegacy"]
+  },
+  "mixins": ["nexusclient.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "1.8.9"
+  }
+}

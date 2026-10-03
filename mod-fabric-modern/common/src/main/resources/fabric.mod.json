@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "nexusclient",
+  "version": "${version}",
+  "name": "Nexus Client",
+  "description": "The Nexus Client in-game mod: mod menu (Right Shift), HUD editor, HUD, PvP, visual, chat and utility mods.",
+  "authors": ["Nexus Client"],
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.nexusclient.modern.NexusModern"]
+  },
+  "mixins": ["nexusclient.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_range}",
+    "java": ">=${java_version}"
+  }
+}

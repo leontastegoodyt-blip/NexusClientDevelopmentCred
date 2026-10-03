@@ -13,6 +13,7 @@ import com.nexusclient.launcher.tools.Playtime;
 import com.nexusclient.launcher.instance.Instance;
 import com.nexusclient.launcher.instance.InstanceStore;
 import com.nexusclient.launcher.minecraft.MinecraftVersion;
+import com.nexusclient.launcher.mods.ModManager;
 import com.nexusclient.launcher.settings.SettingsStore;
 import com.nexusclient.launcher.torcherrig.TorcherRig;
 import javafx.beans.binding.Bindings;
@@ -486,6 +487,14 @@ public class HomePage extends BorderPane {
             launchButton.setDisable(true);
         } else {
             launchButton.setDisable(false);
+            // Warn when the in-game Nexus mod (mod menu, HUD, DFR…) won't be in this game.
+            MinecraftVersion version = instancePanel.resolveVersion(instance);
+            if (version != null && !instance.getsNexusMod(version.id())) {
+                status.setText(Instance.FORGE.equals(instance.loaderOrVanilla())
+                        ? "The Nexus mod (Right Shift menu, HUD) doesn't run on Forge yet."
+                        : "The Nexus mod isn't ready for " + version.id() + " yet, so this plays without it. Pick "
+                                + ModManager.nexusModVersionsText() + " to get it.");
+            }
         }
     }
 

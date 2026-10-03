@@ -43,10 +43,24 @@ dependencies {
 
 // Pack the in-game Nexus mod (built by mod-fabric) inside the launcher, so the launcher can put it
 // into players' Fabric instances. Building the launcher builds the mod first automatically.
+// The file names must match NEXUS_MOD_BUILDS in mods/ModManager.java.
 tasks.processResources {
     from(project(":mod-fabric").tasks.named("jar")) {
         into("com/nexusclient/launcher/nexus-mod")
         rename { "nexus-client-fabric-26.3.jar" }
+    }
+    // The 1.20–1.21.11 builds (mod-fabric-modern); "remapJar" makes the file the real game can load.
+    for (version in listOf("1.20.1", "1.20.4", "1.20.6", "1.21.4", "1.21.11")) {
+        from(project(":mod-fabric-$version").tasks.named("remapJar")) {
+            into("com/nexusclient/launcher/nexus-mod")
+            rename { "nexus-client-fabric-$version.jar" }
+        }
+    }
+    // The 1.8.9 mod is its own build (mod-legacy), so it's built first and its file copied in.
+    dependsOn(gradle.includedBuild("mod-legacy").task(":remapJar"))
+    from(rootProject.file("mod-legacy/build/libs/nexus-client-legacy-1.8.9-0.1.0.jar")) {
+        into("com/nexusclient/launcher/nexus-mod")
+        rename { "nexus-client-legacy-1.8.9.jar" }
     }
 }
 

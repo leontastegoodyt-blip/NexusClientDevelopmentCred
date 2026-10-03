@@ -257,49 +257,137 @@ public final class ModManager {
         }
     }
 
-    /** The Minecraft versions the in-game Nexus mod is built for so far (1.20.x and more come later). */
-    private static final Set<String> NEXUS_MOD_VERSIONS = Set.of("26.3");
+    /**
+     * One build of the in-game Nexus mod that the launcher carries inside itself.
+     *
+     * @param file           its file name in the launcher (resources/…/nexus-mod/)
+     * @param needsFabricApi true if it needs Fabric API next to it (the 1.8.9 build doesn't)
+     */
+    private record NexusModBuild(String file, boolean needsFabricApi) {}
+
+    /**
+     * Which Nexus mod build each Minecraft version uses (one build can cover several versions whose
+     * code is the same). Built by mod-fabric (26.3), mod-fabric-modern (1.20–1.21.11) and
+     * mod-legacy (1.8.9). The files are packed into the launcher by launcher/build.gradle.kts.
+     */
+    private static final Map<String, NexusModBuild> NEXUS_MOD_BUILDS = Map.ofEntries(
+            Map.entry("26.3", new NexusModBuild("nexus-client-fabric-26.3.jar", true)),
+            Map.entry("1.21.11", new NexusModBuild("nexus-client-fabric-1.21.11.jar", true)),
+            Map.entry("1.21.4", new NexusModBuild("nexus-client-fabric-1.21.4.jar", true)),
+            Map.entry("1.20.6", new NexusModBuild("nexus-client-fabric-1.20.6.jar", true)),
+            Map.entry("1.20.5", new NexusModBuild("nexus-client-fabric-1.20.6.jar", true)),
+            Map.entry("1.20.4", new NexusModBuild("nexus-client-fabric-1.20.4.jar", true)),
+            Map.entry("1.20.3", new NexusModBuild("nexus-client-fabric-1.20.4.jar", true)),
+            Map.entry("1.20.2", new NexusModBuild("nexus-client-fabric-1.20.4.jar", true)),
+            Map.entry("1.20.1", new NexusModBuild("nexus-client-fabric-1.20.1.jar", true)),
+            Map.entry("1.20", new NexusModBuild("nexus-client-fabric-1.20.1.jar", true)),
+            Map.entry("1.8.9", new NexusModBuild("nexus-client-legacy-1.8.9.jar", false)));
+
+    /** True if this launcher carries the in-game Nexus mod for that Minecraft version. */
+    public static boolean hasNexusMod(String gameVersion) {
+        return gameVersion != null && NEXUS_MOD_BUILDS.containsKey(gameVersion);
+    }
+
+    /** The versions the in-game Nexus mod is ready for, as text like "1.8.9, 26.3" (for messages). */
+    public static String nexusModVersionsText() {
+        return String.join(", ", new java.util.TreeSet<>(NEXUS_MOD_BUILDS.keySet()));
+    }
 
     /** The file name the Nexus mod gets in an instance's mods folder. */
     public static final String NEXUS_MOD_FILE = "nexus-client.jar";
 
     /**
      * Puts the in-game Nexus mod (mod menu, HUD, PvP mods…) into Fabric instances it's made for,
-     * plus Fabric API, which it needs. The mod ships inside the launcher, and is replaced every
-     * launch if the launcher has a newer copy. Problems are printed – the game still starts.
+     * plus Fabric API if that build needs it. The mod ships inside the launcher, and is replaced
+     * every launch if the launcher has a newer copy. Problems are printed – the game still starts.
      */
     public void ensureNexusMod(ProgressListener progress) throws InterruptedException {
-        if (modLoader() == null || !NEXUS_MOD_VERSIONS.contains(gameVersion)) {
+        if (modLoader() == null || !hasNexusMod(gameVersion)) {
             return;
         }
-        try (InputStream bundled = ModManager.class.getResourceAsStream(
-                "/com/nexusclient/launcher/nexus-mod/nexus-client-fabric-" + gameVersion + ".jar")) {
-            if (bundled == null) {
-                System.err.println("This launcher build has no Nexus mod for " + gameVersion);
-                return;
-            }
-            byte[] jar = bundled.readAllBytes();
+        try {
             Path mods = dir.resolve("mods");
-            Files.createDirectories(mods);
-            Path target = mods.resolve(NEXUS_MOD_FILE);
-            if (!Files.exists(target) || !java.util.Arrays.equals(Files.readAllBytes(target), jar)) {
-                Files.write(target, jar);
+            if (!copyNexusMod(mods)) {
+                return;
             }
             // A turned-off copy ("nexus-client.jar.disabled") would clash with the fresh one.
             Files.deleteIfExists(mods.resolve(NEXUS_MOD_FILE + ".disabled"));
 
-            boolean hasFabricApi;
-            try (Stream<Path> files = Files.list(mods)) {
-                hasFabricApi = files.anyMatch(p -> p.getFileName().toString().toLowerCase(Locale.ROOT)
-                        .startsWith("fabric-api") && p.getFileName().toString().endsWith(".jar"));
-            }
-            if (!hasFabricApi) {
+            if (NEXUS_MOD_BUILDS.get(gameVersion).needsFabricApi() && !hasFabricApi(mods)) {
                 Index index = readIndex();
                 installProject("fabric-api", ContentType.MOD, index, new HashSet<>(), progress);
                 writeIndex(index);
             }
         } catch (IOException e) {
             System.err.println("Couldn't set up the Nexus mod: " + e.getMessage());
+        }
+    }
+
+    /**
+     * For Vanilla instances: they secretly start through Fabric so the Nexus mod (Right Shift menu,
+     * HUD…) still works, but with a hidden mods folder holding only the Nexus mod (and Fabric API
+     * if needed) – the instance's own mods folder isn't used, so it really plays like Vanilla.
+     * The folder is shared by every Vanilla instance on the same version:
+     * <Nexus folder>/nexus-mod/<version>/.
+     *
+     * @return the hidden mods folder (passed to the game as -Dfabric.modsFolder), or null if the
+     *         Nexus mod couldn't be set up – then the game should start as plain Vanilla
+     */
+    public Path prepareHiddenNexusMods(ProgressListener progress) throws InterruptedException {
+        if (!hasNexusMod(gameVersion)) {
+            return null;
+        }
+        Path folder = NexusPaths.root().resolve("nexus-mod").resolve(gameVersion);
+        try {
+            if (!copyNexusMod(folder)) {
+                return null;
+            }
+            if (NEXUS_MOD_BUILDS.get(gameVersion).needsFabricApi() && !hasFabricApi(folder)) {
+                List<ModrinthApi.Version> apis = ModrinthApi.versions("fabric-api", List.of("fabric"), gameVersion);
+                ModrinthApi.VersionFile file = apis.isEmpty() ? null : pickVersion(apis).primaryFile();
+                if (file == null) {
+                    throw new IOException("Fabric API isn't out for " + gameVersion + " yet.");
+                }
+                progress.update("Downloading Fabric API for the Nexus mod…", -1);
+                try (Downloader downloader = new Downloader()) {
+                    downloader.download(new Downloader.Job(file.url(),
+                            folder.resolve(Path.of(file.filename()).getFileName().toString()),
+                            file.hashes() == null ? null : file.hashes().get("sha1"), file.size()));
+                }
+            }
+            return folder;
+        } catch (IOException e) {
+            System.err.println("Couldn't set up the Nexus mod (starting plain Vanilla): " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Copies the right Nexus mod build out of the launcher into a folder (as nexus-client.jar),
+     * unless an identical copy is already there. False if this launcher build doesn't carry it.
+     */
+    private boolean copyNexusMod(Path folder) throws IOException {
+        NexusModBuild build = NEXUS_MOD_BUILDS.get(gameVersion);
+        try (InputStream bundled = ModManager.class.getResourceAsStream(
+                "/com/nexusclient/launcher/nexus-mod/" + build.file())) {
+            if (bundled == null) {
+                System.err.println("This launcher build has no Nexus mod for " + gameVersion);
+                return false;
+            }
+            byte[] jar = bundled.readAllBytes();
+            Files.createDirectories(folder);
+            Path target = folder.resolve(NEXUS_MOD_FILE);
+            if (!Files.exists(target) || !java.util.Arrays.equals(Files.readAllBytes(target), jar)) {
+                Files.write(target, jar);
+            }
+            return true;
+        }
+    }
+
+    private static boolean hasFabricApi(Path folder) throws IOException {
+        try (Stream<Path> files = Files.list(folder)) {
+            return files.anyMatch(p -> p.getFileName().toString().toLowerCase(Locale.ROOT)
+                    .startsWith("fabric-api") && p.getFileName().toString().endsWith(".jar"));
         }
     }
 

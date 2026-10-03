@@ -1,5 +1,7 @@
 package com.nexusclient.launcher.instance;
 
+import com.nexusclient.launcher.mods.ModManager;
+
 import java.util.UUID;
 
 /**
@@ -30,9 +32,32 @@ public record Instance(String id, String name, String version, String loader, St
     public static final String FABRIC = "fabric";
     public static final String FORGE = "forge";
 
-    /** Makes a brand-new instance with no version picked yet. */
+    /** Makes a brand-new instance with no version picked yet (Vanilla – see launchLoader). */
     public static Instance create(String name) {
         return new Instance(UUID.randomUUID().toString(), name, null, VANILLA, null, 0, "", 0);
+    }
+
+    /** True if the in-game Nexus mod (Right Shift menu, HUD…) loads in this instance on that version. */
+    public boolean getsNexusMod(String gameVersion) {
+        return !FORGE.equals(loaderOrVanilla()) && ModManager.hasNexusMod(gameVersion);
+    }
+
+    /**
+     * The mod loader the game really starts with. Vanilla instances secretly start through Fabric
+     * when the Nexus mod exists for that version, so the Nexus mod works without the player
+     * switching anything. They get a hidden mods folder with only the Nexus mod in it
+     * (ModManager.prepareHiddenNexusMods), so the game still plays like Vanilla.
+     */
+    public String launchLoader(String gameVersion) {
+        if (VANILLA.equals(loaderOrVanilla()) && ModManager.hasNexusMod(gameVersion)) {
+            return FABRIC;
+        }
+        return loaderOrVanilla();
+    }
+
+    /** True if this is a Vanilla instance that secretly starts through Fabric (see launchLoader). */
+    public boolean secretlyFabric(String gameVersion) {
+        return VANILLA.equals(loaderOrVanilla()) && FABRIC.equals(launchLoader(gameVersion));
     }
 
     /** True once the player has picked a version for this instance. */

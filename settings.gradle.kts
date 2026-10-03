@@ -28,6 +28,18 @@ include(
     "mod-core",   // shared in-game mod code: HUD, settings, DFR logic
     "mod-fabric", // the mod for Fabric (Minecraft 1.20.x + latest)
     "mod-forge",  // the mod for Forge (Minecraft 1.20.x + latest)
-    "mod-legacy", // the mod for Forge 1.8.9
     "backend",    // the online server: friends, chat, parties, cosmetics
 )
+
+// The Nexus mod for Fabric on Minecraft 1.20–1.21.x: one small build per group of versions whose
+// code is the same, all in mod-fabric-modern/ (shared code in mod-fabric-modern/common).
+// Run one with e.g. gradlew :mod-fabric-1.20.1:runClient
+for (version in listOf("1.20.1", "1.20.4", "1.20.6", "1.21.4", "1.21.11")) {
+    include("mod-fabric-$version")
+    project(":mod-fabric-$version").projectDir = file("mod-fabric-modern/$version")
+}
+
+// The 1.8.9 mod (Legacy Fabric) is its own small build, because its build tool needs an older
+// Fabric Loom than mod-fabric uses (see mod-legacy/settings.gradle.kts). Its tasks still run from
+// here, e.g. gradlew :mod-legacy:build
+includeBuild("mod-legacy")

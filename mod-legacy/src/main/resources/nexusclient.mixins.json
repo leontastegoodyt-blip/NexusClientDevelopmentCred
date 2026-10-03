@@ -1,0 +1,21 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.nexusclient.legacy.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "ChatHudMixin",
+    "ClientPlayerInteractionManagerMixin",
+    "ClientPlayNetworkHandlerMixin",
+    "GameOptionsMixin",
+    "GameRendererMixin",
+    "InGameHudMixin",
+    "KeyBindingAccessor",
+    "KeyBindingMixin",
+    "MinecraftClientMixin",
+    "WorldMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

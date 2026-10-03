@@ -126,8 +126,22 @@ public class GameLaunchTask extends Task<Integer> {
 
         List<String> command;
         try (Downloader downloader = new Downloader()) {
-            GameInstaller.InstalledGame game = GameInstaller.install(version,
-                    safeMode ? Instance.VANILLA : instance.loaderOrVanilla(),
+            // Vanilla instances may secretly start through Fabric so the Nexus mod works (see
+            // Instance.launchLoader). Safe mode is always truly Vanilla.
+            ModManager mods = new ModManager(instance, version.id());
+            Path hiddenNexusMods = null;
+            if (!safeMode && instance.secretlyFabric(version.id())) {
+                hiddenNexusMods = mods.prepareHiddenNexusMods(progress); // null = couldn't, play plain Vanilla
+            }
+            String loader;
+            if (safeMode) {
+                loader = Instance.VANILLA;
+            } else if (instance.secretlyFabric(version.id())) {
+                loader = hiddenNexusMods != null ? Instance.FABRIC : Instance.VANILLA;
+            } else {
+                loader = instance.loaderOrVanilla();
+            }
+            GameInstaller.InstalledGame game = GameInstaller.install(version, loader,
                     instance.loaderVersion(), gameDir, downloader, progress);
 
             VersionJson.JavaVersion javaVersion = game.version().javaVersion();
@@ -143,7 +157,6 @@ public class GameLaunchTask extends Task<Integer> {
             // time they launch. If the player removes them later, they're not added back.
             // They also get the in-game Nexus mod (Right Shift menu, HUD…) on versions it's built for.
             if (!safeMode) {
-                ModManager mods = new ModManager(instance, version.id());
                 mods.ensurePerformanceMods(progress);
                 mods.ensureNexusMod(progress);
             }
@@ -157,6 +170,10 @@ public class GameLaunchTask extends Task<Integer> {
             }
             // …and where the shared tools folder is (so FFmpeg for clips is downloaded only once).
             customJvmArgs += " \"-Dnexus.toolsDir=" + NexusPaths.tools() + "\"";
+            // A secretly-Fabric Vanilla instance loads only the hidden Nexus mods folder, never its own.
+            if (hiddenNexusMods != null) {
+                customJvmArgs += " \"-Dfabric.modsFolder=" + hiddenNexusMods.toAbsolutePath() + "\"";
+            }
             command = LaunchCommand.build(game, java, gameDir, account, chooseRamMb(major), customJvmArgs + loggingOptions(major),
                     quickPlay);
         }
