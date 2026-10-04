@@ -209,9 +209,41 @@ public final class Mods {
         }
     }
 
+    /**
+     * Freelook: while the key is held, the camera swings around the player (in third person) and
+     * the mouse only turns the camera – the player keeps facing and walking the same way.
+     * The loader modules do the game side: switch the view, send mouse movement to turn(), and show
+     * the camera from yaw/pitch here instead of the player's.
+     */
     public static class Freelook extends Module {
+        /** True while the key is held and the camera is free. */
+        public boolean looking;
+        /** Where the free camera looks (degrees, like the player's own yaw and pitch). */
+        public float yaw;
+        public float pitch;
+        /** The view (first/third person) to go back to afterwards – stored by the loader module. */
+        public Object savedView;
+
         public Freelook() {
             super("freelook", "Freelook", "Hold Left Alt to look around without turning your player.", Category.VISUAL, false, true);
+        }
+
+        /** The key was pressed: start looking from where the player is facing. */
+        public void start(float playerYaw, float playerPitch) {
+            looking = true;
+            yaw = playerYaw;
+            pitch = playerPitch;
+        }
+
+        /** Mouse movement while looking (same speed as turning normally). Down is positive pitch. */
+        public void turn(double dx, double dy) {
+            yaw += (float) (dx * 0.15);
+            pitch = Math.max(-90, Math.min(90, pitch + (float) (dy * 0.15)));
+        }
+
+        /** The key was let go (or a server switched the mod off). */
+        public void stop() {
+            looking = false;
         }
     }
 
@@ -227,6 +259,20 @@ public final class Mods {
         public TimeChanger() {
             super("timeChanger", "Time Changer", "Change the time of day – only on your screen.", Category.VISUAL, false, false);
         }
+
+        /**
+         * The time the player should see. Keeps the real day number (so the moon phase stays right)
+         * but swaps in the chosen time of day. Returns the real time when the mod is off.
+         *
+         * @param realTime Minecraft's time in ticks (24000 per day)
+         */
+        public long apply(long realTime) {
+            if (!isActive()) {
+                return realTime;
+            }
+            long day = Math.floorDiv(realTime, 24000L);
+            return day * 24000L + time.intValue();
+        }
     }
 
     public static class WeatherChanger extends Module {
@@ -239,10 +285,9 @@ public final class Mods {
 
     public static class Nametags extends Module {
         public final BooleanSetting ownNametag = add(new BooleanSetting("own", "Show my own nametag (F5)", true));
-        public final BooleanSetting textShadow = add(new BooleanSetting("shadow", "Text shadow", true));
 
         public Nametags() {
-            super("nametags", "Custom Nametags", "Customise how names above players look.", Category.VISUAL, false, false);
+            super("nametags", "Custom Nametags", "Show your own nametag in third person (F5).", Category.VISUAL, false, false);
         }
     }
 
@@ -354,6 +399,21 @@ public final class Mods {
 
         public StreamerMode() {
             super("streamerMode", "Streamer Mode", "Hides server addresses, coordinates and friends' names.", Category.UTILITY, false, false);
+        }
+
+        /** True if the Coordinates HUD (and other places that show where you are) should hide them. */
+        public boolean hidesCoordinates() {
+            return isActive() && hideCoords.isOn();
+        }
+
+        /** True if server addresses should be hidden (Server Address HUD, Discord status…). */
+        public boolean hidesServerAddresses() {
+            return isActive() && hideIps.isOn();
+        }
+
+        /** True if friends' names should be hidden (friend pop-ups once they exist in-game). */
+        public boolean hidesFriends() {
+            return isActive() && hideFriends.isOn();
         }
     }
 }

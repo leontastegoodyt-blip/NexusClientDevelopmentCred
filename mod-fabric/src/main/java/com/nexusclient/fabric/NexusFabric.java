@@ -17,6 +17,7 @@ import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
@@ -42,6 +43,7 @@ public class NexusFabric implements ClientModInitializer {
     public static KeyMapping zoomKey;
     public static KeyMapping menuKey;
     private static KeyMapping clipKey;
+    private static KeyMapping freelookKey;
 
     private boolean wasZooming;
     private int lastHurtTime;
@@ -59,15 +61,15 @@ public class NexusFabric implements ClientModInitializer {
         core.init(new FabricGameInfo(), new FabricPlatform(), FabricLoader.getInstance().getGameDir().toFile());
 
         // Mods this version doesn't do yet – the menu shows them as "Coming soon".
-        core.markUnsupported("hitColor", "blockOutline", "oldAnimations", "hitboxes", "smallItems",
-                "itemPhysics", "lowFire", "particles", "enchantGlint", "motionBlur", "freelook", "timeChanger",
-                "nametags", "waypoints", "minimap", "copyChat", "screenshotUploader", "streamerMode");
+        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur", "waypoints", "minimap",
+                "screenshotUploader");
 
         // Keys (players can change them in Minecraft's Controls menu, under "Nexus Client").
         KeyMapping.Category category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("nexusclient", "main"));
         menuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.open_menu", InputConstants.KEY_RSHIFT, category));
         zoomKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.hold_zoom", InputConstants.KEY_C, category));
         clipKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.save_clip", InputConstants.KEY_F8, category));
+        freelookKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.freelook", InputConstants.KEY_LALT, category));
 
         // HUD: draw every switched-on HUD mod on top of the normal game HUD.
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("nexusclient", "hud"), (graphics, delta) -> {
@@ -133,6 +135,9 @@ public class NexusFabric implements ClientModInitializer {
             zoom.target = zoom.factor.get();
         }
         wasZooming = zooming;
+
+        freelook(mc, core);
+        HitColour.tick(mc);
 
         if (mc.player == null) {
             return;
@@ -209,6 +214,25 @@ public class NexusFabric implements ClientModInitializer {
         } else if (sneakHeldByUs) {
             mc.options.keyShift.setDown(false);
             sneakHeldByUs = false;
+        }
+    }
+
+    /**
+     * Freelook: while the key is held, switch to third person and let the mouse swing the camera
+     * around (see FreelookMixin and TurnMixin). Letting go puts the old view back.
+     */
+    private void freelook(Minecraft mc, NexusCore core) {
+        Mods.Freelook freelook = core.get(Mods.Freelook.class);
+        boolean wanted = freelook.isActive() && freelookKey.isDown() && mc.gui.screen() == null && mc.player != null;
+        if (wanted && !freelook.looking) {
+            freelook.start(mc.player.getYRot(), mc.player.getXRot());
+            freelook.savedView = mc.options.getCameraType();
+            mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+        } else if (!wanted && freelook.looking) {
+            freelook.stop();
+            if (freelook.savedView instanceof CameraType view) {
+                mc.options.setCameraType(view);
+            }
         }
     }
 

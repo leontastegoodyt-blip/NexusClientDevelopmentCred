@@ -77,6 +77,10 @@ tasks.named<JavaExec>("run") {
     //   gradlew :launcher:run -PnexusTour=C:\folder   → photographs every screen into that folder, then closes
     //   gradlew :launcher:run -PnexusFirstRun=true    → shows the first-run welcome screens again
     providers.gradleProperty("nexusTour").orNull?.let { systemProperty("nexus.tour", it) }
+    //   …add -PnexusTourSize=1024x600 to photograph the screens at that window size
+    providers.gradleProperty("nexusTourSize").orNull?.let { systemProperty("nexus.tourSize", it) }
+    //   …add -PnexusTourScreen=true to capture the real pixels on screen (checks sharpness exactly)
+    providers.gradleProperty("nexusTourScreen").orNull?.let { systemProperty("nexus.tourScreen", it) }
     providers.gradleProperty("nexusFirstRun").orNull?.let { systemProperty("nexus.firstRun", it) }
     //   gradlew :launcher:run -PnexusHome=C:\folder   → uses that folder instead of the real Nexus folder
     providers.gradleProperty("nexusHome").orNull?.let { systemProperty("nexus.home", it) }

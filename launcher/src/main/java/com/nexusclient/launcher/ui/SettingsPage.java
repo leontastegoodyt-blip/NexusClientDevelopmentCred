@@ -59,6 +59,7 @@ public class SettingsPage extends VBox {
         title.getStyleClass().add("page-title");
         Label description = new Label(Page.SETTINGS.description());
         description.getStyleClass().add("page-description");
+        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
         HBox header = new HBox(new VBox(4, title, description));
         header.setAlignment(Pos.CENTER_LEFT);
 
@@ -259,9 +260,40 @@ public class SettingsPage extends VBox {
             Theme.apply();
         });
 
+        // Interface size: how big the whole launcher is drawn (sharp at any size). Needs a restart,
+        // because it's chosen before the window opens (see DisplaySetup).
+        ComboBox<Integer> size = new ComboBox<>();
+        size.getStyleClass().add("form-combo");
+        for (int choice : DisplaySetup.SIZE_CHOICES) {
+            size.getItems().add(choice);
+        }
+        size.setConverter(new javafx.util.StringConverter<>() {
+            @Override
+            public String toString(Integer percent) {
+                if (percent == null) {
+                    return "";
+                }
+                return percent == 0 ? "Automatic (" + DisplaySetup.automaticPercent() + "% on this screen)" : percent + "%";
+            }
+
+            @Override
+            public Integer fromString(String text) {
+                return null; // the list can't be typed into
+            }
+        });
+        size.setValue(settings.uiScalePercent);
+        size.setOnAction(event -> {
+            settings.uiScalePercent = size.getValue();
+            SettingsStore.save();
+            Toast.info("Restart Nexus to use the new interface size.");
+        });
+
         return new VBox(12,
                 heading("Accent colour"), hint("The neon colour used for highlights, buttons and glows."),
                 new HBox(10, accent, resetAccent),
+                heading("Interface size"), hint("How big everything is drawn. Automatic makes the launcher bigger on "
+                        + "large screens like 1440p and 4K. Takes effect when Nexus restarts."),
+                size,
                 heading("Background picture"), hint("Shown faintly behind the pages. Keeps the launcher dark and readable."),
                 new HBox(10, chooseBackground, removeBackground));
     }

@@ -110,7 +110,8 @@ public class ServerCard extends HBox {
                 ping.setText("");
                 return;
             }
-            motd.setText(status.motd().isEmpty() ? server.description() : status.motd().replace('\n', ' '));
+            String message = status.motd().isEmpty() ? server.description() : status.motd().replace('\n', ' ');
+            motd.setText(withoutPrivateSymbols(message));
             NumberFormat numbers = NumberFormat.getIntegerInstance();
             players.setText(numbers.format(status.players()) + (status.max() > 0 ? " / " + numbers.format(status.max()) : "")
                     + " playing");
@@ -123,5 +124,18 @@ public class ServerCard extends HBox {
                 iconBox.getChildren().add(new ImageView(image));
             }
         }, error -> players.setText("Offline"));
+    }
+
+    /**
+     * Removes "private use" characters from a server message. Servers like MCC Island draw their
+     * logo with special symbols that only exist in their own resource pack – no normal font has
+     * them, so they would show up as empty boxes (■■■) here.
+     */
+    static String withoutPrivateSymbols(String text) {
+        StringBuilder clean = new StringBuilder();
+        text.codePoints()
+                .filter(c -> Character.getType(c) != Character.PRIVATE_USE)
+                .forEach(clean::appendCodePoint);
+        return clean.toString().replaceAll(" {2,}", " ").trim();
     }
 }

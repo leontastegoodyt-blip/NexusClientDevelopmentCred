@@ -43,9 +43,8 @@ public class NexusLegacy implements ClientModInitializer {
         core.init(new LegacyGameInfo(), new LegacyPlatform(), FabricLoader.getInstance().getGameDir().toFile());
 
         // Mods the 1.8.9 version doesn't do yet – the menu shows them as "Coming soon".
-        core.markUnsupported("hitColor", "blockOutline", "oldAnimations", "hitboxes", "smallItems",
-                "itemPhysics", "lowFire", "particles", "enchantGlint", "motionBlur", "freelook", "timeChanger",
-                "nametags", "waypoints", "minimap", "copyChat", "screenshotUploader", "streamerMode", "dfr");
+        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur", "waypoints", "minimap",
+                "screenshotUploader", "dfr");
     }
 
     /** Runs 20 times a second, at the end of Minecraft's own tick. */
@@ -73,6 +72,8 @@ public class NexusLegacy implements ClientModInitializer {
             zoom.target = zoom.factor.get();
         }
         wasZooming = zooming;
+
+        freelook(mc, core);
 
         // Which server we're on (per-server HUD layouts + that server's rules). Checked every tick:
         // core.joinedServer does nothing if it hasn't changed.
@@ -184,6 +185,26 @@ public class NexusLegacy implements ClientModInitializer {
         } else if (sneakHeldByUs) {
             hold(sneakKey, false);
             sneakHeldByUs = false;
+        }
+    }
+
+    /**
+     * Freelook: while the key is held, switch to third person and let the mouse swing the camera
+     * around (see GameRendererMixin and EntityMixin). Letting go puts the old view back.
+     */
+    private static void freelook(MinecraftClient mc, NexusCore core) {
+        Mods.Freelook freelook = core.get(Mods.Freelook.class);
+        boolean wanted = freelook.isActive() && LegacyKeys.freelook.isPressed() && mc.currentScreen == null
+                && mc.player != null;
+        if (wanted && !freelook.looking) {
+            freelook.start(mc.player.yaw, mc.player.pitch);
+            freelook.savedView = mc.options.perspective;
+            mc.options.perspective = 1; // third person, behind the player
+        } else if (!wanted && freelook.looking) {
+            freelook.stop();
+            if (freelook.savedView instanceof Integer) {
+                mc.options.perspective = (Integer) freelook.savedView;
+            }
         }
     }
 

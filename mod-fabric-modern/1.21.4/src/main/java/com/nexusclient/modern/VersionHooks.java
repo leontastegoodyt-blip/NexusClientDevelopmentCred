@@ -2,6 +2,7 @@ package com.nexusclient.modern;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.core.BlockPos;
@@ -27,6 +28,14 @@ public final class VersionHooks {
     /** Minecraft's "does the player have this effect?" method, exactly (for the Fullbright hook, LightTextureMixin).
      *  Since 1.20.5 effects are passed as "holders". */
     public static final String HAS_EFFECT = "Lnet/minecraft/client/player/LocalPlayer;hasEffect(Lnet/minecraft/core/Holder;)Z";
+
+    /** The red tint Minecraft gives hurt mobs (as ARGB colour) – see HitColour. */
+    public static final int DEFAULT_HURT_COLOUR = 0xB3FF0000;
+
+    /** Sets one pixel of a texture (1.21+ uses normal ARGB colours). */
+    public static void paintPixel(NativeImage image, int x, int y, int argb) {
+        image.setPixel(x, y, argb);
+    }
 
     /** An item type by its id, e.g. "minecraft:arrow". */
     public static Item item(String id) {

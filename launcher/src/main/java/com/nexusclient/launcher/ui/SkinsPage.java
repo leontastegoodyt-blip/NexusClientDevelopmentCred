@@ -68,6 +68,7 @@ public class SkinsPage extends HBox {
         title.getStyleClass().add("page-title");
         Label description = new Label(Page.SKINS.description());
         description.getStyleClass().add("page-description");
+        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
         tabs = new TabStrip(Page.SKINS.tabs(), this::showTab);
         ScrollPane scroll = new ScrollPane(body);
         scroll.setFitToWidth(true);

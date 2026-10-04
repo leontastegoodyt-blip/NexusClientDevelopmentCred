@@ -51,6 +51,7 @@ public class FriendsPage extends VBox {
         title.getStyleClass().add("page-title");
         Label description = new Label(Page.FRIENDS.description());
         description.getStyleClass().add("page-description");
+        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
         status.getStyleClass().add("mod-meta");
 
         TextField addName = new TextField();

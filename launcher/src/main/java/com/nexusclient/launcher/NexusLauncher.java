@@ -19,6 +19,9 @@ import com.nexusclient.launcher.servers.ServerStore;
 import com.nexusclient.launcher.ui.SettingsPage;
 import com.nexusclient.launcher.ui.InstancePanel;
 import com.nexusclient.launcher.ui.NavRail;
+import com.nexusclient.launcher.ui.NeonBackdrop;
+import com.nexusclient.launcher.ui.Fonts;
+import com.nexusclient.launcher.ui.DisplaySetup;
 import com.nexusclient.launcher.ui.Page;
 import com.nexusclient.launcher.ui.ClansPage;
 import com.nexusclient.launcher.ui.FriendsPage;
@@ -26,6 +29,7 @@ import com.nexusclient.launcher.ui.PlaceholderPage;
 import com.nexusclient.launcher.ui.Theme;
 import com.nexusclient.launcher.ui.TitleBar;
 import com.nexusclient.launcher.ui.WindowBehaviour;
+import com.nexusclient.launcher.ui.WindowMemory;
 import com.nexusclient.launcher.ui.Toast;
 import com.nexusclient.launcher.ui.WindowResizer;
 import javafx.application.Application;
@@ -87,6 +91,8 @@ public class NexusLauncher extends Application {
     private ServerStore servers;
     private HomePage homePage;
     private StackPane root;
+    private NavRail navRail;
+    private NeonBackdrop backdrop;
 
     /** The first-run / "set up your PC" screens while they're showing, otherwise null. */
     private FirstRunOverlay overlay;
@@ -96,6 +102,8 @@ public class NexusLauncher extends Application {
      * launch() hands control to JavaFX, which then calls our start() method below.
      */
     public static void main(String[] args) {
+        // Interface size and animation smoothness for this screen – must be decided before JavaFX starts.
+        DisplaySetup.apply();
         launch(args);
     }
 
@@ -106,6 +114,8 @@ public class NexusLauncher extends Application {
     public void start(Stage stage) {
         // Hide Windows' own white title bar – TitleBar draws a dark one instead.
         stage.initStyle(StageStyle.UNDECORATED);
+        // Nexus's own fonts (Inter + Exo 2), so the launcher looks the same on every PC.
+        Fonts.load();
 
         // The player's Microsoft accounts (loaded from accounts.json + the secure secret store).
         accounts = new AccountManager();
@@ -126,7 +136,7 @@ public class NexusLauncher extends Application {
         pages.put(Page.HOME, homePage);
 
         // Tabs on the far left. Clicking one shows its page.
-        NavRail navRail = new NavRail(this::showPage);
+        navRail = new NavRail(this::showPage);
 
         // The right-hand side: the page on top, the legal notice underneath.
         pageArea.getStyleClass().add("page-area");
@@ -155,9 +165,14 @@ public class NexusLauncher extends Application {
         window.setTop(titleBar);
         window.setCenter(body);
 
+        // The animated neon glow behind everything. The title bar, tabs and panels are partly
+        // see-through ("glass"), so it shows through them.
+        backdrop = new NeonBackdrop();
+        StackPane windowWithBackdrop = new StackPane(backdrop, window);
+
         // The very top layer: the window, with room on top for the first-run screens and
         // pop-up messages ("toasts").
-        root = new StackPane(window);
+        root = new StackPane(windowWithBackdrop);
         Toast.setLayer(root);
         Modal.setLayer(root);
 
@@ -176,7 +191,7 @@ public class NexusLauncher extends Application {
         Animations.installButtonAnimations(scene);
 
         // Accent colour, background picture, bigger text, colourblind mode, reduced motion.
-        Theme.install(scene, backgroundLayer);
+        Theme.install(scene, backgroundLayer, backdrop);
         // Minimise/hide the launcher while the game runs (Settings → General).
         WindowBehaviour.install(stage);
 
@@ -184,8 +199,16 @@ public class NexusLauncher extends Application {
         stage.setMinWidth(MIN_WIDTH);
         stage.setMinHeight(MIN_HEIGHT);
         stage.setScene(scene);
-        stage.centerOnScreen();
+        if (DevTour.folder() == null) {
+            // Open where the player left the window last time, and remember it again when it closes.
+            WindowMemory.restore(stage);
+            WindowMemory.track(stage, titleBar::isMaximized);
+        } else {
+            stage.centerOnScreen(); // the developer tour never moves or saves the player's real window
+        }
         stage.show();
+        System.out.println("[Nexus] Interface size " + DisplaySetup.appliedPercent() + "% (output scale "
+                + stage.getOutputScaleX() + ", drawn at " + stage.getRenderScaleX() + ")");
 
         // First time opening Nexus: welcome screen, tutorial, sign-in and TorcherRig.
         Settings settings = SettingsStore.get();
@@ -216,6 +239,9 @@ public class NexusLauncher extends Application {
     private void showPage(Page page) {
         Node node = pages.computeIfAbsent(page, this::createPage);
         pageArea.getChildren().setAll(node);
+        // Light up the matching tab, also when the page was opened some other way
+        // (e.g. joining a server from the Servers tab jumps to Home).
+        navRail.select(page);
         Animations.pageIn(node); // fade + slide the page in
     }
 

@@ -55,6 +55,9 @@ import java.util.List;
  */
 public class HomePage extends BorderPane {
 
+    /** Below this page width, the Friends/Party column is hidden so the main column has room. */
+    private static final double SOCIAL_COLUMN_MIN_PAGE_WIDTH = 900;
+
     /** One news card. The cards come from data/news.json inside Nexus (later: the Nexus website). */
     private record NewsItem(String tag, String title, String text) {}
     private record NewsFile(List<NewsItem> news) {}
@@ -132,9 +135,18 @@ public class HomePage extends BorderPane {
         scroll.getStyleClass().add("page-scroll");
 
         // --- Main column on the left, social column on the right ---
-        HBox columns = new HBox(24, scroll, buildSocialColumn());
+        VBox social = buildSocialColumn();
+        HBox columns = new HBox(24, scroll, social);
         HBox.setHgrow(scroll, Priority.ALWAYS);
         setCenter(columns);
+
+        // In a narrow window, hide the Friends/Party column (it's all in the Friends tab too), so the
+        // main column keeps enough room instead of everything getting squashed.
+        widthProperty().addListener((observable, oldWidth, width) -> {
+            boolean roomy = width.doubleValue() >= SOCIAL_COLUMN_MIN_PAGE_WIDTH;
+            social.setVisible(roomy);
+            social.setManaged(roomy); // "managed = false" means the layout leaves no gap for it
+        });
 
         // --- Launch bar along the bottom ---
         HBox launchBar = buildLaunchBar();
@@ -157,38 +169,59 @@ public class HomePage extends BorderPane {
         title.getStyleClass().add("banner-title");
         Label text = new Label("Pick an instance on the left, choose its version below, and hit Launch.");
         text.getStyleClass().add("banner-text");
+        text.setWrapText(true); // wrap onto a second line instead of being cut off next to the neon block
 
         // Stats. "bind" means the number updates by itself whenever the value changes.
-        HBox stats = new HBox(40,
-                stat("INSTANCES", Bindings.size(instancePanel.getInstances()).asString()),
-                stat("LATEST MINECRAFT", instancePanel.latestVersionProperty()),
-                stat("PLAYTIME", playtimeText),
-                stat("FRIENDS ONLINE", null)); // friends arrive in build step 13
+        HBox stats = new HBox(20,
+                stat(Icons.SERVERS, "INSTANCES", Bindings.size(instancePanel.getInstances()).asString()),
+                stat(Icons.VERSION, "LATEST MINECRAFT", instancePanel.latestVersionProperty()),
+                stat(Icons.PLAY, "PLAYTIME", playtimeText),
+                stat(Icons.FRIENDS, "FRIENDS ONLINE", null)); // friends arrive in build step 13
         stats.getStyleClass().add("banner-stats");
 
-        VBox banner = new VBox(6, eyebrow, title, text, stats);
+        // The words on the left, the floating neon block on the right.
+        VBox words = new VBox(6, eyebrow, title, text);
+        HBox.setHgrow(words, Priority.ALWAYS);
+        NeonCube cube = new NeonCube();
+        HBox top = new HBox(words, cube);
+        top.setAlignment(Pos.CENTER_LEFT);
+        // The neon block steps aside when the banner gets narrow, to leave room for the words.
+        top.widthProperty().addListener((observable, oldWidth, width) -> {
+            boolean roomy = width.doubleValue() >= 480;
+            cube.setVisible(roomy);
+            cube.setManaged(roomy);
+        });
+
+        VBox banner = new VBox(4, top, stats);
         banner.getStyleClass().add("home-banner");
         return banner;
     }
 
     /**
-     * One stat: a small caption above a bigger value.
+     * One stat: a small glowing icon, then a caption above a bigger value.
      * If there's no value yet (null), it shows a dash.
      */
-    private VBox stat(String caption, ObservableValue<String> value) {
+    private HBox stat(String icon, String caption, ObservableValue<String> value) {
+        StackPane iconBox = new StackPane(Icons.create(icon, 18));
+        iconBox.getStyleClass().add("stat-icon");
         Label captionLabel = new Label(caption);
         captionLabel.getStyleClass().add("stat-caption");
+        captionLabel.setMinWidth(Region.USE_PREF_SIZE); // never shorten "LATEST MINECRAFT" to "LATEST MI…"
         Label valueLabel = new Label("—");
         valueLabel.getStyleClass().add("stat-value");
         if (value != null) {
             valueLabel.textProperty().bind(value);
         }
-        return new VBox(2, captionLabel, valueLabel);
+        HBox stat = new HBox(10, iconBox, new VBox(0, captionLabel, valueLabel));
+        stat.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(stat, Priority.ALWAYS); // the four stats share the width equally
+        return stat;
     }
 
     /** "Latest news" heading and a row of cards. */
     private VBox buildNews() {
         HBox cards = new HBox(16);
+        int index = 0;
         for (NewsItem item : loadNews()) {
             Label tag = new Label(item.tag());
             tag.getStyleClass().add("news-tag");
@@ -200,7 +233,8 @@ public class HomePage extends BorderPane {
             text.setWrapText(true);
 
             VBox card = new VBox(6, tag, title, text);
-            card.getStyleClass().add("news-card");
+            // Each card gets its own accent colour along the top: cyan, violet, magenta, cyan…
+            card.getStyleClass().addAll("news-card", "news-card-" + (index++ % 3));
             // Give every card the same starting width, then let them all grow by the same amount,
             // so the cards are always equally wide no matter how much text each one has.
             card.setPrefWidth(200);
@@ -242,7 +276,9 @@ public class HomePage extends BorderPane {
     private HBox sectionHeader(String title, String pill) {
         Label heading = new Label(title);
         heading.getStyleClass().add("section-title");
-        HBox header = new HBox(heading);
+        Region accentBar = new Region(); // the little glowing gradient bar in front of the heading
+        accentBar.getStyleClass().add("section-bar");
+        HBox header = new HBox(10, accentBar, heading);
         header.setAlignment(Pos.CENTER_LEFT);
         if (pill != null) {
             Region spacer = new Region();

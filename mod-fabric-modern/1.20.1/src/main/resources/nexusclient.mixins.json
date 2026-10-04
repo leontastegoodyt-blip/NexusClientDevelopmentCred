@@ -4,15 +4,27 @@
   "package": "com.nexusclient.modern.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
+    "BlockOutlineMixin",
+    "ChatComponentAccessor",
     "ChatComponentMixin",
     "ChatLimitMixin",
+    "ChatScreenMixin",
+    "ClientLevelDataMixin",
     "FovMixin",
+    "FreelookMixin",
     "GameRendererMixin",
     "GuiMixin",
+    "HitboxMixin",
+    "ItemInHandRendererMixin",
     "LevelMixin",
     "LightTextureMixin",
     "MouseClickMixin",
-    "MouseScrollMixin"
+    "MouseScrollMixin",
+    "NametagMixin",
+    "OverlayTextureAccessor",
+    "ParticleEngineMixin",
+    "ScreenEffectRendererMixin",
+    "TurnMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -3,10 +3,13 @@ package com.nexusclient.legacy.mixin;
 import com.nexusclient.core.NexusCore;
 import com.nexusclient.core.module.Mods;
 import com.nexusclient.legacy.ZoomControl;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.render.GameRenderer;
+import net.minecraft.entity.player.ClientPlayerEntity;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -35,6 +38,43 @@ public class GameRendererMixin {
         if (NexusCore.get().get(Mods.NoHurtCam.class).isActive()) {
             ci.cancel();
         }
+    }
+
+    /** The player's real direction, put back after the camera is placed (freelook). */
+    @Unique
+    private float nexus$yaw, nexus$pitch, nexus$prevYaw, nexus$prevPitch;
+    @Unique
+    private boolean nexus$swapped;
+
+    /**
+     * Freelook: while the camera is being placed, the player briefly "looks" where the free camera
+     * looks, then gets their real direction back straight after – so only the camera turns.
+     */
+    @Inject(method = "transformCamera", at = @At("HEAD"))
+    private void nexus$freelookStart(float tickDelta, CallbackInfo ci) {
+        Mods.Freelook freelook = NexusCore.get().get(Mods.Freelook.class);
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        nexus$swapped = freelook.looking && player != null;
+        if (nexus$swapped) {
+            nexus$yaw = player.yaw;
+            nexus$pitch = player.pitch;
+            nexus$prevYaw = player.prevYaw;
+            nexus$prevPitch = player.prevPitch;
+            player.yaw = player.prevYaw = freelook.yaw;
+            player.pitch = player.prevPitch = freelook.pitch;
+        }
+    }
+
+    @Inject(method = "transformCamera", at = @At("RETURN"))
+    private void nexus$freelookEnd(float tickDelta, CallbackInfo ci) {
+        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        if (nexus$swapped && player != null) {
+            player.yaw = nexus$yaw;
+            player.pitch = nexus$pitch;
+            player.prevYaw = nexus$prevYaw;
+            player.prevPitch = nexus$prevPitch;
+        }
+        nexus$swapped = false;
     }
 
     @Redirect(method = "updateLightmap", at = @At(value = "FIELD",

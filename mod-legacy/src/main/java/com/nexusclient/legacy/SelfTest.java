@@ -3,6 +3,7 @@ package com.nexusclient.legacy;
 import com.nexusclient.core.NexusCore;
 import com.nexusclient.core.ui.HudEditor;
 import com.nexusclient.core.ui.ModMenu;
+import com.nexusclient.core.util.SelfTestMods;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.option.KeyBinding;
@@ -35,6 +36,9 @@ public final class SelfTest {
         if (ticks < 0) {
             if (mc.currentScreen instanceof TitleScreen) {
                 ticks = 0; // the game has finished loading – start the test
+                // Don't open the pause menu if the window loses focus during the test (that would
+                // block the Right Shift check, which only works with no menu open).
+                mc.options.pauseOnLostFocus = false;
             }
             return;
         }
@@ -84,7 +88,9 @@ public final class SelfTest {
             return;
         }
         worldTicks++;
-        if (worldTicks == 60) {
+        if (worldTicks == 40) {
+            SelfTestMods.switchOn(); // midnight sky + small items, so their hooks run before the screenshot
+        } else if (worldTicks == 60) {
             screenshot(mc, "selftest-hud.png");
         } else if (worldTicks == 70) {
             // The same call Minecraft makes when the player presses the key bound to the menu.

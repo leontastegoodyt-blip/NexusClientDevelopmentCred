@@ -3,6 +3,7 @@ package com.nexusclient.modern;
 import com.nexusclient.core.NexusCore;
 import com.nexusclient.core.ui.HudEditor;
 import com.nexusclient.core.ui.ModMenu;
+import com.nexusclient.core.util.SelfTestMods;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -81,7 +82,9 @@ public final class SelfTest {
             return;
         }
         worldTicks++;
-        if (worldTicks == 60) {
+        if (worldTicks == 40) {
+            SelfTestMods.switchOn(); // midnight sky + small items, so their hooks run before the screenshot
+        } else if (worldTicks == 60) {
             screenshot(mc, "in-game HUD");
         } else if (worldTicks == 70) {
             // The same call Minecraft makes when the player presses the key bound to the menu.

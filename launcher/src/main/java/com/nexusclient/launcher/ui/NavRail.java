@@ -8,6 +8,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -18,6 +20,9 @@ import java.util.function.Consumer;
  * most launchers.
  */
 public class NavRail extends VBox {
+
+    /** Each page's tab, so a tab can be lit up when its page is opened some other way. */
+    private final Map<Page, ToggleButton> tabs = new EnumMap<>(Page.class);
 
     /**
      * @param onSelect called with the chosen page whenever the player clicks a tab
@@ -47,6 +52,7 @@ public class NavRail extends VBox {
             tab.getStyleClass().add("nav-button");
             tab.setToggleGroup(group);
             tab.setOnAction(event -> onSelect.accept(page));
+            tabs.put(page, tab);
 
             if (page == Page.SETTINGS) {
                 getChildren().addAll(spacer, tab);
@@ -56,6 +62,14 @@ public class NavRail extends VBox {
             if (page == Page.HOME) {
                 tab.setSelected(true); // start on Home
             }
+        }
+    }
+
+    /** Lights up the tab for this page (without opening the page again). */
+    public void select(Page page) {
+        ToggleButton tab = tabs.get(page);
+        if (tab != null && !tab.isSelected()) {
+            tab.setSelected(true);
         }
     }
 }

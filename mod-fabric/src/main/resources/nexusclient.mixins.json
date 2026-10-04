@@ -4,14 +4,26 @@
   "package": "com.nexusclient.fabric.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "BlockOutlineMixin",
     "CameraMixin",
+    "ChatComponentAccessor",
+    "ChatScreenMixin",
+    "ClockMixin",
     "DfrMixin",
+    "FirstPersonItemMixin",
+    "FreelookMixin",
+    "HitboxMixin",
     "ChatComponentMixin",
     "LevelMixin",
     "LightmapMixin",
     "MouseHandlerAccessor",
     "MouseHandlerMixin",
-    "PlayerInfoMixin"
+    "NametagMixin",
+    "OverlayTextureAccessor",
+    "ParticleEngineMixin",
+    "PlayerInfoMixin",
+    "ScreenEffectRendererMixin",
+    "TurnMixin"
   ],
   "injectors": {
     "defaultRequire": 1

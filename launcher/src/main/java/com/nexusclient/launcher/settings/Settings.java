@@ -75,6 +75,18 @@ public class Settings {
     /** Makes the text bigger everywhere. */
     public boolean biggerText = false;
 
+    /**
+     * How big the whole launcher is drawn, in percent (e.g. 125). 0 = automatic: bigger on large
+     * screens such as 1440p (see ui/DisplaySetup). Takes effect when the launcher restarts.
+     */
+    public int uiScalePercent = 0;
+
+    /** Where the launcher window was and how big (0 = never saved – open in the middle). See ui/WindowMemory. */
+    public double windowX = 0;
+    public double windowY = 0;
+    public double windowWidth = 0;
+    public double windowHeight = 0;
+
     /** "OFF", "RED_GREEN" (protanopia/deuteranopia) or "BLUE_YELLOW" (tritanopia). */
     public String colourblindMode = "OFF";
 

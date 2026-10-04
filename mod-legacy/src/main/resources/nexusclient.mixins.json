@@ -4,16 +4,24 @@
   "package": "com.nexusclient.legacy.mixin",
   "compatibilityLevel": "JAVA_8",
   "client": [
+    "ChatHudAccessor",
     "ChatHudMixin",
+    "ChatScreenMixin",
     "ClientPlayerInteractionManagerMixin",
     "ClientPlayNetworkHandlerMixin",
+    "EntityMixin",
+    "EntityRenderDispatcherMixin",
     "GameOptionsMixin",
     "GameRendererMixin",
+    "HeldItemRendererMixin",
     "InGameHudMixin",
     "KeyBindingAccessor",
     "KeyBindingMixin",
+    "LivingEntityRendererMixin",
     "MinecraftClientMixin",
-    "WorldMixin"
+    "ParticleManagerMixin",
+    "WorldMixin",
+    "WorldRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

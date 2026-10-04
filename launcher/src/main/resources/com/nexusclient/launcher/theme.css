@@ -1,25 +1,45 @@
 /* =====================================================================================
-   theme.css – the neon dark look of the Nexus launcher.
+   theme.css – the neon look of the Nexus launcher.
 
    This works like CSS on a website, but JavaFX's version: most properties start
    with "-fx-". Each ".name" block styles the nodes that have that style class
    (set in the Java code with getStyleClass().add("name")).
 
-   Design rule: everything is dark and quiet. Neon is only used as an ACCENT – the
-   selected tab, the selected instance, small highlights and the Launch button.
+   Design rule (updated – the owner found the old look too bland):
+     - NO glow effects (-fx-effect) on anything that contains text: JavaFX draws such things into a
+       separate picture first, which makes text blocky at screen scales like 133%. Glows are only
+       used on icons, the slider knob and pop-ups.
+     - Behind everything is a living neon backdrop (ui/NeonBackdrop.java): drifting glows and a
+       faint grid floor. Panels and cards are partly see-through "glass" so it shows through.
+     - The signature accent is a cyan → violet → magenta gradient. It's used for selected things,
+       main buttons, headings' accent bars, the logo and highlights – not for big areas of text.
+     - Text stays crisp and readable: near-white on dark glass.
    ===================================================================================== */
 
 /* ---- Colour palette -------------------------------------------------------------------
    Change the colours HERE and the whole launcher follows.
    (These are placeholder colours until the official Nexus colours are chosen.) */
 .root {
-    -nexus-bg:          #08080D;   /* main background: almost black                      */
-    -nexus-surface:     #0D0D14;   /* side bars and title bar                            */
-    -nexus-surface-2:   #12121B;   /* cards and input boxes                              */
-    -nexus-surface-3:   #1A1A26;   /* things under the mouse (hover)                     */
-    -nexus-border:      #1C1C29;   /* thin lines between areas                           */
-    -nexus-cyan:        #00E5FF;   /* main neon accent                                   */
-    -nexus-magenta:     #FF2BD6;   /* second neon accent                                 */
+    -nexus-bg:          #07060E;                    /* the darkest background behind everything      */
+    -nexus-glass:       rgba(12, 11, 22, 0.74);     /* side bars and title bar (see-through)         */
+    -nexus-surface:     rgba(18, 16, 32, 0.78);     /* cards                                         */
+    -nexus-surface-2:   rgba(28, 25, 48, 0.82);     /* input boxes, small buttons                    */
+    -nexus-surface-3:   rgba(44, 40, 72, 0.88);     /* things under the mouse (hover)                */
+    -nexus-border:      rgba(160, 150, 255, 0.10);  /* thin lines between areas                      */
+    -nexus-border-hi:   rgba(160, 150, 255, 0.22);  /* brighter edge (hover)                         */
+    -nexus-cyan:        #00E5FF;                    /* main neon accent (the player can change it)   */
+    -nexus-violet:      #8B5CFF;                    /* middle of the gradient                        */
+    -nexus-magenta:     #FF2BD6;                    /* second neon accent                            */
+    -nexus-green:       #3DE0A0;
+    -nexus-amber:       #FFB547;
+    -nexus-red:         #FF6B5E;
+
+    /* The signature gradients (they follow the accent colour automatically). */
+    -nexus-gradient:      linear-gradient(to right, -nexus-cyan, -nexus-violet 55%, -nexus-magenta);
+    -nexus-gradient-down: linear-gradient(to bottom, -nexus-cyan, -nexus-violet 55%, -nexus-magenta);
+    -nexus-gradient-soft: linear-gradient(to right, -nexus-accent-120, rgba(139, 92, 255, 0.12), rgba(255, 43, 214, 0.10));
+    -nexus-gradient-edge: linear-gradient(to right, -nexus-accent-550, rgba(139, 92, 255, 0.55), rgba(255, 43, 214, 0.55));
+
     /* See-through versions of the accent colour (Theme.java recomputes these when the player
        picks their own accent colour in Settings → Appearance). */
     -nexus-accent-045: rgba(0, 229, 255, 0.045);
@@ -37,31 +57,38 @@
     -nexus-accent-500: rgba(0, 229, 255, 0.5);
     -nexus-accent-550: rgba(0, 229, 255, 0.55);
     -nexus-accent-600: rgba(0, 229, 255, 0.6);
-    -nexus-text:        #E4E4EE;   /* normal text                                        */
-    -nexus-text-dim:    #6C6C84;   /* quieter text                                       */
-    -nexus-text-faint:  #44445A;   /* the quietest text                                  */
+    -nexus-text:        #EEECFB;   /* normal text                                        */
+    -nexus-text-dim:    #9692B5;   /* quieter text                                       */
+    -nexus-text-faint:  #5E5A7C;   /* the quietest text                                  */
 
-    -fx-font-family: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
+    /* The system font for text: it can show any letter (other alphabets, the fancy letters in
+       server messages…). Exo 2 (loaded by ui/Fonts.java) is used for titles Nexus writes itself. */
+    -fx-font-family: "System";
     -fx-font-size: 14px;
     -fx-background-color: -nexus-bg;
 
     /* JavaFX draws a blue outline around whatever is selected with the keyboard.
-       Make it neon cyan instead, to match the theme. */
+       Make it the neon accent instead, to match the theme. */
     -fx-focus-color: -nexus-cyan;
     -fx-faint-focus-color: transparent;
 }
 
+/* The animated backdrop's base: a deep dark gradient (the glows are drawn on top in Java). */
+.neon-backdrop {
+    -fx-background-color: linear-gradient(to bottom right, #0B0918, #07060E 45%, #0A0716);
+}
+
 /* A thin border around the whole window, since it no longer has Windows' frame. */
 .window {
-    -fx-border-color: -nexus-border;
+    -fx-border-color: rgba(160, 150, 255, 0.16);
     -fx-border-width: 1;
 }
 
 /* =============================== Title bar =============================== */
 .title-bar {
-    -fx-background-color: -nexus-surface;
-    -fx-min-height: 40px;
-    -fx-pref-height: 40px;
+    -fx-background-color: -nexus-glass;
+    -fx-min-height: 42px;
+    -fx-pref-height: 42px;
     -fx-alignment: center-left;
     -fx-border-color: transparent transparent -nexus-border transparent;  /* line underneath */
 }
@@ -70,67 +97,71 @@
     -fx-padding: 0 0 0 22;
 }
 .title-logo {
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -nexus-cyan;
+    -fx-font-family: "Exo 2";
+    -fx-font-size: 17px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -nexus-gradient;
 }
 .title-client {
+    -fx-font-family: "Exo 2";
     -fx-font-size: 11px;
+    -fx-font-weight: bold;
     -fx-text-fill: -nexus-text-dim;
-    -fx-padding: 1 0 0 0;
+    -fx-padding: 2 0 0 0;
 }
 
 /* The account button in the corner: skin head + name (or "Sign in") */
 .account-button {
     -fx-background-color: -nexus-surface-2;
-    -fx-background-radius: 16;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 16;
-    -fx-padding: 3 12 3 4;
+    -fx-background-radius: 18;
+    -fx-border-color: -nexus-border-hi;
+    -fx-border-radius: 18;
+    -fx-padding: 3 14 3 4;
     -fx-graphic-text-gap: 8;
     -fx-text-fill: -nexus-text;
     -fx-font-size: 12px;
+    -fx-font-weight: 600;
     -fx-cursor: hand;
 }
 .account-button:hover {
-    -fx-border-color: -nexus-accent-550;
+    -fx-border-color: -nexus-gradient-edge;
 }
 
 /* Skin heads: a dark square shows until the real head has loaded */
 .head-placeholder {
-    -fx-background-color: -nexus-surface-3;
+    -fx-background-color: linear-gradient(to bottom right, -nexus-accent-300, rgba(255, 43, 214, 0.3));
 }
 
 /* The account menu that drops down from the account button. Popups don't always see the
    palette names at the top, so these use colour codes directly. */
 .context-menu {
-    -fx-background-color: #12121B;
+    -fx-background-color: #14121F;
     -fx-background-radius: 12;
-    -fx-border-color: #23233A;
+    -fx-border-color: #2C2848;
     -fx-border-radius: 12;
     -fx-padding: 6;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 18, 0.2, 0, 4);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 22, 0.2, 0, 6);
 }
 .context-menu .menu-item {
     -fx-background-radius: 8;
     -fx-padding: 6 8 6 8;
 }
 .context-menu .menu-item:focused {
-    -fx-background-color: #1A1A26;
+    -fx-background-color: #221F36;
 }
 .context-menu .menu-item.menu-static:focused {
     -fx-background-color: transparent;   /* titles and hints don't highlight */
 }
 .context-menu .separator .line {
-    -fx-border-color: #1C1C29 transparent transparent transparent;
+    -fx-border-color: #23203A transparent transparent transparent;
 }
 .menu-title {
-    -fx-text-fill: #6C6C84;
+    -fx-text-fill: #9692B5;
     -fx-font-size: 10px;
     -fx-font-weight: bold;
 }
 .menu-hint {
-    -fx-text-fill: #6C6C84;
+    -fx-text-fill: #9692B5;
     -fx-font-size: 11px;
 }
 .menu-action {
@@ -138,7 +169,7 @@
     -fx-font-size: 13px;
 }
 .menu-account-name {
-    -fx-text-fill: #E4E4EE;
+    -fx-text-fill: #EEECFB;
     -fx-font-size: 13px;
     -fx-font-weight: bold;
 }
@@ -149,9 +180,9 @@
 .menu-remove {
     -fx-background-color: transparent;
     -fx-background-radius: 6;
-    -fx-border-color: #23233A;
+    -fx-border-color: #2C2848;
     -fx-border-radius: 6;
-    -fx-text-fill: #6C6C84;
+    -fx-text-fill: #9692B5;
     -fx-font-size: 11px;
     -fx-padding: 2 7 2 7;
     -fx-cursor: hand;
@@ -168,18 +199,18 @@
 
 /* Pop-up messages in the bottom-right corner */
 .toast {
-    -fx-background-color: #12121B;
+    -fx-background-color: #14121F;
     -fx-background-radius: 12;
     -fx-border-radius: 12;
     -fx-border-width: 1 1 1 3;
-    -fx-text-fill: #E4E4EE;
+    -fx-text-fill: #EEECFB;
     -fx-font-size: 13px;
     -fx-padding: 12 16 12 14;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 18, 0.2, 0, 4);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 22, 0.2, 0, 6);
 }
-.toast-info  { -fx-border-color: #23233A #23233A #23233A #00E5FF; }
-.toast-error { -fx-border-color: #23233A #23233A #23233A #FF6B5E; }
+.toast-info  { -fx-border-color: #2C2848 #2C2848 #2C2848 #00E5FF; }
+.toast-error { -fx-border-color: #2C2848 #2C2848 #2C2848 #FF6B5E; }
 
 /* Minimise / maximise / close – small rounded boxes inside the title bar.
    "insets" shrink the box inwards from the button's edges (top right bottom left). */
@@ -192,23 +223,23 @@
     -fx-border-radius: 8;
     -fx-min-width: 44px;
     -fx-pref-width: 44px;
-    -fx-min-height: 40px;
-    -fx-pref-height: 40px;
+    -fx-min-height: 42px;
+    -fx-pref-height: 42px;
     -fx-padding: 0;
 }
 .window-button .icon           { -fx-fill: -nexus-text-dim; }
-.window-button:hover           { -fx-background-color: -nexus-surface-2; -fx-border-color: -nexus-border; }
+.window-button:hover           { -fx-background-color: -nexus-surface-2; -fx-border-color: -nexus-border-hi; }
 .window-button:hover .icon     { -fx-fill: -nexus-text; }
-.close-button:hover            { -fx-background-color: rgba(196, 43, 28, 0.85); -fx-border-color: #E0493A; }
+.close-button:hover            { -fx-background-color: rgba(220, 45, 60, 0.85); -fx-border-color: #FF5A6A; }
 .close-button:hover .icon      { -fx-fill: white; }
 
 /* =============================== Tab rail (far left) =============================== */
 .nav-rail {
-    -fx-background-color: -nexus-surface;
-    -fx-min-width: 76px;
-    -fx-pref-width: 76px;
-    -fx-padding: 10 0 10 0;
-    -fx-spacing: 2;
+    -fx-background-color: -nexus-glass;
+    -fx-min-width: 78px;
+    -fx-pref-width: 78px;
+    -fx-padding: 12 0 12 0;
+    -fx-spacing: 4;
     -fx-alignment: top-center;
     -fx-border-color: transparent -nexus-border transparent transparent;  /* line on the right */
 }
@@ -216,39 +247,39 @@
    so the boxes have gaps between them. */
 .nav-button {
     -fx-background-color: transparent;
-    -fx-background-insets: 2 8 2 8;
-    -fx-background-radius: 12;
+    -fx-background-insets: 2 9 2 9;
+    -fx-background-radius: 14;
     -fx-border-color: transparent;
-    -fx-border-insets: 2 8 2 8;
-    -fx-border-radius: 12;
-    -fx-min-width: 76px;
-    -fx-pref-width: 76px;
-    -fx-min-height: 58px;
-    -fx-pref-height: 58px;
+    -fx-border-insets: 2 9 2 9;
+    -fx-border-radius: 14;
+    -fx-min-width: 78px;
+    -fx-pref-width: 78px;
+    -fx-min-height: 60px;
+    -fx-pref-height: 60px;
     -fx-padding: 8 0 8 0;
     -fx-graphic-text-gap: 4;
     -fx-text-fill: -nexus-text-dim;
     -fx-font-size: 10px;
+    -fx-font-weight: 600;
     -fx-cursor: hand;
 }
 .nav-button .icon                { -fx-fill: -nexus-text-dim; }
 .nav-button:hover {
     -fx-background-color: -nexus-surface-2;
-    -fx-border-color: -nexus-border;
+    -fx-border-color: -nexus-border-hi;
     -fx-text-fill: -nexus-text;
 }
 .nav-button:hover .icon          { -fx-fill: -nexus-text; }
 .nav-button:selected {
-    -fx-background-color: -nexus-accent-080;
-    -fx-border-color: -nexus-accent-550;
+    -fx-background-color: -nexus-gradient-soft;
+    -fx-border-color: -nexus-gradient-edge;
     -fx-text-fill: -nexus-text;
-    -fx-effect: dropshadow(gaussian, -nexus-accent-250, 10, 0.1, 0, 0);
 }
-.nav-button:selected .icon       { -fx-fill: -nexus-cyan; }
+.nav-button:selected .icon       { -fx-fill: -nexus-gradient-down; }
 
 /* =============================== Instances panel =============================== */
 .instance-panel {
-    -fx-background-color: -nexus-surface;
+    -fx-background-color: -nexus-glass;
     -fx-min-width: 260px;
     -fx-pref-width: 260px;
     -fx-max-width: 260px;
@@ -256,38 +287,42 @@
 }
 .panel-header {
     -fx-alignment: center-left;
-    -fx-padding: 16 12 12 20;
+    -fx-padding: 18 12 12 20;
 }
 .panel-title {
+    -fx-font-family: "Exo 2";
     -fx-text-fill: -nexus-text-dim;
-    -fx-font-size: 11px;
+    -fx-font-size: 12px;
     -fx-font-weight: bold;
 }
 .count-pill {
-    -fx-background-color: -nexus-surface-3;
+    -fx-background-color: -nexus-gradient-soft;
     -fx-background-radius: 8;
-    -fx-text-fill: -nexus-text-dim;
+    -fx-border-color: -nexus-accent-300;
+    -fx-border-radius: 8;
+    -fx-text-fill: -nexus-text;
     -fx-font-size: 10px;
+    -fx-font-weight: bold;
     -fx-padding: 1 7 1 7;
 }
 
 /* Small square buttons that only contain an icon, like "+" */
 .icon-button {
     -fx-background-color: -nexus-surface-2;
-    -fx-background-radius: 8;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 8;
-    -fx-padding: 5;
+    -fx-background-radius: 9;
+    -fx-border-color: -nexus-border-hi;
+    -fx-border-radius: 9;
+    -fx-padding: 6;
     -fx-cursor: hand;
 }
 .icon-button .icon         { -fx-fill: -nexus-text-dim; }
-.icon-button:hover         { -fx-background-color: -nexus-accent-080; -fx-border-color: -nexus-accent-550; }
+.icon-button:hover         { -fx-background-color: -nexus-gradient-soft; -fx-border-color: -nexus-gradient-edge; }
 .icon-button:hover .icon   { -fx-fill: -nexus-cyan; }
 
 /* Search box (the magnifying glass sits on top of its left end).
    ".text-field.search-field" is more specific than ".text-field" further down, so it wins. */
 .text-field.search-field {
-    -fx-padding: 7 10 7 32;    /* extra room on the left for the icon */
+    -fx-padding: 8 10 8 32;    /* extra room on the left for the icon */
 }
 .search-icon .icon {
     -fx-fill: -nexus-text-faint;
@@ -303,33 +338,33 @@
 .instance-list .list-cell {
     -fx-background-color: transparent;
     -fx-background-insets: 0 0 6 0;
-    -fx-background-radius: 12;
+    -fx-background-radius: 14;
     -fx-border-color: transparent;
     -fx-border-insets: 0 0 6 0;
-    -fx-border-radius: 12;
-    -fx-padding: 8 10 14 10;
+    -fx-border-radius: 14;
+    -fx-padding: 9 10 15 10;
     -fx-cursor: hand;
 }
 .instance-list .list-cell:empty {
     -fx-cursor: default;
 }
 .instance-list .list-cell:filled {
-    -fx-background-color: rgba(255, 255, 255, 0.015);
-    -fx-border-color: rgba(255, 255, 255, 0.04);
+    -fx-background-color: rgba(255, 255, 255, 0.025);
+    -fx-border-color: -nexus-border;
 }
 .instance-list .list-cell:filled:hover {
     -fx-background-color: -nexus-surface-2;
-    -fx-border-color: -nexus-border;
+    -fx-border-color: -nexus-border-hi;
 }
 .instance-list .list-cell:filled:selected {
-    -fx-background-color: -nexus-accent-070;
-    -fx-border-color: -nexus-accent-500;
+    -fx-background-color: -nexus-gradient-soft;
+    -fx-border-color: -nexus-gradient-edge;
 }
 .instance-badge {           /* colour comes from InstanceBadge.java */
     -fx-alignment: center;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
-    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-font-weight: 800;
 }
 .instance-name {
     -fx-text-fill: -nexus-text;
@@ -349,14 +384,18 @@
     -fx-border-color: transparent;
 }
 
-/* Thin, dark scrollbars (instead of JavaFX's default grey ones) */
+/* Thin scrollbars with a gradient handle (instead of JavaFX's default grey ones) */
 .scroll-bar {
     -fx-background-color: transparent;
     -fx-pref-width: 8;
 }
 .scroll-bar .thumb {
-    -fx-background-color: -nexus-surface-3;
+    -fx-background-color: rgba(160, 150, 255, 0.18);
     -fx-background-radius: 4;
+}
+.scroll-bar .thumb:hover,
+.scroll-bar .thumb:pressed {
+    -fx-background-color: -nexus-gradient-down;
 }
 .scroll-bar .increment-button,
 .scroll-bar .decrement-button {
@@ -381,9 +420,9 @@
 /* =============================== Forms =============================== */
 .new-instance-form {
     -fx-background-color: -nexus-surface-2;
-    -fx-background-radius: 10;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 10;
+    -fx-background-radius: 12;
+    -fx-border-color: -nexus-border-hi;
+    -fx-border-radius: 12;
     -fx-padding: 12;
     -fx-spacing: 8;
 }
@@ -392,22 +431,22 @@
     -fx-font-weight: bold;
 }
 .text-field {
-    -fx-background-color: -nexus-bg;
-    -fx-background-radius: 6;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 6;
+    -fx-background-color: rgba(6, 5, 12, 0.65);
+    -fx-background-radius: 9;
+    -fx-border-color: -nexus-border-hi;
+    -fx-border-radius: 9;
     -fx-text-fill: -nexus-text;
     -fx-prompt-text-fill: -nexus-text-faint;
-    -fx-padding: 7 10 7 10;
+    -fx-padding: 8 10 8 10;
 }
 .text-field:focused {
-    -fx-border-color: -nexus-accent-600;
+    -fx-border-color: -nexus-gradient-edge;
 }
 .form-combo {
-    -fx-background-color: -nexus-bg;
-    -fx-background-radius: 6;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 6;
+    -fx-background-color: rgba(6, 5, 12, 0.65);
+    -fx-background-radius: 9;
+    -fx-border-color: -nexus-border-hi;
+    -fx-border-radius: 9;
 }
 .form-combo .list-cell {
     -fx-text-fill: -nexus-text;
@@ -419,65 +458,72 @@
 /* The list that pops open under a dropdown. Popups don't always see the palette names
    above, so these use the colour codes directly. */
 .combo-box-popup .list-view {
-    -fx-background-color: #12121B;
-    -fx-border-color: #1C1C29;
+    -fx-background-color: #14121F;
+    -fx-background-radius: 10;
+    -fx-border-color: #2C2848;
+    -fx-border-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 18, 0.2, 0, 4);
 }
 .combo-box-popup .list-view .list-cell {
-    -fx-background-color: #12121B;
-    -fx-text-fill: #E4E4EE;
+    -fx-background-color: transparent;
+    -fx-text-fill: #EEECFB;
     -fx-padding: 6 10 6 10;
 }
 .combo-box-popup .list-view .list-cell:hover {
-    -fx-background-color: #1A1A26;
+    -fx-background-color: #221F36;
 }
 .combo-box-popup .list-view .list-cell:selected {
-    -fx-background-color: #0B2A31;   /* dark cyan */
+    -fx-background-color: linear-gradient(to right, rgba(0, 229, 255, 0.18), rgba(139, 92, 255, 0.14));
     -fx-text-fill: #00E5FF;
 }
 
 /* Hover hints (tooltips) – popups too, so colour codes again. */
 .tooltip {
-    -fx-background-color: #1A1A26;
-    -fx-background-radius: 6;
-    -fx-text-fill: #E4E4EE;
+    -fx-background-color: #1C1930;
+    -fx-background-radius: 8;
+    -fx-border-color: #2C2848;
+    -fx-border-radius: 8;
+    -fx-text-fill: #EEECFB;
     -fx-font-size: 12px;
     -fx-padding: 5 9 5 9;
 }
 
-/* Buttons used in forms */
+/* Buttons used in forms – the main one is the neon gradient */
 .primary-button {
-    -fx-background-color: -nexus-cyan;
-    -fx-background-radius: 8;
-    -fx-border-color: rgba(255, 255, 255, 0.35);
-    -fx-border-radius: 8;
-    -fx-text-fill: -nexus-bg;
+    -fx-background-color: -nexus-gradient;
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(255, 255, 255, 0.30);
+    -fx-border-radius: 10;
+    -fx-text-fill: #07060E;
     -fx-font-weight: bold;
-    -fx-padding: 6 14 6 14;
+    -fx-padding: 7 16 7 16;
     -fx-cursor: hand;
 }
 .primary-button:hover {
-    -fx-effect: dropshadow(gaussian, -nexus-accent-450, 12, 0.2, 0, 0);
+    -fx-border-color: rgba(255, 255, 255, 0.85); /* bright rim instead of a glow (glows make text blurry) */
+}
+.primary-button:disabled {
+    -fx-opacity: 0.35;
 }
 .secondary-button {
-    -fx-background-color: -nexus-surface;
-    -fx-background-radius: 8;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 8;
+    -fx-background-color: -nexus-surface-2;
+    -fx-background-radius: 10;
+    -fx-border-color: -nexus-border-hi;
+    -fx-border-radius: 10;
     -fx-text-fill: -nexus-text-dim;
-    -fx-padding: 6 14 6 14;
+    -fx-font-weight: 600;
+    -fx-padding: 7 16 7 16;
     -fx-cursor: hand;
 }
 .secondary-button:hover {
     -fx-text-fill: -nexus-text;
-    -fx-border-color: rgba(255, 255, 255, 0.2);
+    -fx-border-color: -nexus-gradient-edge;
 }
 
 /* =============================== Content area (right side) =============================== */
 .content {
-    /* Two layers: the dark background, then a very faint cyan glow in the top-right corner. */
-    -fx-background-color:
-        -nexus-bg,
-        radial-gradient(center 100% 0%, radius 55%, -nexus-accent-045, transparent);
+    /* See-through, so the neon backdrop glows behind the pages. */
+    -fx-background-color: transparent;
 }
 .disclaimer {
     -fx-font-size: 10px;
@@ -487,38 +533,51 @@
 
 /* Things used on several pages */
 .section-title {
+    -fx-font-family: "Exo 2";
     -fx-text-fill: -nexus-text;
-    -fx-font-size: 16px;
+    -fx-font-size: 18px;
     -fx-font-weight: bold;
 }
-.step-pill {                        /* e.g. "Coming in build step 6" */
+/* The little gradient bar in front of a section heading (HomePage.sectionHeader) */
+.section-bar {
+    -fx-background-color: -nexus-gradient-down;
+    -fx-background-radius: 2;
+    -fx-min-width: 4px;
+    -fx-max-width: 4px;
+    -fx-min-height: 18px;
+    -fx-max-height: 18px;
+    -fx-effect: dropshadow(gaussian, -nexus-accent-450, 8, 0.2, 0, 0);
+}
+.step-pill {                        /* e.g. "More in the Servers tab" */
     -fx-text-fill: -nexus-text-dim;
     -fx-font-size: 11px;
+    -fx-font-weight: 600;
     -fx-background-color: -nexus-surface-2;
     -fx-background-radius: 12;
-    -fx-border-color: -nexus-border;
+    -fx-border-color: -nexus-border-hi;
     -fx-border-radius: 12;
     -fx-padding: 3 10 3 10;
 }
 .chip {                             /* small detail labels with an icon */
     -fx-text-fill: -nexus-text-dim;
     -fx-font-size: 11px;
+    -fx-font-weight: 600;
     -fx-background-color: -nexus-surface-2;
-    -fx-background-radius: 6;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 6;
-    -fx-padding: 3 8 3 7;
+    -fx-background-radius: 8;
+    -fx-border-color: -nexus-border-hi;
+    -fx-border-radius: 8;
+    -fx-padding: 3 9 3 8;
     -fx-graphic-text-gap: 5;
 }
 .chip .icon {
-    -fx-fill: -nexus-text-dim;
+    -fx-fill: -nexus-cyan;
 }
 
 /* The version dropdown in the Launch bar – looks like a chip, but you can click it. */
 .version-combo {
     -fx-background-color: -nexus-surface-2;
     -fx-background-radius: 8;
-    -fx-border-color: -nexus-border;
+    -fx-border-color: -nexus-border-hi;
     -fx-border-radius: 8;
     -fx-pref-height: 26px;
     -fx-min-width: 150px;
@@ -527,17 +586,17 @@
 .version-combo .list-cell {
     -fx-text-fill: -nexus-text;
     -fx-font-size: 11px;
+    -fx-font-weight: 600;
     -fx-background-color: transparent;
     -fx-padding: 0 4 0 8;
 }
 .version-combo .arrow-button { -fx-background-color: transparent; -fx-padding: 0 8 0 4; }
 .version-combo .arrow        { -fx-background-color: -nexus-text-dim; }
-.version-combo:hover         { -fx-border-color: -nexus-accent-400; }
+.version-combo:hover         { -fx-border-color: -nexus-gradient-edge; }
 
-/* When an instance has no version yet, the dropdown gets a cyan edge so the player notices it. */
+/* When an instance has no version yet, the dropdown gets a glowing edge so the player notices it. */
 .version-combo.needs-version {
-    -fx-border-color: -nexus-cyan;
-    -fx-effect: dropshadow(gaussian, -nexus-accent-350, 10, 0.2, 0, 0);
+    -fx-border-color: -nexus-gradient;
 }
 .version-combo.needs-version .list-cell { -fx-text-fill: -nexus-cyan; }
 
@@ -545,7 +604,7 @@
 .instance-version-missing {
     -fx-text-fill: -nexus-cyan;
     -fx-font-size: 12px;
-    -fx-opacity: 0.8;
+    -fx-opacity: 0.85;
 }
 
 /* ---- Home page ---- */
@@ -555,65 +614,93 @@
 .home-main {
     -fx-padding: 0 4 0 0;   /* keep the scrollbar off the content */
 }
+/* The big welcome banner: glass with a strong neon wash and a glowing gradient rim. */
 .home-banner {
-    /* Two layers: a dark base, then a very faint cyan→magenta tint on top. */
     -fx-background-color:
-        -nexus-surface,
-        linear-gradient(to right, -nexus-accent-060, rgba(255, 43, 214, 0.035));
-    -fx-background-radius: 12;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 12;
+        rgba(16, 14, 30, 0.82),
+        linear-gradient(to right, rgba(0, 229, 255, 0.16), rgba(139, 92, 255, 0.14) 55%, rgba(255, 43, 214, 0.12)),
+        radial-gradient(center 85% 20%, radius 60%, rgba(255, 43, 214, 0.20), transparent),
+        radial-gradient(center 10% 100%, radius 55%, -nexus-accent-220, transparent);
+    -fx-background-radius: 18;
+    -fx-border-color: -nexus-gradient-edge;
+    -fx-border-radius: 18;
     -fx-padding: 26 30 22 30;
 }
 .banner-eyebrow {
-    -fx-text-fill: -nexus-cyan;
+    -fx-text-fill: -nexus-gradient;
     -fx-font-size: 11px;
     -fx-font-weight: bold;
-    -fx-opacity: 0.85;
 }
 .banner-title {
-    -fx-font-size: 30px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -nexus-text;
+    -fx-font-family: "Exo 2";
+    -fx-font-size: 38px;
+    -fx-font-weight: 800;
+    -fx-text-fill: linear-gradient(to right, #FFFFFF, #DDF9FF 60%, #F3D8FF);
 }
 .banner-text {
-    -fx-text-fill: -nexus-text-dim;
+    -fx-text-fill: #C2BEDD;
     -fx-font-size: 14px;
 }
 .banner-stats {
     -fx-padding: 18 0 0 0;
-    -fx-border-color: -nexus-border transparent transparent transparent;  /* line above */
+    -fx-border-color: rgba(255, 255, 255, 0.08) transparent transparent transparent;  /* line above */
     -fx-border-insets: 12 0 0 0;
 }
+/* Each stat's little icon square */
+.stat-icon {
+    -fx-background-color: -nexus-gradient-soft;
+    -fx-background-radius: 10;
+    -fx-border-color: -nexus-accent-300;
+    -fx-border-radius: 10;
+    -fx-min-width: 36px;
+    -fx-min-height: 36px;
+    -fx-max-width: 36px;
+    -fx-max-height: 36px;
+    -fx-alignment: center;
+}
+.stat-icon .icon {
+    -fx-fill: -nexus-gradient-down;
+}
 .stat-caption {
-    -fx-text-fill: -nexus-text-faint;
+    -fx-text-fill: -nexus-text-dim;
     -fx-font-size: 10px;
     -fx-font-weight: bold;
 }
 .stat-value {
+    -fx-font-family: "Exo 2";
     -fx-text-fill: -nexus-text;
-    -fx-font-size: 20px;
-    -fx-font-weight: bold;
+    -fx-font-size: 21px;
+    -fx-font-weight: 800;
 }
+/* News cards: each one gets its own accent (news-card-0 / -1 / -2) along its top edge. */
 .news-card {
     -fx-background-color: -nexus-surface;
-    -fx-background-radius: 10;
+    -fx-background-radius: 14;
     -fx-border-color: -nexus-border;
-    -fx-border-radius: 10;
+    -fx-border-radius: 14;
+    -fx-border-width: 3 1 1 1;
     -fx-padding: 16;
+    -fx-cursor: hand;
 }
+.news-card-0 { -fx-border-color: -nexus-cyan -nexus-border -nexus-border -nexus-border; }
+.news-card-1 { -fx-border-color: -nexus-violet -nexus-border -nexus-border -nexus-border; }
+.news-card-2 { -fx-border-color: -nexus-magenta -nexus-border -nexus-border -nexus-border; }
 .news-card:hover {
-    -fx-border-color: -nexus-accent-300;
+    -fx-background-color: -nexus-surface-2;
 }
 .news-tag {
-    -fx-text-fill: -nexus-cyan;
     -fx-font-size: 10px;
     -fx-font-weight: bold;
-    -fx-opacity: 0.8;
+    -fx-padding: 2 8 2 8;
+    -fx-background-radius: 6;
 }
+.news-card-0 .news-tag { -fx-text-fill: -nexus-cyan;    -fx-background-color: -nexus-accent-120; }
+.news-card-1 .news-tag { -fx-text-fill: #B79BFF;         -fx-background-color: rgba(139, 92, 255, 0.16); }
+.news-card-2 .news-tag { -fx-text-fill: #FF7BE6;         -fx-background-color: rgba(255, 43, 214, 0.14); }
 .news-title {
+    -fx-font-family: "Exo 2";
     -fx-text-fill: -nexus-text;
-    -fx-font-size: 14px;
+    -fx-font-size: 15px;
     -fx-font-weight: bold;
 }
 .news-text {
@@ -629,17 +716,20 @@
 }
 .social-card {
     -fx-background-color: -nexus-surface;
-    -fx-background-radius: 12;
+    -fx-background-radius: 16;
     -fx-border-color: -nexus-border;
-    -fx-border-radius: 12;
+    -fx-border-radius: 16;
     -fx-padding: 16;
 }
 .social-count {
     -fx-text-fill: -nexus-text-faint;
     -fx-font-size: 11px;
 }
+/* Empty-state icons glow softly in the gradient instead of being plain grey */
 .empty-icon .icon {
-    -fx-fill: -nexus-surface-3;
+    -fx-fill: -nexus-gradient-down;
+    -fx-opacity: 0.75;
+    -fx-effect: dropshadow(gaussian, -nexus-accent-350, 14, 0.2, 0, 0);
 }
 .empty-title {
     -fx-text-fill: -nexus-text;
@@ -654,16 +744,18 @@
 
 /* The Launch bar at the bottom of Home */
 .launch-bar {
-    -fx-background-color: -nexus-surface;
-    -fx-background-radius: 12;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 12;
+    -fx-background-color:
+        rgba(16, 14, 30, 0.86),
+        linear-gradient(to right, -nexus-accent-070, transparent 40%, rgba(255, 43, 214, 0.07));
+    -fx-background-radius: 18;
+    -fx-border-color: -nexus-border-hi;
+    -fx-border-radius: 18;
     -fx-padding: 14 14 14 16;
 }
 .launch-instance {
     -fx-text-fill: -nexus-text;
-    -fx-font-size: 17px;
-    -fx-font-weight: bold;
+    -fx-font-size: 19px;
+    -fx-font-weight: 800;
 }
 .launch-status {
     -fx-text-fill: -nexus-text-dim;
@@ -680,54 +772,66 @@
     -fx-background-insets: 0;
 }
 .launch-progress > .bar {
-    -fx-background-color: linear-gradient(to right, #00C8E0, #C81FB0);
+    -fx-background-color: -nexus-gradient;
     -fx-background-radius: 3;
     -fx-background-insets: 0;
     -fx-padding: 3;
 }
 .launch-settings-button {
     -fx-background-color: -nexus-surface-2;
-    -fx-background-radius: 12;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 12;
-    -fx-min-width: 52px;
-    -fx-min-height: 52px;
+    -fx-background-radius: 14;
+    -fx-border-color: -nexus-border-hi;
+    -fx-border-radius: 14;
+    -fx-min-width: 54px;
+    -fx-min-height: 54px;
     -fx-cursor: hand;
 }
 .launch-settings-button .icon       { -fx-fill: -nexus-text-dim; }
-.launch-settings-button:hover       { -fx-border-color: -nexus-accent-550; }
+.launch-settings-button:hover       { -fx-border-color: -nexus-gradient-edge; }
 .launch-settings-button:hover .icon { -fx-fill: -nexus-cyan; }
 .launch-button {
-    -fx-background-color: linear-gradient(to right, #00C8E0, #C81FB0);
-    -fx-background-radius: 12;
-    -fx-border-color: rgba(255, 255, 255, 0.35);  /* thin bright rim */
-    -fx-border-radius: 12;
-    -fx-text-fill: #06060A;         /* dark text on the bright button */
-    -fx-font-size: 16px;
-    -fx-font-weight: bold;
-    -fx-min-width: 180px;
-    -fx-min-height: 52px;
+    -fx-background-color: -nexus-gradient;
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255, 255, 255, 0.40);  /* thin bright rim */
+    -fx-border-radius: 14;
+    -fx-text-fill: #07060E;         /* dark text on the bright button */
+    -fx-font-family: "Exo 2";
+    -fx-font-size: 18px;
+    -fx-font-weight: 800;
+    -fx-min-width: 190px;
+    -fx-min-height: 54px;
     -fx-graphic-text-gap: 8;
     -fx-cursor: hand;               /* pointing-hand mouse cursor */
 }
-.launch-button .icon      { -fx-fill: #06060A; }
+.launch-button .icon      { -fx-fill: #07060E; }
 .launch-button:disabled   { -fx-opacity: 0.3; }
 
 /* The soft neon glow behind LAUNCH. HomePage blurs it and makes it slowly "breathe".
    (The blur is set in HomePage.java, because JavaFX CSS can't do blurs.) */
 .launch-glow {
-    -fx-background-color: linear-gradient(to right, #00C8E0, #C81FB0);
-    -fx-background-radius: 12;
+    -fx-background-color: -nexus-gradient;
+    -fx-background-radius: 14;
 }
 
 /* While a game is launching or running, LAUNCH becomes a dark STOP button with a red edge. */
 .launch-button.stop-mode {
     -fx-background-color: -nexus-surface-2;
-    -fx-border-color: rgba(255, 90, 80, 0.55);
+    -fx-border-color: rgba(255, 90, 80, 0.6);
     -fx-text-fill: #FF6B5E;
 }
 .launch-button.stop-mode .icon  { -fx-fill: #FF6B5E; }
-.launch-button.stop-mode:hover  { -fx-background-color: rgba(255, 90, 80, 0.12); }
+.launch-button.stop-mode:hover  { -fx-background-color: rgba(255, 90, 80, 0.14); }
+
+/* The floating neon cube in the Home banner (ui/NeonCube.java) */
+.neon-cube-line {
+    -fx-stroke: -nexus-gradient-down;
+    -fx-stroke-width: 2;
+    -fx-stroke-line-join: round;
+    -fx-fill: transparent;
+}
+.neon-cube-face-top   { -fx-fill: -nexus-accent-120; }
+.neon-cube-face-left  { -fx-fill: rgba(139, 92, 255, 0.12); }
+.neon-cube-face-right { -fx-fill: rgba(255, 43, 214, 0.10); }
 
 /* ---- Tab pages (Mods, Servers, Friends, ...) ---- */
 .tab-page {
@@ -735,9 +839,10 @@
     -fx-spacing: 18;
 }
 .page-title {
-    -fx-text-fill: -nexus-text;
-    -fx-font-size: 24px;
-    -fx-font-weight: bold;
+    -fx-font-family: "Exo 2";
+    -fx-text-fill: linear-gradient(to right, #FFFFFF, #DDF9FF 70%, #F3D8FF);
+    -fx-font-size: 30px;
+    -fx-font-weight: 800;
 }
 .page-description {
     -fx-text-fill: -nexus-text-dim;
@@ -746,29 +851,30 @@
 
 /* The row of sub-tabs – each one is a rounded "pill" box */
 .tab-strip {
-    -fx-spacing: 8;
+    -fx-hgap: 8;            /* gap between tabs                          */
+    -fx-vgap: 8;            /* gap between rows, when the tabs wrap      */
     -fx-padding: 0 0 4 0;
 }
 .tab-strip-button {
     -fx-background-color: -nexus-surface;
-    -fx-background-radius: 10;
+    -fx-background-radius: 12;
     -fx-border-color: -nexus-border;
-    -fx-border-radius: 10;
+    -fx-border-radius: 12;
     -fx-text-fill: -nexus-text-dim;
     -fx-font-size: 13px;
+    -fx-font-weight: 600;
     -fx-padding: 7 16 7 16;
     -fx-cursor: hand;
 }
 .tab-strip-button:hover {
     -fx-background-color: -nexus-surface-2;
-    -fx-border-color: rgba(255, 255, 255, 0.18);
+    -fx-border-color: -nexus-border-hi;
     -fx-text-fill: -nexus-text;
 }
 .tab-strip-button:selected {
-    -fx-background-color: -nexus-accent-080;
-    -fx-border-color: -nexus-accent-550;
+    -fx-background-color: -nexus-gradient-soft;
+    -fx-border-color: -nexus-gradient-edge;
     -fx-text-fill: -nexus-text;
-    -fx-effect: dropshadow(gaussian, -nexus-accent-220, 10, 0.1, 0, 0);
 }
 .preview-note {
     -fx-text-fill: -nexus-text-faint;
@@ -777,21 +883,21 @@
 
 /* Skeleton shapes (grey outlines of content that isn't built yet) */
 .skeleton {
-    -fx-background-color: #161621;
+    -fx-background-color: rgba(160, 150, 255, 0.08);
     -fx-background-radius: 6;
 }
 .skeleton-card {
     -fx-background-color: -nexus-surface;
-    -fx-background-radius: 10;
+    -fx-background-radius: 14;
     -fx-border-color: -nexus-border;
-    -fx-border-radius: 10;
+    -fx-border-radius: 14;
     -fx-padding: 12;
 }
 .skeleton-row {
     -fx-background-color: -nexus-surface;
-    -fx-background-radius: 10;
+    -fx-background-radius: 14;
     -fx-border-color: -nexus-border;
-    -fx-border-radius: 10;
+    -fx-border-radius: 14;
     -fx-padding: 12 16 12 12;
 }
 
@@ -799,30 +905,30 @@
 /* The dark layer covering the window, with a soft neon glow in the middle. */
 .firstrun-backdrop {
     -fx-background-color:
-        rgba(6, 6, 10, 0.97),
-        radial-gradient(center 50% 40%, radius 60%, -nexus-accent-100, rgba(255, 43, 214, 0.04), transparent);
+        rgba(6, 5, 12, 0.94),
+        radial-gradient(center 50% 40%, radius 60%, -nexus-accent-120, rgba(139, 92, 255, 0.08), transparent);
 }
 .firstrun-card {
-    -fx-background-color: -nexus-surface;
-    -fx-background-radius: 18;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 18;
+    -fx-background-color: rgba(16, 14, 30, 0.92);
+    -fx-background-radius: 22;
+    -fx-border-color: -nexus-gradient-edge;
+    -fx-border-radius: 22;
     -fx-padding: 34 38 30 38;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 40, 0.2, 0, 10);
 }
 .welcome-letter {
-    -fx-font-size: 88px;
-    -fx-font-weight: bold;
-    -fx-text-fill: linear-gradient(to bottom, -nexus-cyan, #8B7BFF, -nexus-magenta);
-    -fx-effect: dropshadow(gaussian, -nexus-accent-550, 28, 0.25, 0, 0);
+    -fx-font-family: "Exo 2";
+    -fx-font-size: 92px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -nexus-gradient-down;
 }
 .welcome-sub {
-    -fx-text-fill: -nexus-cyan;
-    -fx-font-size: 16px;
+    -fx-font-family: "Exo 2";
+    -fx-text-fill: -nexus-gradient;
+    -fx-font-size: 17px;
     -fx-font-weight: bold;
 }
 .tutorial-icon .icon {
-    -fx-fill: -nexus-cyan;
+    -fx-fill: -nexus-gradient-down;
     -fx-effect: dropshadow(gaussian, -nexus-accent-450, 16, 0.2, 0, 0);
 }
 .tutorial-dot {
@@ -836,14 +942,15 @@
 .tutorial-dot.active {
     -fx-min-width: 24px;
     -fx-max-width: 24px;
-    -fx-background-color: -nexus-cyan;
+    -fx-background-color: -nexus-gradient;
 }
 
 /* =============================== TorcherRig & memory (step 4) =============================== */
 .torcher-title {
+    -fx-font-family: "Exo 2";
     -fx-text-fill: -nexus-text;
-    -fx-font-size: 22px;
-    -fx-font-weight: bold;
+    -fx-font-size: 24px;
+    -fx-font-weight: 800;
 }
 .torcher-text {
     -fx-text-fill: -nexus-text-dim;
@@ -854,7 +961,7 @@
     -fx-font-size: 13px;
 }
 .torcher-tip {
-    -fx-text-fill: #C9A86A;       /* soft amber: advice, not an error */
+    -fx-text-fill: #E3C27E;       /* soft amber: advice, not an error */
     -fx-font-size: 12px;
 }
 .tier-badge {
@@ -864,15 +971,15 @@
     -fx-background-radius: 10;
     -fx-border-radius: 10;
 }
-.tier-low   { -fx-text-fill: #FFB547; -fx-border-color: rgba(255, 181, 71, 0.6); -fx-background-color: rgba(255, 181, 71, 0.08); }
-.tier-mid   { -fx-text-fill: #00E5FF; -fx-border-color: -nexus-accent-600;  -fx-background-color: -nexus-accent-080; }
-.tier-high  { -fx-text-fill: #8B7BFF; -fx-border-color: rgba(139, 123, 255, 0.6); -fx-background-color: rgba(139, 123, 255, 0.08); }
-.tier-ultra { -fx-text-fill: #FF2BD6; -fx-border-color: rgba(255, 43, 214, 0.6); -fx-background-color: rgba(255, 43, 214, 0.08); }
+.tier-low   { -fx-text-fill: #FFB547; -fx-border-color: rgba(255, 181, 71, 0.6); -fx-background-color: rgba(255, 181, 71, 0.10); }
+.tier-mid   { -fx-text-fill: #00E5FF; -fx-border-color: -nexus-accent-600;  -fx-background-color: -nexus-accent-100; }
+.tier-high  { -fx-text-fill: #A98BFF; -fx-border-color: rgba(139, 92, 255, 0.6); -fx-background-color: rgba(139, 92, 255, 0.12); }
+.tier-ultra { -fx-text-fill: #FF5BE0; -fx-border-color: rgba(255, 43, 214, 0.6); -fx-background-color: rgba(255, 43, 214, 0.10); }
 .hardware-grid {
     -fx-background-color: -nexus-surface-2;
-    -fx-background-radius: 10;
+    -fx-background-radius: 12;
     -fx-border-color: -nexus-border;
-    -fx-border-radius: 10;
+    -fx-border-radius: 12;
     -fx-padding: 12 14 12 14;
 }
 .hardware-name {
@@ -887,20 +994,21 @@
 .change-row {
     -fx-padding: 5 10 5 10;
     -fx-background-radius: 8;
-    -fx-background-color: rgba(255, 255, 255, 0.02);
+    -fx-background-color: rgba(255, 255, 255, 0.03);
 }
 .change-name  { -fx-text-fill: -nexus-text-dim; -fx-font-size: 13px; }
 .change-value { -fx-text-fill: -nexus-text; -fx-font-size: 13px; -fx-font-weight: bold; }
 .ram-value {
-    -fx-text-fill: -nexus-cyan;
-    -fx-font-size: 26px;
-    -fx-font-weight: bold;
+    -fx-font-family: "Exo 2";
+    -fx-text-fill: -nexus-gradient;
+    -fx-font-size: 28px;
+    -fx-font-weight: 800;
 }
 .settings-card {
     -fx-background-color: -nexus-surface;
-    -fx-background-radius: 14;
+    -fx-background-radius: 18;
     -fx-border-color: -nexus-border;
-    -fx-border-radius: 14;
+    -fx-border-radius: 18;
     -fx-padding: 22 24 22 24;
 }
 
@@ -911,7 +1019,7 @@
     -fx-pref-height: 6;
 }
 .slider .thumb {
-    -fx-background-color: -nexus-cyan;
+    -fx-background-color: -nexus-gradient;
     -fx-background-radius: 10;
     -fx-padding: 8;
     -fx-effect: dropshadow(gaussian, -nexus-accent-500, 10, 0.2, 0, 0);
@@ -930,17 +1038,18 @@
 }
 .check-box .box, .radio-button .radio {
     -fx-background-color: -nexus-surface-2;
-    -fx-border-color: -nexus-border;
-    -fx-background-radius: 5;
-    -fx-border-radius: 5;
+    -fx-border-color: -nexus-border-hi;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
 }
 .radio-button .radio {
     -fx-background-radius: 10;
     -fx-border-radius: 10;
 }
 .check-box:selected .box, .radio-button:selected .radio {
-    -fx-border-color: -nexus-cyan;
-    -fx-background-color: -nexus-accent-120;
+    -fx-border-color: -nexus-gradient-edge;
+    -fx-background-color: -nexus-gradient-soft;
+    -fx-effect: dropshadow(gaussian, -nexus-accent-250, 8, 0.1, 0, 0);
 }
 .check-box:selected .mark, .radio-button:selected .dot {
     -fx-background-color: -nexus-cyan;
@@ -948,15 +1057,14 @@
 
 /* =============================== Pop-ups (step 5) =============================== */
 .modal-backdrop {
-    -fx-background-color: rgba(4, 4, 8, 0.72);
+    -fx-background-color: rgba(4, 3, 10, 0.70);
 }
 .modal-card {
-    -fx-background-color: -nexus-surface;
-    -fx-background-radius: 16;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 16;
+    -fx-background-color: rgba(16, 14, 30, 0.96);
+    -fx-background-radius: 20;
+    -fx-border-color: -nexus-gradient-edge;
+    -fx-border-radius: 20;
     -fx-padding: 26 28 24 28;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 40, 0.2, 0, 10);
 }
 .settings-actions {
     -fx-padding: 14 0 0 0;
@@ -965,11 +1073,12 @@
 /* Red button for things that delete */
 .danger-button {
     -fx-background-color: rgba(255, 90, 80, 0.10);
-    -fx-background-radius: 8;
+    -fx-background-radius: 10;
     -fx-border-color: rgba(255, 90, 80, 0.55);
-    -fx-border-radius: 8;
+    -fx-border-radius: 10;
     -fx-text-fill: #FF6B5E;
-    -fx-padding: 6 14 6 14;
+    -fx-font-weight: 600;
+    -fx-padding: 7 16 7 16;
     -fx-cursor: hand;
 }
 .danger-button:hover {
@@ -977,19 +1086,20 @@
 }
 /* Plain menu items (the + menu and right-click menu) */
 .context-menu .menu-item .label {
-    -fx-text-fill: #E4E4EE;
+    -fx-text-fill: #EEECFB;
 }
 
 /* =============================== Mods page (step 6) =============================== */
 .mod-row {
     -fx-background-color: -nexus-surface;
-    -fx-background-radius: 12;
+    -fx-background-radius: 14;
     -fx-border-color: -nexus-border;
-    -fx-border-radius: 12;
+    -fx-border-radius: 14;
     -fx-padding: 12 14 12 12;
 }
 .mod-row:hover {
-    -fx-border-color: -nexus-accent-300;
+    -fx-background-color: -nexus-surface-2;
+    -fx-border-color: -nexus-gradient-edge;
 }
 .mod-title {
     -fx-text-fill: -nexus-text;
@@ -1011,12 +1121,13 @@
 .ping-bad  { -fx-text-fill: #FF6B5E; }
 /* The "Rejoin …" / "Continue …" button next to the chips in the Launch bar */
 .quick-play-button {
-    -fx-background-color: -nexus-accent-080;
-    -fx-background-radius: 6;
-    -fx-border-color: -nexus-accent-450;
-    -fx-border-radius: 6;
+    -fx-background-color: -nexus-gradient-soft;
+    -fx-background-radius: 8;
+    -fx-border-color: -nexus-gradient-edge;
+    -fx-border-radius: 8;
     -fx-text-fill: -nexus-cyan;
     -fx-font-size: 11px;
+    -fx-font-weight: 600;
     -fx-padding: 3 9 3 7;
     -fx-graphic-text-gap: 5;
     -fx-cursor: hand;
@@ -1030,35 +1141,37 @@
 }
 /* The colour picker's pop-up */
 .color-palette {
-    -fx-background-color: #12121B;
-    -fx-border-color: #23233A;
+    -fx-background-color: #14121F;
+    -fx-border-color: #2C2848;
 }
 .color-picker .color-picker-label {
-    -fx-text-fill: #E4E4EE;
+    -fx-text-fill: #EEECFB;
 }
 
 /* =============================== Tools (step 8) =============================== */
 .screenshot-tile {
     -fx-background-color: -nexus-surface-2;
-    -fx-background-radius: 10;
+    -fx-background-radius: 12;
     -fx-border-color: -nexus-border;
-    -fx-border-radius: 10;
+    -fx-border-radius: 12;
 }
 .screenshot-tile:hover {
-    -fx-border-color: -nexus-accent-450;
+    -fx-border-color: -nexus-gradient-edge;
 }
 /* The 3D skin preview's backdrop */
 .skin-preview {
-    -fx-background-color: radial-gradient(center 50% 45%, radius 60%, -nexus-accent-100, transparent);
-    -fx-background-radius: 12;
+    -fx-background-color:
+        radial-gradient(center 50% 45%, radius 60%, -nexus-accent-120, transparent),
+        radial-gradient(center 50% 90%, radius 50%, rgba(139, 92, 255, 0.18), transparent);
+    -fx-background-radius: 16;
 }
 
 /* =============================== Game Error Scan (step 9) =============================== */
 .log-view {
-    -fx-background-color: -nexus-surface;
-    -fx-background-radius: 10;
+    -fx-background-color: rgba(8, 7, 16, 0.85);
+    -fx-background-radius: 12;
     -fx-border-color: -nexus-border;
-    -fx-border-radius: 10;
+    -fx-border-radius: 12;
     -fx-font-family: "Consolas", "Menlo", "monospace";
 }
 .log-view .list-cell {

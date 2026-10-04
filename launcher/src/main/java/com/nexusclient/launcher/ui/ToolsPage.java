@@ -67,6 +67,7 @@ public class ToolsPage extends VBox {
         title.getStyleClass().add("page-title");
         Label description = new Label(Page.TOOLS.description());
         description.getStyleClass().add("page-description");
+        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
 
         tabs = new TabStrip(Page.TOOLS.tabs(), this::showTab);
         ScrollPane scroll = new ScrollPane(body);

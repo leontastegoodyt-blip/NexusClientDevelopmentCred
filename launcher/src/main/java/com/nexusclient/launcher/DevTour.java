@@ -3,9 +3,11 @@ package com.nexusclient.launcher;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
+import javafx.scene.transform.Transform;
 import javafx.util.Duration;
 
 import javax.imageio.ImageIO;
@@ -37,6 +39,16 @@ public final class DevTour {
     public static void run(Scene scene, List<Stop> stops) {
         File dir = new File(folder());
         dir.mkdirs();
+        // Optional window size for the tour (e.g. -PnexusTourSize=1024x600 to check small windows).
+        String size = System.getProperty("nexus.tourSize");
+        if (size != null && size.matches("\\d+x\\d+")) {
+            String[] parts = size.split("x");
+            scene.getWindow().setWidth(Double.parseDouble(parts[0]));
+            scene.getWindow().setHeight(Double.parseDouble(parts[1]));
+        }
+        if (Boolean.getBoolean("nexus.tourScreen") && scene.getWindow() instanceof javafx.stage.Stage stage) {
+            stage.setAlwaysOnTop(true); // so the screen pictures only ever show the launcher
+        }
         visit(scene, stops, 0, dir);
     }
 
@@ -51,10 +63,28 @@ public final class DevTour {
         // Wait for animations to settle, then take the picture.
         PauseTransition wait = new PauseTransition(Duration.millis(stop.waitMillis()));
         wait.setOnFinished(event -> {
-            save(scene.snapshot(null), new File(dir, String.format("%02d-%s.png", index + 1, stop.name())));
+            save(picture(scene), new File(dir, String.format("%02d-%s.png", index + 1, stop.name())));
             visit(scene, stops, index + 1, dir);
         });
         wait.play();
+    }
+
+    /**
+     * A picture of the whole window at the screen's real scale (e.g. 133% on a 1440p screen), so
+     * it shows exactly how sharp and big things really look.
+     */
+    private static WritableImage picture(Scene scene) {
+        if (Boolean.getBoolean("nexus.tourScreen")) {
+            // The real pixels on screen inside the launcher window – exactly what the player sees
+            // (the window is kept on top during this tour, so only the launcher is captured).
+            javafx.stage.Window window = scene.getWindow();
+            return new javafx.scene.robot.Robot().getScreenCapture(null, window.getX(), window.getY(),
+                    window.getWidth(), window.getHeight(), false);
+        }
+        double scale = scene.getWindow().getOutputScaleX();
+        SnapshotParameters params = new SnapshotParameters();
+        params.setTransform(Transform.scale(scale, scale));
+        return scene.getRoot().snapshot(params, null);
     }
 
     /** Saves a JavaFX picture as a PNG file (converting it to the format Java's image writer uses). */

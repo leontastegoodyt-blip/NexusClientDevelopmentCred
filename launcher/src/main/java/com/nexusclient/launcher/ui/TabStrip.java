@@ -5,7 +5,8 @@ import com.nexusclient.launcher.i18n.Lang;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.Region;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -15,8 +16,10 @@ import java.util.function.Consumer;
  * The selected one gets a glowing outline (see ".tab-strip-button" in theme.css).
  *
  * Works just like NavRail: ToggleButtons in a ToggleGroup, so only one is selected at a time.
+ * It's a FlowPane, so when the window is narrow the tabs wrap onto a second row instead of being
+ * squashed into "Ge…" and "…".
  */
-public class TabStrip extends HBox {
+public class TabStrip extends FlowPane {
 
     private final ToggleGroup group = new ToggleGroup();
 
@@ -38,6 +41,7 @@ public class TabStrip extends HBox {
             // The tab's text in the player's language; "name" stays the English id used by the code.
             ToggleButton tab = new ToggleButton(Lang.t("tab." + name.replace(" ", ""), name));
             tab.getStyleClass().add("tab-strip-button");
+            tab.setMinWidth(Region.USE_PREF_SIZE); // never shrink the tab's text into "…"
             tab.setToggleGroup(group);
             tab.setUserData(name);
             tab.setOnAction(event -> onSelect.accept(name));

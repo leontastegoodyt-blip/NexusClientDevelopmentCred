@@ -39,6 +39,7 @@ public class ServersPage extends VBox {
         title.getStyleClass().add("page-title");
         Label description = new Label(Page.SERVERS.description());
         description.getStyleClass().add("page-description");
+        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
         Button refresh = new Button("Refresh");
         refresh.getStyleClass().add("secondary-button");
         refresh.setOnAction(event -> showTab(currentTab));

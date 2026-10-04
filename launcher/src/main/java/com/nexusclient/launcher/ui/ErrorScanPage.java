@@ -65,6 +65,7 @@ public class ErrorScanPage extends VBox {
         title.getStyleClass().add("page-title");
         Label description = new Label(Page.ERROR_SCAN.description());
         description.getStyleClass().add("page-description");
+        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
         tabs = new TabStrip(Page.ERROR_SCAN.tabs(), this::showTab);
 
         ScrollPane scroll = new ScrollPane(body);

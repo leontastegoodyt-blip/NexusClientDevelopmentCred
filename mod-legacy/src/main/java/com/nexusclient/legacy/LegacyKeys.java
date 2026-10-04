@@ -4,7 +4,8 @@ import net.minecraft.client.option.KeyBinding;
 import org.lwjgl.input.Keyboard;
 
 /**
- * LegacyKeys – Nexus's keys in 1.8.9: Right Shift = mod menu, C = zoom, F8 = save clip.
+ * LegacyKeys – Nexus's keys in 1.8.9: Right Shift = mod menu, C = zoom, F8 = save clip,
+ * Left Alt = freelook.
  * Players can change them in Options → Controls, under "Nexus Client".
  *
  * They're made by GameOptionsMixin while Minecraft builds its key list, so they're saved in
@@ -18,6 +19,7 @@ public final class LegacyKeys {
     public static KeyBinding menu;
     public static KeyBinding zoom;
     public static KeyBinding clip;
+    public static KeyBinding freelook;
 
     private LegacyKeys() {}
 
@@ -27,7 +29,8 @@ public final class LegacyKeys {
             menu = new KeyBinding("Open Nexus menu", Keyboard.KEY_RSHIFT, CATEGORY);
             zoom = new KeyBinding("Zoom (hold)", Keyboard.KEY_C, CATEGORY);
             clip = new KeyBinding("Save clip", Keyboard.KEY_F8, CATEGORY);
+            freelook = new KeyBinding("Freelook (hold)", Keyboard.KEY_LMENU, CATEGORY); // Left Alt
         }
-        return new KeyBinding[] {menu, zoom, clip};
+        return new KeyBinding[] {menu, zoom, clip, freelook};
     }
 }

@@ -1,5 +1,7 @@
 package com.nexusclient.core.hud;
 
+import com.nexusclient.core.NexusCore;
+import com.nexusclient.core.module.Mods;
 import com.nexusclient.core.platform.GameInfo;
 import com.nexusclient.core.platform.GameInfo.EffectInfo;
 import com.nexusclient.core.platform.GameInfo.ItemInfo;
@@ -93,10 +95,14 @@ public final class HudMods {
 
         @Override
         protected List<String> lines(GameInfo game, boolean preview) {
+            List<String> lines = new ArrayList<String>();
+            if (!preview && NexusCore.get().get(Mods.StreamerMode.class).hidesCoordinates()) {
+                lines.add("Coordinates hidden"); // Streamer Mode is on
+                return lines;
+            }
             double x = preview ? 128.5 : game.x();
             double y = preview ? 64 : game.y();
             double z = preview ? -302.2 : game.z();
-            List<String> lines = new ArrayList<String>();
             lines.add("X: " + (int) Math.floor(x));
             lines.add("Y: " + (int) Math.floor(y));
             lines.add("Z: " + (int) Math.floor(z));
@@ -164,6 +170,9 @@ public final class HudMods {
 
         @Override
         protected List<String> lines(GameInfo game, boolean preview) {
+            if (!preview && NexusCore.get().get(Mods.StreamerMode.class).hidesServerAddresses()) {
+                return one("Server hidden"); // Streamer Mode is on
+            }
             return one(preview ? "mc.hypixel.net" : game.serverAddress());
         }
     }

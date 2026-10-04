@@ -3,10 +3,12 @@ package com.nexusclient.fabric;
 import com.nexusclient.core.NexusCore;
 import com.nexusclient.core.ui.HudEditor;
 import com.nexusclient.core.ui.ModMenu;
+import com.nexusclient.core.util.SelfTestMods;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
+import net.minecraft.client.gui.screens.AccessibilityOnboardingScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.levelgen.WorldOptions;
@@ -22,6 +24,7 @@ public final class SelfTest {
 
     private static int ticks = -1;
     private static int worldTicks = -1;
+    private static int waitTicks;
 
     private SelfTest() {}
 
@@ -34,6 +37,11 @@ public final class SelfTest {
         if (ticks < 0) {
             if (mc.gui.screen() instanceof TitleScreen) {
                 ticks = 0; // the game has finished loading – start the test
+            } else if (mc.gui.screen() instanceof AccessibilityOnboardingScreen) {
+                // Minecraft's very-first-start screen doesn't always move on by itself – skip it.
+                mc.setScreenAndShow(new TitleScreen());
+            } else if (++waitTicks % 100 == 0) {
+                System.out.println("[Nexus] self-test waiting for the title screen: screen = " + mc.gui.screen());
             }
             return;
         }
@@ -99,7 +107,11 @@ public final class SelfTest {
             return;
         }
         worldTicks++;
-        if (worldTicks == 70) {
+        if (worldTicks == 40) {
+            SelfTestMods.switchOn(); // midnight sky + small items, so their hooks run before the screenshot
+        } else if (worldTicks == 60) {
+            Screenshot.grab(mc, false);
+        } else if (worldTicks == 70) {
             // The same call Minecraft makes when the player presses the key bound to the menu.
             KeyMapping.click(KeyMappingHelper.getBoundKeyOf(NexusFabric.menuKey));
         } else if (worldTicks == 72) {

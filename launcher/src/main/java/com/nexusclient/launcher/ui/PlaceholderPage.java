@@ -35,6 +35,7 @@ public class PlaceholderPage extends VBox {
         title.getStyleClass().add("page-title");
         Label description = new Label(page.description());
         description.getStyleClass().add("page-description");
+        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);

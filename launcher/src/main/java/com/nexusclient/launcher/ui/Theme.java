@@ -17,6 +17,7 @@ import java.util.Locale;
  *
  *   - accent colour: replaces the neon cyan everywhere (Settings → Appearance)
  *   - background picture: shown faintly behind the pages
+ *   - the neon backdrop (NeonBackdrop): its glow colour
  *   - reduced motion: switches animations off
  *   - bigger text: adds bigger-text.css
  *   - colourblind modes: adds a style file that swaps colours that are hard to tell apart
@@ -29,18 +30,23 @@ public final class Theme {
 
     private static final String BASE = "/com/nexusclient/launcher/";
 
+    /** The neon cyan used when the player hasn't picked their own accent colour. */
+    private static final String DEFAULT_ACCENT = "#00E5FF";
+
     private static Scene scene;
     private static Region backgroundLayer;
+    private static NeonBackdrop backdrop;
 
     private Theme() {}
 
     /**
-     * Remembers the window's scene and the background layer, then applies the settings.
-     * Called once by NexusLauncher.
+     * Remembers the window's scene, the background-picture layer and the neon backdrop,
+     * then applies the settings. Called once by NexusLauncher.
      */
-    public static void install(Scene windowScene, Region background) {
+    public static void install(Scene windowScene, Region background, NeonBackdrop neonBackdrop) {
         scene = windowScene;
         backgroundLayer = background;
+        backdrop = neonBackdrop;
         apply();
     }
 
@@ -69,6 +75,10 @@ public final class Theme {
         }
         // Inline styles on the top of the window beat the theme file, so this overrides the colours.
         scene.getRoot().setStyle(style.toString());
+        // The drifting glows follow the accent colour too, and stop when reduced motion is on.
+        if (backdrop != null) {
+            backdrop.setAccent(Color.web(accent != null ? accent : DEFAULT_ACCENT));
+        }
 
         // --- Extra style files: bigger text, colourblind colours ---
         List<String> sheets = scene.getStylesheets();
