@@ -105,7 +105,7 @@
     -fx-text-fill: -nexus-gradient;
 }
 .title-client {
-    -fx-font-family: "Exo 2";
+    -fx-font-family: "System";   /* small text: the system font stays sharp (Exo 2 looked chopped at small sizes) */
     -fx-font-size: 11px;
     -fx-font-weight: bold;
     -fx-text-fill: -nexus-text-dim;
@@ -285,7 +285,7 @@
     -fx-border-color: -nexus-gradient-edge;
     -fx-border-radius: 9;
     -fx-text-fill: -nexus-text;
-    -fx-font-family: "Exo 2";
+    -fx-font-family: "System";   /* small text: the system font stays sharp (Exo 2 looked chopped at small sizes) */
     -fx-font-size: 13px;
     -fx-font-weight: bold;
     -fx-padding: 6 12 6 12;
@@ -304,7 +304,7 @@
     -fx-padding: 18 12 12 20;
 }
 .panel-title {
-    -fx-font-family: "Exo 2";
+    -fx-font-family: "System";   /* small text: the system font stays sharp (Exo 2 looked chopped at small sizes) */
     -fx-text-fill: -nexus-text-dim;
     -fx-font-size: 12px;
     -fx-font-weight: bold;
@@ -547,7 +547,7 @@
 
 /* Things used on several pages */
 .section-title {
-    -fx-font-family: "Exo 2";
+    -fx-font-family: "System";   /* small text: the system font stays sharp (Exo 2 looked chopped at small sizes) */
     -fx-text-fill: -nexus-text;
     -fx-font-size: 18px;
     -fx-font-weight: bold;
@@ -681,7 +681,7 @@
     -fx-font-weight: bold;
 }
 .stat-value {
-    -fx-font-family: "Exo 2";
+    -fx-font-family: "System";   /* small text: the system font stays sharp (Exo 2 looked chopped at small sizes) */
     -fx-text-fill: -nexus-text;
     -fx-font-size: 21px;
     -fx-font-weight: 800;
@@ -712,7 +712,7 @@
 .news-card-1 .news-tag { -fx-text-fill: #B79BFF;         -fx-background-color: rgba(139, 92, 255, 0.16); }
 .news-card-2 .news-tag { -fx-text-fill: #FF7BE6;         -fx-background-color: rgba(255, 43, 214, 0.14); }
 .news-title {
-    -fx-font-family: "Exo 2";
+    -fx-font-family: "System";   /* small text: the system font stays sharp (Exo 2 looked chopped at small sizes) */
     -fx-text-fill: -nexus-text;
     -fx-font-size: 15px;
     -fx-font-weight: bold;
@@ -813,7 +813,7 @@
     -fx-border-color: rgba(255, 255, 255, 0.40);  /* thin bright rim */
     -fx-border-radius: 14;
     -fx-text-fill: #07060E;         /* dark text on the bright button */
-    -fx-font-family: "Exo 2";
+    -fx-font-family: "System";   /* small text: the system font stays sharp (Exo 2 looked chopped at small sizes) */
     -fx-font-size: 18px;
     -fx-font-weight: 800;
     -fx-min-width: 190px;
@@ -858,7 +858,7 @@
 }
 /* "⬡ NEXUS › MODS" above each page title (ui/PageHeader.java) */
 .page-kicker {
-    -fx-font-family: "Exo 2";
+    -fx-font-family: "System";   /* small text: the system font stays sharp (Exo 2 looked chopped at small sizes) */
     -fx-text-fill: -nexus-gradient;
     -fx-font-size: 11px;
     -fx-font-weight: 800;
@@ -951,7 +951,7 @@
     -fx-text-fill: -nexus-gradient-down;
 }
 .welcome-sub {
-    -fx-font-family: "Exo 2";
+    -fx-font-family: "System";   /* small text: the system font stays sharp (Exo 2 looked chopped at small sizes) */
     -fx-text-fill: -nexus-gradient;
     -fx-font-size: 17px;
     -fx-font-weight: bold;
@@ -1353,7 +1353,7 @@
     -fx-background-insets: 0, 3;
 }
 .clan-emblem-text {
-    -fx-font-family: "Exo 2";
+    -fx-font-family: "System";   /* small text: the system font stays sharp (Exo 2 looked chopped at small sizes) */
     -fx-font-size: 15px;
     -fx-font-weight: 800;
     -fx-text-fill: -nexus-gradient-down;
@@ -1368,7 +1368,7 @@
     -fx-text-fill: linear-gradient(to right, #FFFFFF, #DDF0FF 70%, #E6DCFF);
 }
 .clan-honor {
-    -fx-font-family: "Exo 2";
+    -fx-font-family: "System";   /* small text: the system font stays sharp (Exo 2 looked chopped at small sizes) */
     -fx-font-size: 14px;
     -fx-font-weight: bold;
     -fx-text-fill: -nexus-amber;
@@ -1385,8 +1385,8 @@
 .podium-3 { -fx-background-color: rgba(255, 255, 255, 0.08), linear-gradient(to bottom, rgba(205, 127, 50, 0.36), rgba(205, 127, 50, 0.04)); }
 .podium-number { -fx-font-family: "Exo 2"; -fx-font-size: 30px; -fx-font-weight: 800; -fx-text-fill: rgba(255, 255, 255, 0.55); }
 .podium-medal  { -fx-font-size: 20px; }
-.leader-rank   { -fx-font-family: "Exo 2"; -fx-font-size: 18px; -fx-font-weight: 800; -fx-text-fill: -nexus-text-dim; }
-.leader-honor  { -fx-font-family: "Exo 2"; -fx-font-size: 15px; -fx-font-weight: 800; -fx-text-fill: -nexus-amber; }
+.leader-rank   { -fx-font-family: "System"; -fx-font-size: 18px; -fx-font-weight: 800; -fx-text-fill: -nexus-text-dim; }
+.leader-honor  { -fx-font-family: "System"; -fx-font-size: 15px; -fx-font-weight: 800; -fx-text-fill: -nexus-amber; }
 .mvp-row       { -fx-border-color: rgba(255, 212, 107, 0.55); }
 .event-multiplier {
     -fx-font-family: "Exo 2"; -fx-font-size: 22px; -fx-font-weight: 800; -fx-text-fill: -nexus-amber;
