@@ -35,16 +35,25 @@ public class SkinModel3D extends StackPane {
     private final Rotate tilt = new Rotate(-8, Rotate.X_AXIS);
     private double dragX;
     private double dragY;
+    private PixelReader reader; // the current skin, so empty outer layers can be skipped
 
     public SkinModel3D(double width, double height) {
         getStyleClass().add("skin-preview");
         model.getTransforms().addAll(tilt, spin);
 
-        Group world = new Group(model, new AmbientLight(Color.gray(0.82)));
-        PointLight light = new PointLight(Color.gray(0.35));
-        light.setTranslateZ(-80);
-        light.setTranslateY(-40);
-        world.getChildren().add(light);
+        // Lighting: a soft overall light plus a brighter "key" light from the front-left and above,
+        // so the sides of every box are a little darker than the front – that's what makes the arms
+        // stand out from the body (with flat light everything looked like one blob).
+        Group world = new Group(model, new AmbientLight(Color.gray(0.52)));
+        PointLight key = new PointLight(Color.gray(0.62));
+        key.setTranslateX(-60);
+        key.setTranslateY(-70);
+        key.setTranslateZ(-90);
+        PointLight rim = new PointLight(Color.web("#3AA8FF").deriveColor(0, 1, 0.35, 1)); // faint blue from behind
+        rim.setTranslateX(70);
+        rim.setTranslateY(-30);
+        rim.setTranslateZ(80);
+        world.getChildren().addAll(key, rim);
 
         PerspectiveCamera camera = new PerspectiveCamera(true);
         camera.setTranslateZ(-78);
@@ -70,6 +79,27 @@ public class SkinModel3D extends StackPane {
             dragY = event.getSceneY();
         });
         setStyle("-fx-cursor: open-hand;");
+
+        // A slow idle sway, like a character on a display stand. It pauses while the player drags,
+        // and only runs while the preview is actually on screen (so it costs nothing elsewhere).
+        javafx.animation.Timeline sway = new javafx.animation.Timeline(
+                new javafx.animation.KeyFrame(javafx.util.Duration.seconds(3.2),
+                        new javafx.animation.KeyValue(spin.angleProperty(), 20, javafx.animation.Interpolator.EASE_BOTH)));
+        sway.setAutoReverse(true);
+        sway.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        setOnMouseReleased(event -> {
+            if (Animations.enabled) {
+                sway.play();
+            }
+        });
+        addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, event -> sway.pause());
+        sceneProperty().addListener((o, oldScene, newScene) -> {
+            if (newScene != null && Animations.enabled) {
+                sway.play();
+            } else {
+                sway.stop();
+            }
+        });
     }
 
     /**
@@ -84,6 +114,7 @@ public class SkinModel3D extends StackPane {
             return;
         }
         boolean legacy = skin.getHeight() < 64; // old 64 x 32 skins have no separate left arm/leg or layers
+        reader = skin.getPixelReader();
         PhongMaterial material = new PhongMaterial();
         material.setDiffuseMap(sharpen(skin));
         material.setSpecularColor(Color.BLACK); // no shiny highlights – Minecraft is matte
@@ -119,6 +150,9 @@ public class SkinModel3D extends StackPane {
      */
     private void addPart(PhongMaterial material, double texW, double texH, double u, double v,
                          double w, double h, double d, double x, double y, double z, double inflate) {
+        if (inflate > 0 && isEmpty(u, v, 2 * (w + d), d + h)) {
+            return; // this outer layer (hat, jacket…) is see-through everywhere – nothing to draw
+        }
         double x0 = x - inflate, x1 = x + w + inflate;
         double y0 = y - inflate, y1 = y + h + inflate;
         double z0 = z - inflate, z1 = z + d + inflate;
@@ -143,6 +177,18 @@ public class SkinModel3D extends StackPane {
         view.setMaterial(material);
         view.setCullFace(CullFace.NONE); // draw both sides of every face
         model.getChildren().add(view);
+    }
+
+    /** True if every pixel in that area of the skin is fully see-through. */
+    private boolean isEmpty(double u, double v, double w, double h) {
+        for (int y = (int) v; y < v + h && y < 64; y++) {
+            for (int x = (int) u; x < u + w && x < 64; x++) {
+                if ((reader.getArgb(x, y) >>> 24) != 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /** Adds one square face (two triangles) with its part of the skin picture. */

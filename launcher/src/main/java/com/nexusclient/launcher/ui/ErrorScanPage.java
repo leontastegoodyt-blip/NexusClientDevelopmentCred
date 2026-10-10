@@ -63,9 +63,6 @@ public class ErrorScanPage extends VBox {
 
         Label title = new Label(Page.ERROR_SCAN.title());
         title.getStyleClass().add("page-title");
-        Label description = new Label(Page.ERROR_SCAN.description());
-        description.getStyleClass().add("page-description");
-        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
         tabs = new TabStrip(Page.ERROR_SCAN.tabs(), this::showTab);
 
         ScrollPane scroll = new ScrollPane(body);
@@ -75,7 +72,7 @@ public class ErrorScanPage extends VBox {
         scroll.getStyleClass().add("page-scroll");
         VBox.setVgrow(scroll, Priority.ALWAYS);
 
-        getChildren().addAll(new VBox(4, title, description), tabs, scroll);
+        getChildren().addAll(PageHeader.block(Page.ERROR_SCAN, title), tabs, scroll);
         panel.selectedInstanceProperty().addListener((observable, was, now) -> {
             if (!currentTab.equals("History")) {
                 showTab(currentTab);

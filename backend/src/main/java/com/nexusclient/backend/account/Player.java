@@ -15,7 +15,8 @@ import java.util.UUID;
 @Table(name = "players")
 public class Player {
 
-    public enum Role { PLAYER, MODERATOR, ADMIN }
+    /** DEVELOPER = the Nexus owner (nexus.developers): everything an admin can do, plus the developer tools. */
+    public enum Role { PLAYER, MODERATOR, ADMIN, DEVELOPER }
 
     /** Who may send this player direct messages. Friends-only by default (the project brief: safety). */
     public enum DmPolicy { FRIENDS, NOBODY }
@@ -104,6 +105,15 @@ public class Player {
     }
 
     public boolean isStaff() {
-        return role == Role.ADMIN || role == Role.MODERATOR;
+        return role == Role.DEVELOPER || role == Role.ADMIN || role == Role.MODERATOR;
+    }
+
+    /** Admins and the developer: bans, kicks, events, partners, Premium. */
+    public boolean isAdmin() {
+        return role == Role.DEVELOPER || role == Role.ADMIN;
+    }
+
+    public boolean isDeveloper() {
+        return role == Role.DEVELOPER;
     }
 }

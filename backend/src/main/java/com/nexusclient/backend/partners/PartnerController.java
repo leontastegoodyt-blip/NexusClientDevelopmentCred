@@ -77,7 +77,7 @@ public class PartnerController {
     public PartnerView setRules(@RequestAttribute(SignedInCheck.ME_PLAYER) Player me, @PathVariable long id,
                                 @Valid @RequestBody RulesRequest body) {
         PartnerServer partner = partners.findById(id).orElseThrow(() -> NexusException.notFound("No such partner server"));
-        if (!me.getUuid().equals(partner.getManager()) && me.getRole() != Player.Role.ADMIN) {
+        if (!me.getUuid().equals(partner.getManager()) && !me.isAdmin()) {
             throw NexusException.forbidden("Only this server's manager can change its rules");
         }
         if (body.blocked().size() > 60) {
@@ -125,7 +125,7 @@ public class PartnerController {
     }
 
     private static void requireAdmin(Player me) {
-        if (me.getRole() != Player.Role.ADMIN) {
+        if (!me.isAdmin()) {
             throw NexusException.forbidden("Admins only");
         }
     }

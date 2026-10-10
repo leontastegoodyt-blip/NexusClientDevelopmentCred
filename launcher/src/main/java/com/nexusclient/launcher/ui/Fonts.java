@@ -6,20 +6,16 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Fonts – loads the launcher's own fonts, so the look is the same on every PC:
- *   - Inter: clean, easy-to-read text (everything by default)
- *   - Exo 2: a sporty, techy font for big titles and the logo
- * Both are free fonts (SIL Open Font License – the licence files sit next to them in
- * resources/…/fonts). After loading, theme.css can use them by name ("Inter", "Exo 2").
+ * Fonts – loads the launcher's own title font, Exo 2: a sporty, techy font for big titles and
+ * the logo. It's free (SIL Open Font License – the licence file sits next to it in
+ * resources/…/fonts). After loading, theme.css can use it by name ("Exo 2").
  *
- * The font files only include Latin letters (enough for English and most Western European
- * languages). A future language with other letters needs its matching font files added here.
+ * Body text deliberately uses the system font instead: it has every letter (other alphabets,
+ * fancy symbols in server messages), while Exo 2 only has Latin letters.
  */
 public final class Fonts {
 
-    private static final String[] FILES = {
-            "Inter-Regular.ttf", "Inter-Medium.ttf", "Inter-SemiBold.ttf", "Inter-Bold.ttf",
-            "Exo2-Bold.ttf", "Exo2-ExtraBold.ttf"};
+    private static final String[] FILES = {"Exo2-Bold.ttf", "Exo2-ExtraBold.ttf"};
 
     private Fonts() {}
 

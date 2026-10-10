@@ -3,7 +3,7 @@ package com.nexusclient.core.settings;
 import com.nexusclient.core.util.Chroma;
 
 /**
- * A colour setting, stored as ARGB (alpha, red, green, blue – e.g. 0xFF00E5FF is solid Nexus cyan).
+ * A colour setting, stored as ARGB (alpha, red, green, blue – e.g. 0xFF3AA8FF is solid Nexus blue).
  * It can also be set to "chroma": a neon rainbow that slowly cycles through all colours.
  */
 public class ColorSetting extends Setting<Integer> {

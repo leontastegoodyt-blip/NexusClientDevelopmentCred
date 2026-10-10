@@ -237,7 +237,7 @@ public class ClanController {
     }
 
     private static void requireAdmin(Player me) {
-        if (me.getRole() != Player.Role.ADMIN) {
+        if (!me.isAdmin()) {
             throw NexusException.forbidden("Admins only");
         }
     }

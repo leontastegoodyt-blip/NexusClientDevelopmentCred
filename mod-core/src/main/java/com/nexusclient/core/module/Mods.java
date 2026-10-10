@@ -66,7 +66,7 @@ public final class Mods {
         public final NumberSetting size = add(new NumberSetting("size", "Size", 5, 1, 15, 1, ""));
         public final NumberSetting gap = add(new NumberSetting("gap", "Gap", 2, 0, 10, 1, ""));
         public final NumberSetting thickness = add(new NumberSetting("thickness", "Thickness", 1, 1, 5, 1, ""));
-        public final ColorSetting color = add(new ColorSetting("color", "Colour", 0xFF00E5FF));
+        public final ColorSetting color = add(new ColorSetting("color", "Colour", 0xFF3AA8FF));
         public final BooleanSetting outline = add(new BooleanSetting("outline", "Black outline", true));
 
         public Crosshair() {
@@ -118,7 +118,7 @@ public final class Mods {
     }
 
     public static class BlockOutline extends Module {
-        public final ColorSetting color = add(new ColorSetting("color", "Outline colour", 0xFF00E5FF));
+        public final ColorSetting color = add(new ColorSetting("color", "Outline colour", 0xFF3AA8FF));
         public final NumberSetting thickness = add(new NumberSetting("thickness", "Thickness", 2, 1, 6, 0.5, ""));
 
         public BlockOutline() {

@@ -15,6 +15,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
@@ -40,13 +41,10 @@ public class ClansPage extends VBox {
         getStyleClass().add("tab-page");
         Label title = new Label(Page.CLANS.title());
         title.getStyleClass().add("page-title");
-        Label description = new Label(Page.CLANS.description());
-        description.getStyleClass().add("page-description");
-        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
         Button refresh = button("Refresh", "secondary-button", this::show);
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox header = new HBox(10, new VBox(4, title, description), spacer, refresh);
+        HBox header = new HBox(10, PageHeader.block(Page.CLANS, title), spacer, refresh);
         header.setAlignment(Pos.CENTER_LEFT);
 
         TabStrip tabs = new TabStrip(Page.CLANS.tabs(), tab -> {
@@ -69,11 +67,11 @@ public class ClansPage extends VBox {
                 show();
             }
         });
-        body.getChildren().setAll(empty("Connecting to Nexus…", "Signing in to the Nexus online server."));
+        body.getChildren().setAll(People.empty(Icons.CLANS, "Connecting…", null));
         Background.run("nexus-online", () -> {
             online.signIn(accounts);
             return true;
-        }, ok -> show(), error -> body.getChildren().setAll(empty("Can't connect to Nexus", error.getMessage()),
+        }, ok -> show(), error -> body.getChildren().setAll(People.empty(Icons.CLANS, "Can't connect", error.getMessage()),
                 button("Try again", "secondary-button", () -> {
                     body.getChildren().clear();
                     Background.run("nexus-online", () -> {
@@ -105,31 +103,27 @@ public class ClansPage extends VBox {
         for (JsonElement e : invites) {
             JsonObject invite = e.getAsJsonObject();
             long id = invite.get("clanId").getAsLong();
-            body.getChildren().add(row("[" + invite.get("tag").getAsString() + "] " + invite.get("clanName").getAsString(),
-                    "Invited you to join", List.of(
+            body.getChildren().add(People.row(null, "[" + invite.get("tag").getAsString() + "] "
+                            + invite.get("clanName").getAsString(), "Invited you to join", null, "INVITE", List.of(
                             button("Join", "primary-button", () -> post("/api/clans/" + id + "/accept", null, this::show)),
-                            button("Decline", "secondary-button", () -> post("/api/clans/" + id + "/decline", null, this::show)))));
+                            People.iconButton(Icons.CLOSE, "Decline", false,
+                                    () -> post("/api/clans/" + id + "/decline", null, this::show)))));
         }
         if (clans.isEmpty()) {
             body.getChildren().add(createForm());
-            return;
         }
         for (JsonElement e : clans) {
             body.getChildren().add(clanCard(e.getAsJsonObject()));
         }
-        if (clans.size() == 1) {
-            Label more = new Label("With Nexus Premium you can own and be in 2 clans.");
-            more.getStyleClass().add("mod-meta");
-            body.getChildren().add(more);
-        }
+        Animations.flipInCards(body);
     }
 
     private Node createForm() {
         TextField name = new TextField();
-        name.setPromptText("Clan name (3-24 characters)");
+        name.setPromptText("Clan name");
         TextField tag = new TextField();
-        tag.setPromptText("Tag (2-5)");
-        tag.setPrefWidth(110);
+        tag.setPromptText("TAG");
+        tag.setPrefWidth(90);
         HBox.setHgrow(name, Priority.ALWAYS);
         Button create = button("Create clan", "primary-button", () -> post("/api/clans",
                 Map.of("name", name.getText().trim(), "tag", tag.getText().trim()), () -> {
@@ -138,69 +132,111 @@ public class ClansPage extends VBox {
                 }));
         Label title = new Label("Start a clan");
         title.getStyleClass().add("section-title");
-        Label text = new Label("Clan members earn honor by playing (100 per hour, up to 450 a day). The top 3 clans "
-                + "get Nexus Premium free while they stay on the podium. Up to 35 members.");
-        text.getStyleClass().add("torcher-text");
-        text.setWrapText(true);
-        VBox card = new VBox(10, title, text, new HBox(8, name, tag, create));
+        HBox facts = People.statChips("100 honor / hour", "35 members", "Top 3 = free Premium");
+        VBox card = new VBox(12, new HBox(14, emblem("?"), new VBox(8, title, facts)), new HBox(8, name, tag, create));
         card.getStyleClass().add("settings-card");
         return card;
+    }
+
+    /** The clan's emblem: its tag in a glowing hexagon badge. */
+    private static StackPane emblem(String tag) {
+        Label letters = new Label(tag);
+        letters.getStyleClass().add("clan-emblem-text");
+        StackPane emblem = new StackPane(letters);
+        emblem.getStyleClass().add("clan-emblem");
+        emblem.setMinSize(64, 64);
+        emblem.setMaxSize(64, 64);
+        return emblem;
     }
 
     private Node clanCard(JsonObject clan) {
         long id = clan.get("id").getAsLong();
         String myRank = clan.get("myRank").getAsString();
         boolean canManage = myRank.equals("OWNER") || myRank.equals("CO_OWNER") || myRank.equals("FIRST_CLASS");
+        JsonArray members = clan.getAsJsonArray("members");
 
-        Label title = new Label("[" + clan.get("tag").getAsString() + "] " + clan.get("name").getAsString());
-        title.getStyleClass().add("banner-title");
+        // --- Banner: emblem, name, live numbers ---
+        Label title = new Label(clan.get("name").getAsString());
+        title.getStyleClass().add("clan-name");
         int place = clan.get("place").getAsInt();
-        String placeText = clan.get("mvp").getAsBoolean() ? "Nexus MVP" : place == 0 ? "Not ranked yet" : "#" + place
-                + (clan.get("podium").getAsBoolean() ? " · on the podium (free Premium!)" : "");
-        Label stats = new Label(clan.get("honor").getAsLong() + " honor · " + placeText + " · you are " + pretty(myRank)
-                + (clan.get("primary").getAsBoolean() ? "" : " · your honor goes to your other clan"));
-        stats.getStyleClass().add("mod-meta");
-        VBox card = new VBox(10, title, stats);
-        if (clan.has("description") && !clan.get("description").isJsonNull()) {
+        String placeText = clan.get("mvp").getAsBoolean() ? "★ Nexus MVP" : place == 0 ? "Unranked"
+                : (place <= 3 ? medal(place) + " " : "") + "#" + place;
+        long online = 0;
+        for (JsonElement e : members) {
+            if (e.getAsJsonObject().get("online").getAsBoolean()) {
+                online++;
+            }
+        }
+        Label honor = new Label();
+        honor.getStyleClass().add("clan-honor");
+        Animations.countUp(honor, clan.get("honor").getAsLong(), " honor");
+        HBox chips = People.statChips(placeText, members.size() + "/35 members", "● " + online + " online",
+                "You: " + pretty(myRank));
+        VBox words = new VBox(4, title, honor, chips);
+        HBox banner = new HBox(16, emblem(clan.get("tag").getAsString()), words);
+        banner.setAlignment(Pos.CENTER_LEFT);
+        banner.getStyleClass().add("clan-banner");
+        if (clan.get("podium").getAsBoolean()) {
+            Label premium = new Label("PODIUM · FREE PREMIUM");
+            premium.getStyleClass().add("person-badge");
+            words.getChildren().add(1, premium);
+        }
+
+        // --- Actions: invite field + a ⋯ menu for everything else ---
+        HBox actions = new HBox(8);
+        actions.setAlignment(Pos.CENTER_LEFT);
+        if (canManage) {
+            TextField inviteName = new TextField();
+            inviteName.setPromptText("Invite by name");
+            HBox.setHgrow(inviteName, Priority.ALWAYS);
+            Runnable invite = () -> post("/api/clans/" + id + "/invite",
+                    Map.of("name", inviteName.getText().trim()), () -> Toast.info("Invite sent"));
+            inviteName.setOnAction(e -> invite.run());
+            actions.getChildren().addAll(inviteName, People.iconButton(Icons.ADD, "Invite", true, invite));
+        } else {
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            actions.getChildren().add(spacer);
+        }
+        java.util.Map<String, Runnable> more = new java.util.LinkedHashMap<>();
+        if (!clan.get("primary").getAsBoolean()) {
+            more.put("Send my honor here", () -> post("/api/clans/" + id + "/primary", null, this::show));
+        }
+        if (!myRank.equals("MEMBER")) {
+            more.put("Edit description", () -> editDescription(id));
+        }
+        if (myRank.equals("OWNER")) {
+            more.put("!Delete clan", () -> Modal.confirm("Delete the clan?",
+                    "Everyone is removed and its honor is lost. This can't be undone.", "Delete",
+                    () -> call(() -> new JsonElement[] {online().delete("/api/clans/" + id)}, r -> show())));
+        } else {
+            more.put("!Leave clan", () -> Modal.confirm("Leave the clan?",
+                    "You can only come back if someone invites you again.", "Leave",
+                    () -> post("/api/clans/" + id + "/leave", null, this::show)));
+        }
+        actions.getChildren().add(People.moreMenu(more));
+
+        VBox card = new VBox(14, banner);
+        if (clan.has("description") && !clan.get("description").isJsonNull()
+                && !clan.get("description").getAsString().isBlank()) {
             Label d = new Label(clan.get("description").getAsString());
             d.getStyleClass().add("torcher-text");
             d.setWrapText(true);
             card.getChildren().add(d);
         }
-
-        // Actions for this clan.
-        HBox actions = new HBox(8);
-        if (canManage) {
-            TextField inviteName = new TextField();
-            inviteName.setPromptText("Invite by Minecraft name");
-            actions.getChildren().addAll(inviteName, button("Invite", "primary-button", () -> post("/api/clans/" + id + "/invite",
-                    Map.of("name", inviteName.getText().trim()), () -> Toast.info("Invite sent"))));
-        }
-        if (!clan.get("primary").getAsBoolean()) {
-            actions.getChildren().add(button("Send my honor here", "secondary-button",
-                    () -> post("/api/clans/" + id + "/primary", null, this::show)));
-        }
-        if (!myRank.equals("MEMBER")) {
-            actions.getChildren().add(button("Edit description", "secondary-button", () -> editDescription(id)));
-        }
-        if (myRank.equals("OWNER")) {
-            actions.getChildren().add(button("Delete clan", "danger-button", () -> Modal.confirm("Delete the clan?",
-                    "Everyone is removed and its honor is lost. This can't be undone.", "Delete",
-                    () -> call(() -> new JsonElement[] {online.delete("/api/clans/" + id)}, r -> show()))));
-        } else {
-            actions.getChildren().add(button("Leave clan", "danger-button", () -> Modal.confirm("Leave the clan?",
-                    "You can only come back if someone invites you again.", "Leave",
-                    () -> post("/api/clans/" + id + "/leave", null, this::show))));
-        }
         card.getChildren().add(actions);
 
-        // Members.
-        JsonArray members = clan.getAsJsonArray("members");
-        card.getChildren().add(section("Members (" + members.size() + "/35)"));
-        for (JsonElement e : members) {
-            JsonObject m = e.getAsJsonObject();
-            card.getChildren().add(memberRow(id, m, myRank));
+        // --- Members, highest rank first ---
+        card.getChildren().add(section("Members"));
+        List<JsonObject> sorted = new ArrayList<>();
+        members.forEach(e -> sorted.add(e.getAsJsonObject()));
+        sorted.sort(java.util.Comparator.comparingInt((JsonObject m) -> rankIndex(m.get("rank").getAsString()))
+                .thenComparing(m -> -m.get("honor").getAsLong()));
+        VBox memberList = new VBox(8);
+        for (JsonObject m : sorted) {
+            memberList.getChildren().add(memberRow(id, m, myRank));
         }
+        card.getChildren().add(memberList);
         if (clan.has("invited") && !clan.getAsJsonArray("invited").isEmpty()) {
             List<String> names = new ArrayList<>();
             clan.getAsJsonArray("invited").forEach(n -> names.add(n.getAsString()));
@@ -214,37 +250,48 @@ public class ClansPage extends VBox {
         return card;
     }
 
+    private NexusOnline online() {
+        return online;
+    }
+
     private Node memberRow(long clanId, JsonObject m, String myRank) {
         String uuid = m.get("uuid").getAsString();
         String rank = m.get("rank").getAsString();
+        String name = m.get("name").getAsString();
         boolean me = uuid.equals(online.myUuid());
-        List<Node> buttons = new ArrayList<>();
         int mine = rankIndex(myRank);
         int theirs = rankIndex(rank);
         boolean canManage = mine <= 2 && mine < theirs && !me; // owner, co-owner, first class – over lower ranks
+
+        List<Node> buttons = new ArrayList<>();
+        java.util.Map<String, Runnable> menu = new java.util.LinkedHashMap<>();
         if (canManage) {
-            ComboBox<String> ranks = new ComboBox<>();
             for (String r : RANKS) {
-                if (rankIndex(r) > mine) {
-                    ranks.getItems().add(r);
+                if (rankIndex(r) > mine && !r.equals(rank)) {
+                    menu.put("Make " + pretty(r), () -> post("/api/clans/" + clanId + "/rank",
+                            Map.of("uuid", uuid, "rank", r), this::show));
                 }
             }
-            ranks.setValue(rank);
-            ranks.setOnAction(e -> {
-                if (!ranks.getValue().equals(rank)) {
-                    post("/api/clans/" + clanId + "/rank", Map.of("uuid", uuid, "rank", ranks.getValue()), this::show);
-                }
-            });
-            buttons.add(ranks);
-            buttons.add(button("Kick", "danger-button", () -> post("/api/clans/" + clanId + "/kick", Map.of("uuid", uuid), this::show)));
         }
         if (myRank.equals("OWNER") && !me) {
-            buttons.add(button("Give clan", "secondary-button", () -> Modal.confirm("Give the clan to "
-                    + m.get("name").getAsString() + "?", "They become the owner and you take their rank.", "Give clan",
-                    () -> post("/api/clans/" + clanId + "/transfer", Map.of("uuid", uuid), this::show))));
+            menu.put("Give clan to " + name, () -> Modal.confirm("Give the clan to " + name + "?",
+                    "They become the owner and you take their rank.", "Give clan",
+                    () -> post("/api/clans/" + clanId + "/transfer", Map.of("uuid", uuid), this::show)));
         }
-        return row(m.get("name").getAsString() + (me ? " (you)" : ""), pretty(rank) + " · " + m.get("honor").getAsLong()
-                + " honor" + (m.get("online").getAsBoolean() ? " · ● online" : ""), buttons);
+        if (canManage) {
+            menu.put("!Kick", () -> post("/api/clans/" + clanId + "/kick", Map.of("uuid", uuid), this::show));
+        }
+        if (!menu.isEmpty()) {
+            buttons.add(People.moreMenu(menu));
+        }
+        HBox row = People.row(uuid, name + (me ? " (you)" : ""), m.get("honor").getAsLong() + " honor",
+                m.get("online").getAsBoolean(), pretty(rank).toUpperCase(), buttons);
+        row.getStyleClass().add("rank-" + rank.toLowerCase());
+        return row;
+    }
+
+    private static String medal(int place) {
+        return place == 1 ? "🥇" : place == 2 ? "🥈" : "🥉";
     }
 
     private Node chatBox(long clanId) {
@@ -339,35 +386,111 @@ public class ClansPage extends VBox {
 
     private void showClanList(JsonArray clans, String emptyText) {
         body.getChildren().clear();
+        // The leaderboard starts with a podium for the top 3 (2nd · 1st · 3rd, like a real podium).
+        List<JsonObject> podium = new ArrayList<>();
+        for (JsonElement e : clans) {
+            JsonObject c = e.getAsJsonObject();
+            if (c.get("podium").getAsBoolean() && !c.get("mvp").getAsBoolean()) {
+                podium.add(c);
+            }
+        }
+        if (!podium.isEmpty()) {
+            body.getChildren().add(podium(podium));
+        }
         fillClanList(body, clans, emptyText);
+        Animations.flipInCards(body);
+    }
+
+    /** Three blocks of different heights with the top clans standing on them. */
+    private Node podium(List<JsonObject> top) {
+        HBox stage = new HBox(14);
+        stage.setAlignment(Pos.BOTTOM_CENTER);
+        int[] order = {1, 0, 2}; // second, first, third
+        double[] heights = {110, 80, 60};
+        for (int index : order) {
+            if (index >= top.size()) {
+                continue;
+            }
+            JsonObject c = top.get(index);
+            int place = c.get("place").getAsInt();
+            Label medal = new Label(medal(place));
+            medal.getStyleClass().add("podium-medal");
+            Label name = new Label(c.get("name").getAsString());
+            name.getStyleClass().add("mod-title");
+            Label honor = new Label(c.get("honor").getAsLong() + " honor");
+            honor.getStyleClass().add("mod-meta");
+            Region block = new Region();
+            block.getStyleClass().addAll("podium-block", "podium-" + place);
+            block.setPrefSize(130, heights[index]);
+            block.setMinHeight(heights[index]);
+            Label number = new Label(String.valueOf(place));
+            number.getStyleClass().add("podium-number");
+            StackPane blockWithNumber = new StackPane(block, number);
+            VBox column = new VBox(6, emblem(c.get("tag").getAsString()), medal, name, honor, blockWithNumber);
+            column.setAlignment(Pos.BOTTOM_CENTER);
+            column.getStyleClass().add("flip-in");
+            stage.getChildren().add(column);
+        }
+        VBox box = new VBox(stage);
+        box.getStyleClass().addAll("settings-card", "podium-card");
+        return box;
     }
 
     private void fillClanList(VBox target, JsonArray clans, String emptyText) {
         if (clans.isEmpty()) {
-            target.getChildren().add(empty("Nothing here", emptyText));
+            target.getChildren().add(People.empty(Icons.TROPHY, "No clans yet", emptyText));
         }
         for (JsonElement e : clans) {
             JsonObject c = e.getAsJsonObject();
             int place = c.get("place").getAsInt();
-            String medal = c.get("mvp").getAsBoolean() ? "★ Nexus MVP" : c.get("podium").getAsBoolean()
-                    ? (place == 1 ? "🥇" : place == 2 ? "🥈" : "🥉") + " #" + place : place > 0 ? "#" + place : "";
-            target.getChildren().add(row(medal + "  [" + c.get("tag").getAsString() + "] " + c.get("name").getAsString(),
-                    c.get("honor").getAsLong() + " honor · " + c.get("members").getAsLong() + " members", List.of()));
+            String rank = c.get("mvp").getAsBoolean() ? "★" : place > 0 ? "#" + place : "–";
+            Label rankLabel = new Label(rank);
+            rankLabel.getStyleClass().add("leader-rank");
+            rankLabel.setMinWidth(44);
+            Label title = new Label(c.get("name").getAsString());
+            title.getStyleClass().add("mod-title");
+            Label meta = new Label(c.get("members").getAsLong() + " members");
+            meta.getStyleClass().add("mod-meta");
+            Label honor = new Label(c.get("honor").getAsLong() + " honor");
+            honor.getStyleClass().add("leader-honor");
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            StackPane small = emblem(c.get("tag").getAsString());
+            small.setScaleX(0.62);
+            small.setScaleY(0.62);
+            StackPane emblemBox = new StackPane(small);
+            emblemBox.setMinSize(42, 42);
+            emblemBox.setMaxSize(42, 42);
+            HBox row = new HBox(12, rankLabel, emblemBox, new VBox(2, title, meta), spacer, honor);
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.getStyleClass().add("mod-row");
+            if (c.get("mvp").getAsBoolean()) {
+                row.getStyleClass().add("mvp-row");
+            }
+            target.getChildren().add(row);
         }
     }
 
     private void showEvents(JsonArray events) {
         body.getChildren().clear();
         if (events.isEmpty()) {
-            body.getChildren().add(empty("No honor events right now",
-                    "During events hosted by Nexus, honor is multiplied (e.g. x2 for a weekend)."));
+            body.getChildren().add(People.empty(Icons.BOLT, "No events right now", "Events multiply honor."));
         }
         for (JsonElement e : events) {
             JsonObject ev = e.getAsJsonObject();
-            body.getChildren().add(row(ev.get("name").getAsString() + " – honor x" + ev.get("multiplier").getAsDouble(),
-                    "From " + ev.get("startsAt").getAsString().replace('T', ' ').replace("Z", " UTC")
-                            + " to " + ev.get("endsAt").getAsString().replace('T', ' ').replace("Z", " UTC"), List.of()));
+            Label multiplier = new Label("x" + ev.get("multiplier").getAsDouble());
+            multiplier.getStyleClass().add("event-multiplier");
+            Label name = new Label(ev.get("name").getAsString());
+            name.getStyleClass().add("mod-title");
+            Label when = new Label(ev.get("startsAt").getAsString().replace('T', ' ').replace("Z", " UTC")
+                    + "  →  " + ev.get("endsAt").getAsString().replace('T', ' ').replace("Z", " UTC"));
+            when.getStyleClass().add("mod-meta");
+            HBox row = new HBox(14, multiplier, new VBox(2, name, when));
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.getStyleClass().add("mod-row");
+            body.getChildren().add(row);
         }
+        Animations.flipInCards(body);
     }
 
     private void showBrowse() {
@@ -414,20 +537,6 @@ public class ClansPage extends VBox {
         };
     }
 
-    private static Node row(String name, String detail, List<Node> buttons) {
-        Label title = new Label(name);
-        title.getStyleClass().add("mod-title");
-        Label meta = new Label(detail);
-        meta.getStyleClass().add("mod-meta");
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox row = new HBox(12, new VBox(2, title, meta), spacer);
-        row.getChildren().addAll(buttons);
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.getStyleClass().add("mod-row");
-        return row;
-    }
-
     private static Button button(String text, String style, Runnable action) {
         Button button = new Button(text);
         button.getStyleClass().add(style);
@@ -440,16 +549,5 @@ public class ClansPage extends VBox {
         Label label = new Label(text);
         label.getStyleClass().add("section-title");
         return label;
-    }
-
-    private static Node empty(String title, String text) {
-        Label t = new Label(title);
-        t.getStyleClass().add("empty-title");
-        Label d = new Label(text);
-        d.getStyleClass().add("empty-text");
-        d.setWrapText(true);
-        VBox box = new VBox(6, t, d);
-        box.getStyleClass().add("settings-card");
-        return box;
     }
 }

@@ -11,6 +11,9 @@ import com.nexusclient.launcher.ui.FirstRunOverlay;
 import com.nexusclient.launcher.ui.HomePage;
 import com.nexusclient.launcher.ui.Modal;
 import com.nexusclient.launcher.ui.ModsPage;
+import com.nexusclient.launcher.ui.DeveloperPage;
+import com.nexusclient.launcher.online.NexusOnline;
+import com.nexusclient.launcher.ui.NexusLogo;
 import com.nexusclient.launcher.ui.ToolsPage;
 import com.nexusclient.launcher.ui.SkinsPage;
 import com.nexusclient.launcher.ui.ErrorScanPage;
@@ -38,6 +41,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -114,7 +118,7 @@ public class NexusLauncher extends Application {
     public void start(Stage stage) {
         // Hide Windows' own white title bar – TitleBar draws a dark one instead.
         stage.initStyle(StageStyle.UNDECORATED);
-        // Nexus's own fonts (Inter + Exo 2), so the launcher looks the same on every PC.
+        // Nexus's title font (Exo 2), so the titles look the same on every PC.
         Fonts.load();
 
         // The player's Microsoft accounts (loaded from accounts.json + the secure secret store).
@@ -196,6 +200,10 @@ public class NexusLauncher extends Application {
         WindowBehaviour.install(stage);
 
         stage.setTitle("Nexus Client"); // still shown in the taskbar
+        Image appIcon = NexusLogo.appIcon();
+        if (appIcon != null) {
+            stage.getIcons().add(appIcon); // the Nexus logo in the taskbar and Alt+Tab
+        }
         stage.setMinWidth(MIN_WIDTH);
         stage.setMinHeight(MIN_HEIGHT);
         stage.setScene(scene);
@@ -220,6 +228,23 @@ public class NexusLauncher extends Application {
         accounts.activeProperty().addListener((observable, oldAccount, newAccount) -> {
             if (newAccount != null && SettingsStore.get().optimisePromptPending && overlay == null) {
                 showOverlay(FirstRunOverlay.Start.OPTIMISE);
+            }
+        });
+
+        // The Developer tab appears only when the Nexus server confirms this is the developer's account.
+        NexusOnline online = NexusOnline.get();
+        online.addStateListener(state -> navRail.showDeveloperTab(
+                state == NexusOnline.State.ONLINE && online.isDeveloper()));
+        // If a developer kicks or bans this player, tell them why.
+        online.addListener(event -> {
+            String type = event.get("type").getAsString();
+            String reason = event.has("reason") ? event.get("reason").getAsString() : "";
+            if (type.equals("kicked")) {
+                Toast.error("You were signed out of Nexus by a developer" + (reason.isEmpty() ? "." : ": " + reason));
+            } else if (type.equals("banned")) {
+                Toast.error("You're banned from Nexus online features until "
+                        + event.get("until").getAsString().replace('T', ' ').substring(0, 16)
+                        + (reason.isEmpty() ? "" : " (" + reason + ")"));
             }
         });
 
@@ -258,6 +283,7 @@ public class NexusLauncher extends Application {
                 homePage.joinServer(server);
             });
             case CLANS -> new ClansPage(accounts);
+            case DEVELOPER -> new DeveloperPage();
             case FRIENDS -> new FriendsPage(accounts, server -> {
                 showPage(Page.HOME);
                 homePage.joinServer(server);
@@ -318,7 +344,8 @@ public class NexusLauncher extends Application {
             }, 300));
         }
         for (Page page : Page.values()) {
-            stops.add(new DevTour.Stop("page-" + page.name().toLowerCase(), () -> showPage(page), 700));
+            stops.add(new DevTour.Stop("page-" + page.name().toLowerCase(), () -> showPage(page),
+                    Integer.getInteger("nexus.tourDelay", 700))); // -PnexusTourDelay=ms waits longer (e.g. for online pages)
         }
         // The Settings page is created during the tour, so it's looked up when we get there.
         for (String tab : List.of("General", "Appearance", "Accessibility", "Language", "Game", "TorcherRig", "About")) {

@@ -73,6 +73,10 @@ application {
 // Developer mode allows the temporary test player when nobody is signed in. Real releases never have it.
 tasks.named<JavaExec>("run") {
     systemProperty("nexus.dev", "true")
+    // The Nexus online server (backend), so the launcher can start it on this PC (online/LocalServer.java).
+    val serverJar = project(":backend").tasks.named("bootJar")
+    dependsOn(serverJar)
+    doFirst { systemProperty("nexus.localServerJar", serverJar.get().outputs.files.singleFile.absolutePath) }
     // Developer tools (optional):
     //   gradlew :launcher:run -PnexusTour=C:\folder   → photographs every screen into that folder, then closes
     //   gradlew :launcher:run -PnexusFirstRun=true    → shows the first-run welcome screens again
@@ -82,6 +86,8 @@ tasks.named<JavaExec>("run") {
     //   …add -PnexusTourScreen=true to capture the real pixels on screen (checks sharpness exactly)
     providers.gradleProperty("nexusTourScreen").orNull?.let { systemProperty("nexus.tourScreen", it) }
     providers.gradleProperty("nexusFirstRun").orNull?.let { systemProperty("nexus.firstRun", it) }
+    //   …add -PnexusTourDelay=4000 to wait longer on each page (lets online pages finish loading)
+    providers.gradleProperty("nexusTourDelay").orNull?.let { systemProperty("nexus.tourDelay", it) }
     //   gradlew :launcher:run -PnexusHome=C:\folder   → uses that folder instead of the real Nexus folder
     providers.gradleProperty("nexusHome").orNull?.let { systemProperty("nexus.home", it) }
 }

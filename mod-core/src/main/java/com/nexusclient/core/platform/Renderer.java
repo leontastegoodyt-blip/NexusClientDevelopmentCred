@@ -5,7 +5,7 @@ package com.nexusclient.core.platform;
  * with that version of Minecraft's own drawing code, so the menus and HUD look the same everywhere.
  *
  * Coordinates are in "GUI pixels" (Minecraft's scaled screen units). Colours are ARGB:
- * 0xAARRGGBB, e.g. 0xFF00E5FF = solid Nexus cyan, 0x80000000 = half-see-through black.
+ * 0xAARRGGBB, e.g. 0xFF3AA8FF = solid Nexus blue, 0x80000000 = half-see-through black.
  */
 public interface Renderer {
 

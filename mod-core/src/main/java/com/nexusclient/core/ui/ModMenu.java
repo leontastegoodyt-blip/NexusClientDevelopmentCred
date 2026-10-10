@@ -34,7 +34,7 @@ public class ModMenu implements NexusScreen {
     private static final String FAVOURITES = "★ Favourites";
 
     /** Colour presets offered for colour settings. */
-    private static final int[] PRESETS = {0xFF00E5FF, 0xFFFF2BD6, 0xFF8B7BFF, 0xFFFFB547, 0xFF3DE0A0,
+    private static final int[] PRESETS = {0xFF3AA8FF, 0xFFFF2BD6, 0xFF8B7BFF, 0xFFFFB547, 0xFF3DE0A0,
             0xFFFF5A5A, 0xFFFFFFFF, 0xFF101018};
 
     private View view = View.GRID;

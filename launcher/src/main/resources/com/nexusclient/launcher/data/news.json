@@ -1,8 +1,8 @@
 {
-  "_comment": "The news cards on the Home page. Newest first. Later this can be downloaded from the Nexus website instead.",
+  "_comment": "The news cards on the Home page. Newest first. Keep the text SHORT (one line). Later this can be downloaded from the Nexus website instead.",
   "news": [
-    { "tag": "UPDATE", "title": "Servers & settings", "text": "Live server list with one-click join, Quick Play, themes, accessibility and more." },
-    { "tag": "UPDATE", "title": "Mods & modpacks", "text": "Browse Modrinth for mods, resource packs, shaders and modpacks – installed in one click." },
-    { "tag": "UPDATE", "title": "TorcherRig", "text": "Nexus scans your PC and sets the game up to match it. You see every change first." }
+    { "tag": "NEW", "title": "Fresh new look", "text": "Flip tiles, sliding tabs, live friends." },
+    { "tag": "NEW", "title": "Your own logo", "text": "The Nexus hexagon is everywhere now." },
+    { "tag": "UPDATE", "title": "Every version", "text": "Right Shift menu from 1.8.9 to 26.3." }
   ]
 }

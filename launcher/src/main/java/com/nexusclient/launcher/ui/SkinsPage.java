@@ -66,16 +66,13 @@ public class SkinsPage extends HBox {
         // --- Right: title, sub-tabs, content ---
         Label title = new Label(Page.SKINS.title());
         title.getStyleClass().add("page-title");
-        Label description = new Label(Page.SKINS.description());
-        description.getStyleClass().add("page-description");
-        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
         tabs = new TabStrip(Page.SKINS.tabs(), this::showTab);
         ScrollPane scroll = new ScrollPane(body);
         scroll.setFitToWidth(true);
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroll.getStyleClass().add("page-scroll");
         VBox.setVgrow(scroll, Priority.ALWAYS);
-        VBox right = new VBox(18, new VBox(4, title, description), tabs, scroll);
+        VBox right = new VBox(18, PageHeader.block(Page.SKINS, title), tabs, scroll);
         HBox.setHgrow(right, Priority.ALWAYS);
 
         getChildren().addAll(right, left);
@@ -361,39 +358,9 @@ public class SkinsPage extends HBox {
         }
     }
 
-    /**
-     * A plain stand-in skin drawn in code (Nexus mustn't include Minecraft's own Steve skin):
-     * skin-coloured head and hands, a Nexus-cyan shirt and dark trousers.
-     */
+    /** The "Nexus default" character (see DefaultSkin – Nexus mustn't include Minecraft's own Steve skin). */
     private static Image defaultSkin() {
-        WritableImage skin = new WritableImage(64, 64);
-        PixelWriter writer = skin.getPixelWriter();
-        int skinTone = 0xFFC68E6B;
-        int hair = 0xFF2B1D14;
-        int shirt = 0xFF00B8CC;
-        int trousers = 0xFF1C1C2A;
-        for (int y = 0; y < 64; y++) {
-            for (int x = 0; x < 64; x++) {
-                int colour = 0x00000000;
-                if (y < 16 && x < 32) {
-                    colour = y < 10 ? hair : skinTone;                 // head
-                } else if (y >= 16 && y < 32 && x >= 16 && x < 40) {
-                    colour = shirt;                                     // body
-                } else if (y >= 16 && y < 32 && x >= 40 && x < 56) {
-                    colour = y >= 28 ? skinTone : shirt;               // right arm (hand at the bottom)
-                } else if (y >= 48 && x >= 32 && x < 48) {
-                    colour = y >= 60 ? skinTone : shirt;               // left arm
-                } else if ((y >= 16 && y < 32 && x < 16) || (y >= 48 && x >= 16 && x < 32)) {
-                    colour = trousers;                                  // legs
-                }
-                writer.setArgb(x, y, colour);
-            }
-        }
-        // Eyes on the face (front of the head is at x 8–15, y 8–15).
-        for (int x : new int[] {9, 10, 13, 14}) {
-            writer.setArgb(x, 12, x == 10 || x == 13 ? 0xFF00E5FF : 0xFFFFFFFF);
-        }
-        return skin;
+        return DefaultSkin.create();
     }
 
     private static Node note(String text) {

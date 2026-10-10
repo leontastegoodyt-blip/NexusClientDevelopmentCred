@@ -14,7 +14,7 @@ public class NexusSettings extends Module {
             "Different HUD layout for each server", false));
 
     /** The accent colour of the Nexus menus. */
-    public final ColorSetting accent = add(new ColorSetting("accent", "Menu accent colour", 0xFF00E5FF));
+    public final ColorSetting accent = add(new ColorSetting("accent", "Menu accent colour", 0xFF3AA8FF));
 
     /** Snap HUD elements to edges and each other in the HUD editor. */
     public final BooleanSetting snapping = add(new BooleanSetting("snapping", "Snap HUD elements when moving", true));

@@ -49,9 +49,6 @@ public class FriendsPage extends VBox {
 
         Label title = new Label(Page.FRIENDS.title());
         title.getStyleClass().add("page-title");
-        Label description = new Label(Page.FRIENDS.description());
-        description.getStyleClass().add("page-description");
-        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
         status.getStyleClass().add("mod-meta");
 
         TextField addName = new TextField();
@@ -76,7 +73,7 @@ public class FriendsPage extends VBox {
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox header = new HBox(10, new VBox(4, title, description, status), spacer, addName, add);
+        HBox header = new HBox(10, PageHeader.block(Page.FRIENDS, title, status), spacer, addName, add);
         header.setAlignment(Pos.CENTER_LEFT);
 
         TabStrip tabs = new TabStrip(Page.FRIENDS.tabs(), tab -> {
@@ -100,7 +97,7 @@ public class FriendsPage extends VBox {
     // ------------------------------------------------------------------ loading
 
     private void connectAndLoad() {
-        body.getChildren().setAll(empty("Connecting to Nexus…", "Signing in to the Nexus online server."));
+        body.getChildren().setAll(People.empty(Icons.FRIENDS, "Connecting…", null));
         Background.run("nexus-online", () -> {
             online.signIn(accounts);
             return true;
@@ -108,7 +105,7 @@ public class FriendsPage extends VBox {
             Button retry = new Button("Try again");
             retry.getStyleClass().add("secondary-button");
             retry.setOnAction(e -> connectAndLoad());
-            body.getChildren().setAll(empty("Can't connect to Nexus", error.getMessage()), retry);
+            body.getChildren().setAll(People.empty(Icons.FRIENDS, "Can't connect", error.getMessage()), retry);
         });
     }
 
@@ -138,6 +135,18 @@ public class FriendsPage extends VBox {
             return;
         }
         body.getChildren().clear();
+        // A strip of live numbers above every list.
+        long onlineCount = 0;
+        for (JsonElement e : overview.getAsJsonArray("friends")) {
+            if (e.getAsJsonObject().get("online").getAsBoolean()) {
+                onlineCount++;
+            }
+        }
+        int requests = overview.getAsJsonArray("incoming").size();
+        body.getChildren().add(People.statChips("● " + onlineCount + " online",
+                overview.getAsJsonArray("friends").size() + " friends",
+                requests + (requests == 1 ? " request" : " requests"),
+                party == null ? "No party" : "Party " + party.getAsJsonArray("members").size() + "/8"));
         switch (currentTab) {
             case "Online", "All Friends" -> showFriends(currentTab.equals("Online"));
             case "Requests" -> showRequests();
@@ -145,6 +154,7 @@ public class FriendsPage extends VBox {
             case "Blocked" -> showBlocked();
             default -> { }
         }
+        Animations.flipInCards(body);
     }
 
     private void showFriends(boolean onlineOnly) {
@@ -160,8 +170,8 @@ public class FriendsPage extends VBox {
         }
         if (shown == 0) {
             body.getChildren().add(onlineOnly
-                    ? empty("No friends online", "Friends who are playing show up here, with the server they're on.")
-                    : empty("No friends yet", "Add friends by their Minecraft name at the top."));
+                    ? People.empty(Icons.FRIENDS, "Nobody online", null)
+                    : People.empty(Icons.FRIENDS, "No friends yet", "Add someone by name, top right."));
         }
     }
 
@@ -173,50 +183,60 @@ public class FriendsPage extends VBox {
 
         List<Node> buttons = new ArrayList<>();
         if (!server.isEmpty()) {
-            buttons.add(button("Join", "primary-button", () -> onJoin.accept(new ServerStore.Server(server, server, ""))));
+            buttons.add(People.iconButton(Icons.PLAY, "Join " + server, true,
+                    () -> onJoin.accept(new ServerStore.Server(server, server, ""))));
         }
-        buttons.add(button("Message", "secondary-button", () -> openDm(uuid, name)));
+        buttons.add(People.iconButton(Icons.CHAT, "Message", false, () -> openDm(uuid, name)));
         if (isOnline) {
-            buttons.add(button("Invite to party", "secondary-button", () -> call(
+            buttons.add(People.iconButton(Icons.ADD, "Invite to party", false, () -> call(
                     () -> online.post("/api/party/invite", Map.of("uuid", uuid)),
                     ok -> Toast.info("Party invite sent to " + name))));
         }
-        buttons.add(button("Remove", "secondary-button", () -> Modal.confirm("Remove " + name + "?",
-                "You'll stop being friends. You can add them again later.", "Remove",
-                () -> call(() -> online.post("/api/friends/remove", Map.of("uuid", uuid)), ok -> refresh()))));
-        buttons.add(button("Block", "danger-button", () -> Modal.confirm("Block " + name + "?",
-                "They won't be able to message you, invite you or add you as a friend.", "Block",
-                () -> call(() -> online.post("/api/friends/block", Map.of("uuid", uuid)), ok -> refresh()))));
+        buttons.add(People.moreMenu(People.menu(
+                "Remove friend", (Runnable) () -> Modal.confirm("Remove " + name + "?",
+                        "You can add them again later.", "Remove",
+                        () -> call(() -> online.post("/api/friends/remove", Map.of("uuid", uuid)), ok -> refresh())),
+                "!Block", (Runnable) () -> Modal.confirm("Block " + name + "?",
+                        "They can't message, invite or add you.", "Block",
+                        () -> call(() -> online.post("/api/friends/block", Map.of("uuid", uuid)), ok -> refresh())))));
 
         String detail = !isOnline ? "Offline" : server.isEmpty() ? "Online" : "Playing on " + server;
-        return row(name, detail, isOnline, buttons);
+        return People.row(uuid, name, detail, isOnline, null, buttons);
     }
 
     private void showRequests() {
         JsonArray incoming = overview.getAsJsonArray("incoming");
         JsonArray outgoing = overview.getAsJsonArray("outgoing");
-        body.getChildren().add(section("Waiting for you (" + incoming.size() + ")"));
+        if (incoming.isEmpty() && outgoing.isEmpty()) {
+            body.getChildren().add(People.empty(Icons.FRIENDS, "No requests", null));
+            return;
+        }
+        if (!incoming.isEmpty()) {
+            body.getChildren().add(section("For you · " + incoming.size()));
+        }
         for (JsonElement e : incoming) {
             String uuid = e.getAsJsonObject().get("uuid").getAsString();
             String name = e.getAsJsonObject().get("name").getAsString();
-            body.getChildren().add(row(name, "Wants to be friends", false, List.of(
+            body.getChildren().add(People.row(uuid, name, "Wants to be friends", null, null, List.of(
                     button("Accept", "primary-button", () -> call(
                             () -> online.post("/api/friends/accept", Map.of("uuid", uuid)), ok -> refresh())),
-                    button("Decline", "secondary-button", () -> call(
+                    People.iconButton(Icons.CLOSE, "Decline", false, () -> call(
                             () -> online.post("/api/friends/decline", Map.of("uuid", uuid)), ok -> refresh())))));
         }
-        body.getChildren().add(section("Sent (" + outgoing.size() + ")"));
+        if (!outgoing.isEmpty()) {
+            body.getChildren().add(section("Sent · " + outgoing.size()));
+        }
         for (JsonElement e : outgoing) {
             String uuid = e.getAsJsonObject().get("uuid").getAsString();
-            body.getChildren().add(row(e.getAsJsonObject().get("name").getAsString(), "Waiting for an answer", false,
-                    List.of(button("Cancel", "secondary-button", () -> call(
+            body.getChildren().add(People.row(uuid, e.getAsJsonObject().get("name").getAsString(), "Waiting…", null, null,
+                    List.of(People.iconButton(Icons.CLOSE, "Cancel request", false, () -> call(
                             () -> online.post("/api/friends/decline", Map.of("uuid", uuid)), ok -> refresh())))));
         }
     }
 
     private void showParty() {
         if (pendingInviteParty != null) {
-            body.getChildren().add(row(pendingInviteFrom + " invited you to a party", "Invites last 60 seconds", true,
+            body.getChildren().add(People.row(null, pendingInviteFrom, "Invited you to a party", true, "INVITE",
                     List.of(button("Join party", "primary-button", () -> {
                         String id = pendingInviteParty;
                         pendingInviteParty = null;
@@ -224,27 +244,26 @@ public class FriendsPage extends VBox {
                     }))));
         }
         if (party == null) {
-            body.getChildren().add(empty("Not in a party",
-                    "Invite an online friend from the Online tab. Parties get their own chat, shared waypoints, "
-                            + "and the leader can bring everyone to the same server."));
+            body.getChildren().add(People.empty(Icons.CLANS, "Not in a party", "Invite an online friend to start one."));
             return;
         }
         String leader = party.get("leader").getAsString();
         boolean iLead = leader.equals(online.myUuid());
-        body.getChildren().add(section("Party (" + party.getAsJsonArray("members").size() + "/8)"));
+        body.getChildren().add(section("Party · " + party.getAsJsonArray("members").size() + "/8"));
         for (JsonElement e : party.getAsJsonArray("members")) {
             JsonObject m = e.getAsJsonObject();
             String uuid = m.get("uuid").getAsString();
             String server = m.get("server").getAsString();
             List<Node> buttons = new ArrayList<>();
             if (iLead && !uuid.equals(online.myUuid())) {
-                buttons.add(button("Make leader", "secondary-button", () -> call(
-                        () -> online.post("/api/party/promote", Map.of("uuid", uuid)), ok -> refresh())));
-                buttons.add(button("Kick", "danger-button", () -> call(
-                        () -> online.post("/api/party/kick", Map.of("uuid", uuid)), ok -> refresh())));
+                buttons.add(People.moreMenu(People.menu(
+                        "Make leader", (Runnable) () -> call(
+                                () -> online.post("/api/party/promote", Map.of("uuid", uuid)), ok -> refresh()),
+                        "!Kick from party", (Runnable) () -> call(
+                                () -> online.post("/api/party/kick", Map.of("uuid", uuid)), ok -> refresh()))));
             }
-            String detail = (uuid.equals(leader) ? "★ Leader · " : "") + (server.isEmpty() ? "Online" : "On " + server);
-            body.getChildren().add(row(m.get("name").getAsString(), detail, m.get("online").getAsBoolean(), buttons));
+            body.getChildren().add(People.row(uuid, m.get("name").getAsString(), server.isEmpty() ? "Online" : "On " + server,
+                    m.get("online").getAsBoolean(), uuid.equals(leader) ? "LEADER" : null, buttons));
         }
 
         // Party chat.
@@ -256,7 +275,7 @@ public class FriendsPage extends VBox {
             chatLines.getChildren().add(label);
         }
         if (partyChat.isEmpty()) {
-            Label hint = new Label("Party chat is empty. Messages here also show in-game.");
+            Label hint = new Label("No messages yet.");
             hint.getStyleClass().add("mod-meta");
             chatLines.getChildren().add(hint);
         }
@@ -272,7 +291,7 @@ public class FriendsPage extends VBox {
         };
         input.setOnAction(e -> sendChat.run());
         HBox sendRow = new HBox(8, input, button("Send", "primary-button", sendChat),
-                button("Leave party", "danger-button", () -> call(() -> online.post("/api/party/leave", null), ok -> {
+                button("Leave", "danger-button", () -> call(() -> online.post("/api/party/leave", null), ok -> {
                     partyChat.clear();
                     refresh();
                 })));
@@ -284,11 +303,11 @@ public class FriendsPage extends VBox {
     private void showBlocked() {
         JsonArray blocked = overview.getAsJsonArray("blocked");
         if (blocked.isEmpty()) {
-            body.getChildren().add(empty("Nobody blocked", "Blocked players can't message, invite or add you."));
+            body.getChildren().add(People.empty(Icons.BAN, "Nobody blocked", null));
         }
         for (JsonElement e : blocked) {
             String uuid = e.getAsJsonObject().get("uuid").getAsString();
-            body.getChildren().add(row(e.getAsJsonObject().get("name").getAsString(), "Blocked", false,
+            body.getChildren().add(People.row(uuid, e.getAsJsonObject().get("name").getAsString(), "Blocked", null, null,
                     List.of(button("Unblock", "secondary-button", () -> call(
                             () -> online.post("/api/friends/unblock", Map.of("uuid", uuid)), ok -> refresh())))));
         }
@@ -412,24 +431,6 @@ public class FriendsPage extends VBox {
         Background.run("friends-call", job::run, whenDone, error -> Toast.error(error.getMessage()));
     }
 
-    private static Node row(String name, String detail, boolean highlighted, List<Node> buttons) {
-        Label initial = new Label(name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase());
-        initial.getStyleClass().add("instance-badge");
-        initial.setMinSize(36, 36);
-        initial.setAlignment(Pos.CENTER);
-        Label title = new Label(name);
-        title.getStyleClass().add("mod-title");
-        Label meta = new Label((highlighted ? "● " : "") + detail);
-        meta.getStyleClass().add("mod-meta");
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox row = new HBox(12, initial, new VBox(2, title, meta), spacer);
-        row.getChildren().addAll(buttons);
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.getStyleClass().add("mod-row");
-        return row;
-    }
-
     private static Button button(String text, String style, Runnable action) {
         Button button = new Button(text);
         button.getStyleClass().add(style);
@@ -442,16 +443,5 @@ public class FriendsPage extends VBox {
         Label label = new Label(text);
         label.getStyleClass().add("section-title");
         return label;
-    }
-
-    private static Node empty(String title, String text) {
-        Label t = new Label(title);
-        t.getStyleClass().add("empty-title");
-        Label d = new Label(text);
-        d.getStyleClass().add("empty-text");
-        d.setWrapText(true);
-        VBox box = new VBox(6, t, d);
-        box.getStyleClass().add("settings-card");
-        return box;
     }
 }

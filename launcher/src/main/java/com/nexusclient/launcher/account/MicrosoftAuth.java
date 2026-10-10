@@ -350,7 +350,7 @@ public final class MicrosoftAuth {
         return "<!doctype html><html><head><meta charset='utf-8'><title>Nexus Client</title></head>"
                 + "<body style='margin:0;height:100vh;display:flex;align-items:center;justify-content:center;"
                 + "background:#08080D;color:#E4E4EE;font-family:Segoe UI,Arial,sans-serif'>"
-                + "<div style='text-align:center'><div style='font-size:28px;font-weight:bold;color:#00E5FF'>NEXUS</div>"
+                + "<div style='text-align:center'><div style='font-size:28px;font-weight:bold;color:#3AA8FF'>NEXUS</div>"
                 + "<p style='font-size:16px'>" + message + "</p></div></body></html>";
     }
 

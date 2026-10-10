@@ -244,7 +244,7 @@ public final class HudMods {
 
             // Guide lines at 60 FPS (16.7 ms) and 30 FPS (33.3 ms).
             int base = 3 + GRAPH_HEIGHT;
-            r.rect(3, base - barHeight(16.7f), WIDTH - 3, base - barHeight(16.7f) + 1, 0x3000E5FF);
+            r.rect(3, base - barHeight(16.7f), WIDTH - 3, base - barHeight(16.7f) + 1, 0x303AA8FF);
             r.rect(3, base - barHeight(33.3f), WIDTH - 3, base - barHeight(33.3f) + 1, 0x30FFB547);
 
             // One bar per frame, newest on the right; one pixel wide, so only the newest fit.
@@ -348,7 +348,7 @@ public final class HudMods {
     public static class Keystrokes extends HudModule {
         public final BooleanSetting showMouse = add(new BooleanSetting("showMouse", "Show mouse buttons", true));
         public final BooleanSetting showSpace = add(new BooleanSetting("showSpace", "Show jump (space)", true));
-        public final ColorSetting pressedColor = add(new ColorSetting("pressedColor", "Pressed colour", 0xB000E5FF));
+        public final ColorSetting pressedColor = add(new ColorSetting("pressedColor", "Pressed colour", 0xB03AA8FF));
 
         public Keystrokes() {
             super("keystrokes", "Keystrokes", "Shows which movement keys and mouse buttons you're pressing.",

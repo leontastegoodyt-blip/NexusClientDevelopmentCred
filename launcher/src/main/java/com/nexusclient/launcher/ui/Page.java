@@ -41,6 +41,10 @@ public enum Page {
     TOOLS("Tools", "Tools", Icons.TOOLS,
             "Screenshots, world backups, safe mode, playtime stats and the storage cleaner.", 8,
             List.of("Screenshots", "World Backups", "Safe Mode", "Playtime", "Storage")),
+    // Only shown to the Nexus developer (the owner's account) – see NavRail.showDeveloperTab.
+    DEVELOPER("Developer", "Dev", Icons.CODE,
+            "Owner-only tools: players, kicks and bans, reports, honor events and partners.", 0,
+            List.of("Overview", "Players", "Reports", "Events", "Partners", "Crashes")),
     SETTINGS("Settings", "Settings", Icons.SETTINGS,
             "Theme, language, accessibility, Discord status and launcher behaviour.", 7,
             List.of("General", "Appearance", "Game", "TorcherRig", "Accessibility", "Language", "Premium", "About"));

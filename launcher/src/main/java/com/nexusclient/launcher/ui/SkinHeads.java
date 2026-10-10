@@ -86,6 +86,60 @@ public final class SkinHeads {
         return head;
     }
 
+    /** Skin links found for players (UUID → skin URL), so each player is only looked up once. */
+    private static final Map<String, String> SKIN_URLS = new ConcurrentHashMap<>();
+
+    /**
+     * A head for ANY player (friends, clan members…), by their Minecraft UUID. Asks Mojang's public
+     * profile service where their skin is, then works like {@link #create}.
+     */
+    public static StackPane forUuid(String uuid, double size) {
+        StackPane head = create(null, size);
+        ImageView view = (ImageView) head.getChildren().get(1);
+        int pixels = (int) Math.round(size * 2);
+        Thread loader = new Thread(() -> {
+            String skinUrl = SKIN_URLS.computeIfAbsent(uuid, SkinHeads::lookUpSkinUrl);
+            if (skinUrl.isEmpty()) {
+                return;
+            }
+            Image image = CACHE.computeIfAbsent(skinUrl + "@" + pixels, key -> loadHead(skinUrl, pixels));
+            if (image != null) {
+                Platform.runLater(() -> view.setImage(image));
+            }
+        }, "skin-head-loader");
+        loader.setDaemon(true);
+        loader.start();
+        return head;
+    }
+
+    /** Mojang's profile for a UUID holds the skin link (base64-encoded JSON). "" if there's none. */
+    private static String lookUpSkinUrl(String uuid) {
+        try {
+            java.net.http.HttpClient http = java.net.http.HttpClient.newHttpClient();
+            java.net.http.HttpResponse<String> response = http.send(java.net.http.HttpRequest.newBuilder(
+                    java.net.URI.create("https://sessionserver.mojang.com/session/minecraft/profile/"
+                            + uuid.replace("-", ""))).timeout(java.time.Duration.ofSeconds(10)).build(),
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                return "";
+            }
+            var profile = com.google.gson.JsonParser.parseString(response.body()).getAsJsonObject();
+            for (var property : profile.getAsJsonArray("properties")) {
+                var p = property.getAsJsonObject();
+                if ("textures".equals(p.get("name").getAsString())) {
+                    String json = new String(java.util.Base64.getDecoder().decode(p.get("value").getAsString()),
+                            StandardCharsets.UTF_8);
+                    var skin = com.google.gson.JsonParser.parseString(json).getAsJsonObject()
+                            .getAsJsonObject("textures").getAsJsonObject("SKIN");
+                    return skin == null ? "" : skin.get("url").getAsString();
+                }
+            }
+        } catch (Exception e) {
+            // No head then – the placeholder stays.
+        }
+        return "";
+    }
+
     /** Downloads (or reads the cached) skin and cuts the head out of it. Returns null on failure. */
     private static Image loadHead(String skinUrl, int pixels) {
         try {

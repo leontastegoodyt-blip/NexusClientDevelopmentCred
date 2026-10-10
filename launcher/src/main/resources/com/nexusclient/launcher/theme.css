@@ -27,36 +27,38 @@
     -nexus-surface-3:   rgba(44, 40, 72, 0.88);     /* things under the mouse (hover)                */
     -nexus-border:      rgba(160, 150, 255, 0.10);  /* thin lines between areas                      */
     -nexus-border-hi:   rgba(160, 150, 255, 0.22);  /* brighter edge (hover)                         */
-    -nexus-cyan:        #00E5FF;                    /* main neon accent (the player can change it)   */
+    -nexus-cyan:        #3AA8FF;                    /* main accent: the logo's electric blue (the player can change it) */
+    -nexus-sky:         #5FD3FF;                    /* light blue: the bright top-left of the logo   */
     -nexus-violet:      #8B5CFF;                    /* middle of the gradient                        */
-    -nexus-magenta:     #FF2BD6;                    /* second neon accent                            */
+    -nexus-magenta:     #FF2BD6;                    /* small extra accent only (one news card, Ultra tier) */
     -nexus-green:       #3DE0A0;
     -nexus-amber:       #FFB547;
     -nexus-red:         #FF6B5E;
 
-    /* The signature gradients (they follow the accent colour automatically). */
-    -nexus-gradient:      linear-gradient(to right, -nexus-cyan, -nexus-violet 55%, -nexus-magenta);
-    -nexus-gradient-down: linear-gradient(to bottom, -nexus-cyan, -nexus-violet 55%, -nexus-magenta);
-    -nexus-gradient-soft: linear-gradient(to right, -nexus-accent-120, rgba(139, 92, 255, 0.12), rgba(255, 43, 214, 0.10));
-    -nexus-gradient-edge: linear-gradient(to right, -nexus-accent-550, rgba(139, 92, 255, 0.55), rgba(255, 43, 214, 0.55));
+    /* The signature gradients, like the logo: light blue → logo blue → violet (they follow the
+       accent colour automatically). */
+    -nexus-gradient:      linear-gradient(to right, -nexus-sky, -nexus-cyan 45%, -nexus-violet);
+    -nexus-gradient-down: linear-gradient(to bottom, -nexus-sky, -nexus-cyan 45%, -nexus-violet);
+    -nexus-gradient-soft: linear-gradient(to right, -nexus-accent-120, rgba(139, 92, 255, 0.12));
+    -nexus-gradient-edge: linear-gradient(to right, -nexus-accent-550, rgba(139, 92, 255, 0.55));
 
     /* See-through versions of the accent colour (Theme.java recomputes these when the player
        picks their own accent colour in Settings → Appearance). */
-    -nexus-accent-045: rgba(0, 229, 255, 0.045);
-    -nexus-accent-060: rgba(0, 229, 255, 0.06);
-    -nexus-accent-070: rgba(0, 229, 255, 0.07);
-    -nexus-accent-080: rgba(0, 229, 255, 0.08);
-    -nexus-accent-100: rgba(0, 229, 255, 0.10);
-    -nexus-accent-120: rgba(0, 229, 255, 0.12);
-    -nexus-accent-220: rgba(0, 229, 255, 0.22);
-    -nexus-accent-250: rgba(0, 229, 255, 0.25);
-    -nexus-accent-300: rgba(0, 229, 255, 0.3);
-    -nexus-accent-350: rgba(0, 229, 255, 0.35);
-    -nexus-accent-400: rgba(0, 229, 255, 0.4);
-    -nexus-accent-450: rgba(0, 229, 255, 0.45);
-    -nexus-accent-500: rgba(0, 229, 255, 0.5);
-    -nexus-accent-550: rgba(0, 229, 255, 0.55);
-    -nexus-accent-600: rgba(0, 229, 255, 0.6);
+    -nexus-accent-045: rgba(58, 168, 255, 0.045);
+    -nexus-accent-060: rgba(58, 168, 255, 0.06);
+    -nexus-accent-070: rgba(58, 168, 255, 0.07);
+    -nexus-accent-080: rgba(58, 168, 255, 0.08);
+    -nexus-accent-100: rgba(58, 168, 255, 0.10);
+    -nexus-accent-120: rgba(58, 168, 255, 0.12);
+    -nexus-accent-220: rgba(58, 168, 255, 0.22);
+    -nexus-accent-250: rgba(58, 168, 255, 0.25);
+    -nexus-accent-300: rgba(58, 168, 255, 0.3);
+    -nexus-accent-350: rgba(58, 168, 255, 0.35);
+    -nexus-accent-400: rgba(58, 168, 255, 0.4);
+    -nexus-accent-450: rgba(58, 168, 255, 0.45);
+    -nexus-accent-500: rgba(58, 168, 255, 0.5);
+    -nexus-accent-550: rgba(58, 168, 255, 0.55);
+    -nexus-accent-600: rgba(58, 168, 255, 0.6);
     -nexus-text:        #EEECFB;   /* normal text                                        */
     -nexus-text-dim:    #9692B5;   /* quieter text                                       */
     -nexus-text-faint:  #5E5A7C;   /* the quietest text                                  */
@@ -129,7 +131,7 @@
 
 /* Skin heads: a dark square shows until the real head has loaded */
 .head-placeholder {
-    -fx-background-color: linear-gradient(to bottom right, -nexus-accent-300, rgba(255, 43, 214, 0.3));
+    -fx-background-color: linear-gradient(to bottom right, -nexus-accent-300, rgba(139, 92, 255, 0.3));
 }
 
 /* The account menu that drops down from the account button. Popups don't always see the
@@ -165,7 +167,7 @@
     -fx-font-size: 11px;
 }
 .menu-action {
-    -fx-text-fill: #00E5FF;
+    -fx-text-fill: #3AA8FF;
     -fx-font-size: 13px;
 }
 .menu-account-name {
@@ -174,7 +176,7 @@
     -fx-font-weight: bold;
 }
 .menu-account-active {
-    -fx-text-fill: #00E5FF;
+    -fx-text-fill: #3AA8FF;
     -fx-font-size: 11px;
 }
 .menu-remove {
@@ -209,7 +211,7 @@
     -fx-cursor: hand;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 22, 0.2, 0, 6);
 }
-.toast-info  { -fx-border-color: #2C2848 #2C2848 #2C2848 #00E5FF; }
+.toast-info  { -fx-border-color: #2C2848 #2C2848 #2C2848 #3AA8FF; }
 .toast-error { -fx-border-color: #2C2848 #2C2848 #2C2848 #FF6B5E; }
 
 /* Minimise / maximise / close – small rounded boxes inside the title bar.
@@ -233,49 +235,61 @@
 .close-button:hover            { -fx-background-color: rgba(220, 45, 60, 0.85); -fx-border-color: #FF5A6A; }
 .close-button:hover .icon      { -fx-fill: white; }
 
-/* =============================== Tab rail (far left) =============================== */
+/* =============================== Tab rail (far left) ===============================
+   Just icons. The details are in the movement (ui/NavRail.java): a glowing indicator slides to
+   the selected tab, and the tab's name flips out beside the icon on hover. */
 .nav-rail {
     -fx-background-color: -nexus-glass;
-    -fx-min-width: 78px;
-    -fx-pref-width: 78px;
-    -fx-padding: 12 0 12 0;
+    -fx-min-width: 64px;
+    -fx-pref-width: 64px;
+    -fx-max-width: 64px;
+    -fx-padding: 10 0 10 0;
     -fx-spacing: 4;
     -fx-alignment: top-center;
     -fx-border-color: transparent -nexus-border transparent transparent;  /* line on the right */
 }
-/* Each tab is a rounded box. It's drawn a little inside the button's edges ("insets"),
-   so the boxes have gaps between them. */
 .nav-button {
     -fx-background-color: transparent;
-    -fx-background-insets: 2 9 2 9;
-    -fx-background-radius: 14;
     -fx-border-color: transparent;
-    -fx-border-insets: 2 9 2 9;
-    -fx-border-radius: 14;
-    -fx-min-width: 78px;
-    -fx-pref-width: 78px;
-    -fx-min-height: 60px;
-    -fx-pref-height: 60px;
-    -fx-padding: 8 0 8 0;
-    -fx-graphic-text-gap: 4;
-    -fx-text-fill: -nexus-text-dim;
-    -fx-font-size: 10px;
-    -fx-font-weight: 600;
+    -fx-min-width: 64px;
+    -fx-pref-width: 64px;
+    -fx-min-height: 50px;
+    -fx-pref-height: 50px;
+    -fx-padding: 0;
     -fx-cursor: hand;
 }
-.nav-button .icon                { -fx-fill: -nexus-text-dim; }
-.nav-button:hover {
-    -fx-background-color: -nexus-surface-2;
-    -fx-border-color: -nexus-border-hi;
-    -fx-text-fill: -nexus-text;
-}
+.nav-button .icon                { -fx-fill: -nexus-text-faint; }
 .nav-button:hover .icon          { -fx-fill: -nexus-text; }
-.nav-button:selected {
-    -fx-background-color: -nexus-gradient-soft;
-    -fx-border-color: -nexus-gradient-edge;
-    -fx-text-fill: -nexus-text;
+/* The selected icon glows in the gradient (a glow is fine here: icons have no text). */
+.nav-button:selected .icon {
+    -fx-fill: -nexus-gradient-down;
+    -fx-effect: dropshadow(gaussian, -nexus-accent-500, 10, 0.25, 0, 0);
 }
-.nav-button:selected .icon       { -fx-fill: -nexus-gradient-down; }
+/* The soft square that slides behind the selected icon */
+.nav-indicator {
+    -fx-background-color: -nexus-gradient-soft;
+    -fx-background-radius: 13;
+    -fx-border-color: -nexus-gradient-edge;
+    -fx-border-radius: 13;
+}
+/* The glowing bar on the rail's left edge, next to the selected tab */
+.nav-indicator-bar {
+    -fx-background-color: -nexus-gradient-down;
+    -fx-background-radius: 0 3 3 0;
+    -fx-effect: dropshadow(gaussian, -nexus-accent-600, 10, 0.3, 0, 0);
+}
+/* The tab's name that flips out on hover (solid background, no glow – it has text) */
+.nav-flyout {
+    -fx-background-color: #14122A;
+    -fx-background-radius: 9;
+    -fx-border-color: -nexus-gradient-edge;
+    -fx-border-radius: 9;
+    -fx-text-fill: -nexus-text;
+    -fx-font-family: "Exo 2";
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 12 6 12;
+}
 
 /* =============================== Instances panel =============================== */
 .instance-panel {
@@ -473,8 +487,8 @@
     -fx-background-color: #221F36;
 }
 .combo-box-popup .list-view .list-cell:selected {
-    -fx-background-color: linear-gradient(to right, rgba(0, 229, 255, 0.18), rgba(139, 92, 255, 0.14));
-    -fx-text-fill: #00E5FF;
+    -fx-background-color: linear-gradient(to right, rgba(58, 168, 255, 0.18), rgba(139, 92, 255, 0.14));
+    -fx-text-fill: #3AA8FF;
 }
 
 /* Hover hints (tooltips) – popups too, so colour codes again. */
@@ -618,8 +632,8 @@
 .home-banner {
     -fx-background-color:
         rgba(16, 14, 30, 0.82),
-        linear-gradient(to right, rgba(0, 229, 255, 0.16), rgba(139, 92, 255, 0.14) 55%, rgba(255, 43, 214, 0.12)),
-        radial-gradient(center 85% 20%, radius 60%, rgba(255, 43, 214, 0.20), transparent),
+        linear-gradient(to right, rgba(58, 168, 255, 0.16), rgba(47, 107, 255, 0.14) 55%, rgba(139, 92, 255, 0.14)),
+        radial-gradient(center 85% 20%, radius 60%, rgba(139, 92, 255, 0.20), transparent),
         radial-gradient(center 10% 100%, radius 55%, -nexus-accent-220, transparent);
     -fx-background-radius: 18;
     -fx-border-color: -nexus-gradient-edge;
@@ -715,7 +729,11 @@
     -fx-max-width: 250px;
 }
 .social-card {
-    -fx-background-color: -nexus-surface;
+    /* glass card: a 1px light "sheen" along the top edge, a faint accent glow in the top-left corner */
+    -fx-background-color: rgba(255, 255, 255, 0.07),
+        linear-gradient(to bottom, rgba(24, 22, 44, 0.84), rgba(14, 12, 27, 0.84)),
+        radial-gradient(center 0% 0%, radius 70%, -nexus-accent-070, transparent);
+    -fx-background-insets: 0, 1 0 0 0, 1 0 0 0;
     -fx-background-radius: 16;
     -fx-border-color: -nexus-border;
     -fx-border-radius: 16;
@@ -746,7 +764,7 @@
 .launch-bar {
     -fx-background-color:
         rgba(16, 14, 30, 0.86),
-        linear-gradient(to right, -nexus-accent-070, transparent 40%, rgba(255, 43, 214, 0.07));
+        linear-gradient(to right, -nexus-accent-070, transparent 40%, rgba(139, 92, 255, 0.07));
     -fx-background-radius: 18;
     -fx-border-color: -nexus-border-hi;
     -fx-border-radius: 18;
@@ -831,50 +849,61 @@
 }
 .neon-cube-face-top   { -fx-fill: -nexus-accent-120; }
 .neon-cube-face-left  { -fx-fill: rgba(139, 92, 255, 0.12); }
-.neon-cube-face-right { -fx-fill: rgba(255, 43, 214, 0.10); }
+.neon-cube-face-right { -fx-fill: rgba(47, 107, 255, 0.14); }
 
 /* ---- Tab pages (Mods, Servers, Friends, ...) ---- */
 .tab-page {
-    -fx-padding: 26 30 14 30;
-    -fx-spacing: 18;
+    -fx-padding: 22 30 14 30;
+    -fx-spacing: 16;
+}
+/* "⬡ NEXUS › MODS" above each page title (ui/PageHeader.java) */
+.page-kicker {
+    -fx-font-family: "Exo 2";
+    -fx-text-fill: -nexus-gradient;
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
 }
 .page-title {
     -fx-font-family: "Exo 2";
-    -fx-text-fill: linear-gradient(to right, #FFFFFF, #DDF9FF 70%, #F3D8FF);
+    -fx-text-fill: linear-gradient(to right, #FFFFFF, #DDF0FF 70%, #E6DCFF);
     -fx-font-size: 30px;
     -fx-font-weight: 800;
 }
-.page-description {
-    -fx-text-fill: -nexus-text-dim;
-    -fx-font-size: 13px;
-}
 
-/* The row of sub-tabs – each one is a rounded "pill" box */
+/* The row of sub-tabs: plain text, with a glowing pill sliding behind the selected one
+   (ui/TabStrip.java moves the pill). The whole row sits on a faint glass track. */
 .tab-strip {
-    -fx-hgap: 8;            /* gap between tabs                          */
-    -fx-vgap: 8;            /* gap between rows, when the tabs wrap      */
-    -fx-padding: 0 0 4 0;
+    -fx-hgap: 4;            /* gap between tabs                          */
+    -fx-vgap: 4;            /* gap between rows, when the tabs wrap      */
+    -fx-padding: 4;
+    -fx-background-color: rgba(12, 11, 24, 0.55);
+    -fx-background-radius: 13;
+    -fx-border-color: -nexus-border;
+    -fx-border-radius: 13;
+}
+.tab-pill {
+    -fx-background-color: -nexus-gradient-soft, rgba(58, 168, 255, 0.06);
+    -fx-background-radius: 10;
+    -fx-border-color: -nexus-gradient-edge;
+    -fx-border-radius: 10;
 }
 .tab-strip-button {
-    -fx-background-color: -nexus-surface;
-    -fx-background-radius: 12;
-    -fx-border-color: -nexus-border;
-    -fx-border-radius: 12;
+    -fx-background-color: transparent;
+    -fx-background-radius: 10;
+    -fx-border-color: transparent;
     -fx-text-fill: -nexus-text-dim;
     -fx-font-size: 13px;
     -fx-font-weight: 600;
-    -fx-padding: 7 16 7 16;
+    -fx-padding: 6 15 6 15;
     -fx-cursor: hand;
 }
 .tab-strip-button:hover {
-    -fx-background-color: -nexus-surface-2;
-    -fx-border-color: -nexus-border-hi;
     -fx-text-fill: -nexus-text;
+    -fx-background-color: rgba(255, 255, 255, 0.04);
 }
 .tab-strip-button:selected {
-    -fx-background-color: -nexus-gradient-soft;
-    -fx-border-color: -nexus-gradient-edge;
-    -fx-text-fill: -nexus-text;
+    -fx-background-color: transparent;
+    -fx-text-fill: #FFFFFF;
 }
 .preview-note {
     -fx-text-fill: -nexus-text-faint;
@@ -972,7 +1001,7 @@
     -fx-border-radius: 10;
 }
 .tier-low   { -fx-text-fill: #FFB547; -fx-border-color: rgba(255, 181, 71, 0.6); -fx-background-color: rgba(255, 181, 71, 0.10); }
-.tier-mid   { -fx-text-fill: #00E5FF; -fx-border-color: -nexus-accent-600;  -fx-background-color: -nexus-accent-100; }
+.tier-mid   { -fx-text-fill: #3AA8FF; -fx-border-color: -nexus-accent-600;  -fx-background-color: -nexus-accent-100; }
 .tier-high  { -fx-text-fill: #A98BFF; -fx-border-color: rgba(139, 92, 255, 0.6); -fx-background-color: rgba(139, 92, 255, 0.12); }
 .tier-ultra { -fx-text-fill: #FF5BE0; -fx-border-color: rgba(255, 43, 214, 0.6); -fx-background-color: rgba(255, 43, 214, 0.10); }
 .hardware-grid {
@@ -1005,7 +1034,11 @@
     -fx-font-weight: 800;
 }
 .settings-card {
-    -fx-background-color: -nexus-surface;
+    /* glass card: a 1px light "sheen" along the top edge, a faint accent glow in the top-left corner */
+    -fx-background-color: rgba(255, 255, 255, 0.07),
+        linear-gradient(to bottom, rgba(24, 22, 44, 0.84), rgba(14, 12, 27, 0.84)),
+        radial-gradient(center 0% 0%, radius 70%, -nexus-accent-070, transparent);
+    -fx-background-insets: 0, 1 0 0 0, 1 0 0 0;
     -fx-background-radius: 18;
     -fx-border-color: -nexus-border;
     -fx-border-radius: 18;
@@ -1091,14 +1124,17 @@
 
 /* =============================== Mods page (step 6) =============================== */
 .mod-row {
-    -fx-background-color: -nexus-surface;
+    /* glass card: a 1px light "sheen" along the top edge, a faint accent glow in the top-left corner */
+    -fx-background-color: rgba(255, 255, 255, 0.07),
+        linear-gradient(to bottom, rgba(24, 22, 44, 0.84), rgba(14, 12, 27, 0.84)),
+        radial-gradient(center 0% 0%, radius 70%, -nexus-accent-070, transparent);
+    -fx-background-insets: 0, 1 0 0 0, 1 0 0 0;
     -fx-background-radius: 14;
     -fx-border-color: -nexus-border;
     -fx-border-radius: 14;
     -fx-padding: 12 14 12 12;
 }
 .mod-row:hover {
-    -fx-background-color: -nexus-surface-2;
     -fx-border-color: -nexus-gradient-edge;
 }
 .mod-title {
@@ -1183,3 +1219,166 @@
 .log-view .list-cell.log-error { -fx-text-fill: #FF6B5E; }
 .log-view .list-cell.log-warn  { -fx-text-fill: #FFB547; }
 .log-view .list-cell:selected  { -fx-background-color: -nexus-surface-3; }
+
+/* =============================== Redesign extras =============================== */
+/* The bright streak that sweeps across LAUNCH now and then (Animations.shine) */
+.shine-streak {
+    -fx-background-color: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.55), transparent);
+}
+
+/* ---- Home: flip-over stat tiles (ui/FlipTile.java) ---- */
+.stat-tile {
+    -fx-background-color: rgba(255, 255, 255, 0.06), rgba(10, 9, 22, 0.55);
+    -fx-background-insets: 0, 1 0 0 0;
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(255, 255, 255, 0.07);
+    -fx-border-radius: 12;
+    -fx-padding: 10 12 10 12;
+    -fx-cursor: hand;
+    -fx-min-height: 74px;
+}
+.stat-tile:hover { -fx-border-color: -nexus-gradient-edge; }
+.stat-tile-back {
+    -fx-background-color: transparent;
+}
+.stat-detail {
+    -fx-text-fill: #C9C5E6;
+    -fx-font-size: 11px;
+}
+.flip-mark .icon { -fx-fill: -nexus-text-faint; }
+.stat-tile:hover .flip-mark .icon { -fx-fill: -nexus-cyan; }
+
+/* ---- Home: status chips under the greeting ---- */
+.status-chip {
+    -fx-background-color: rgba(10, 9, 22, 0.55);
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(255, 255, 255, 0.08);
+    -fx-border-radius: 10;
+    -fx-text-fill: #C9C5E6;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-padding: 4 10 4 8;
+    -fx-graphic-text-gap: 7;
+}
+.status-chip .icon { -fx-fill: -nexus-amber; }
+.status-dot {
+    -fx-min-width: 8px;  -fx-max-width: 8px;
+    -fx-min-height: 8px; -fx-max-height: 8px;
+    -fx-background-radius: 4;
+}
+.status-dot-on   { -fx-background-color: -nexus-green; -fx-effect: dropshadow(gaussian, rgba(61, 224, 160, 0.8), 6, 0.3, 0, 0); }
+.status-dot-wait { -fx-background-color: -nexus-amber; }
+.status-dot-off  { -fx-background-color: #4A4766; }
+
+/* ---- People rows (friends, party, clan members) ---- */
+.person-row {
+    -fx-padding: 6 8 6 6;
+    -fx-background-radius: 10;
+}
+.person-row:hover { -fx-background-color: rgba(255, 255, 255, 0.04); }
+.person-row .status-dot { -fx-border-color: #0E0C1C; -fx-border-width: 2; -fx-border-radius: 5;
+                          -fx-min-width: 11px; -fx-max-width: 11px; -fx-min-height: 11px; -fx-max-height: 11px;
+                          -fx-background-radius: 6; -fx-translate-x: 2; -fx-translate-y: 2; }
+.person-name { -fx-text-fill: -nexus-text; -fx-font-size: 13px; -fx-font-weight: bold; }
+.person-detail { -fx-text-fill: -nexus-text-faint; -fx-font-size: 11px; }
+.person-detail-online { -fx-text-fill: -nexus-green; -fx-font-size: 11px; }
+
+/* ---- People cards (ui/People.java): Friends, Clans, Developer ---- */
+.person-card .skin-head { -fx-effect: null; }
+.person-card .status-dot {
+    -fx-border-color: #0E0C1C; -fx-border-width: 2; -fx-border-radius: 7;
+    -fx-min-width: 13px; -fx-max-width: 13px; -fx-min-height: 13px; -fx-max-height: 13px;
+    -fx-background-radius: 7; -fx-translate-x: 3; -fx-translate-y: 3;
+}
+.person-badge {
+    -fx-background-color: -nexus-gradient-soft;
+    -fx-background-radius: 6;
+    -fx-border-color: -nexus-accent-350;
+    -fx-border-radius: 6;
+    -fx-text-fill: -nexus-sky;
+    -fx-font-size: 9px;
+    -fx-font-weight: 800;
+    -fx-padding: 1 6 1 6;
+}
+.rank-owner .person-badge       { -fx-text-fill: #FFD46B; -fx-border-color: rgba(255, 212, 107, 0.5); -fx-background-color: rgba(255, 180, 46, 0.12); }
+.rank-co_owner .person-badge,
+.rank-first_class .person-badge { -fx-text-fill: #C3A8FF; -fx-border-color: rgba(139, 92, 255, 0.5); -fx-background-color: rgba(139, 92, 255, 0.14); }
+.rank-member .person-badge      { -fx-text-fill: -nexus-text-dim; -fx-border-color: -nexus-border-hi; -fx-background-color: transparent; }
+.empty-card { -fx-padding: 26; }
+
+/* Icon-only buttons (People.iconButton) */
+.icon-button-primary {
+    -fx-background-color: -nexus-gradient;
+    -fx-border-color: rgba(255, 255, 255, 0.3);
+}
+.icon-button-primary .icon        { -fx-fill: #07060E; }
+.icon-button-primary:hover .icon  { -fx-fill: #07060E; }
+.icon-button-primary:hover        { -fx-background-color: -nexus-gradient; -fx-border-color: white; }
+.more-button {
+    -fx-text-fill: -nexus-text-dim;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 3 9 3 9;
+}
+.more-button:hover { -fx-text-fill: -nexus-text; }
+.context-menu .menu-item.menu-danger .label { -fx-text-fill: #FF8A80; }
+
+/* ---- Clans ---- */
+/* The clan emblem: the tag inside a hexagon, like the Nexus logo */
+.clan-emblem {
+    -fx-shape: "M50 0 L93 25 L93 75 L50 100 L7 75 L7 25 Z";
+    -fx-scale-shape: true;
+    -fx-background-color: -nexus-gradient-down, #0E0C1F;
+    -fx-background-insets: 0, 3;
+}
+.clan-emblem-text {
+    -fx-font-family: "Exo 2";
+    -fx-font-size: 15px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -nexus-gradient-down;
+}
+.clan-banner {
+    -fx-padding: 0 0 4 0;
+}
+.clan-name {
+    -fx-font-family: "Exo 2";
+    -fx-font-size: 26px;
+    -fx-font-weight: 800;
+    -fx-text-fill: linear-gradient(to right, #FFFFFF, #DDF0FF 70%, #E6DCFF);
+}
+.clan-honor {
+    -fx-font-family: "Exo 2";
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -nexus-amber;
+}
+/* Leaderboard */
+.podium-card { -fx-padding: 22 22 0 22; }
+.podium-block {
+    -fx-background-color: rgba(255, 255, 255, 0.06), linear-gradient(to bottom, rgba(58, 168, 255, 0.28), rgba(58, 168, 255, 0.04));
+    -fx-background-insets: 0, 1 0 0 0;
+    -fx-background-radius: 10 10 0 0;
+}
+.podium-1 { -fx-background-color: rgba(255, 255, 255, 0.08), linear-gradient(to bottom, rgba(255, 196, 70, 0.40), rgba(255, 196, 70, 0.04)); }
+.podium-2 { -fx-background-color: rgba(255, 255, 255, 0.08), linear-gradient(to bottom, rgba(200, 210, 230, 0.32), rgba(200, 210, 230, 0.04)); }
+.podium-3 { -fx-background-color: rgba(255, 255, 255, 0.08), linear-gradient(to bottom, rgba(205, 127, 50, 0.36), rgba(205, 127, 50, 0.04)); }
+.podium-number { -fx-font-family: "Exo 2"; -fx-font-size: 30px; -fx-font-weight: 800; -fx-text-fill: rgba(255, 255, 255, 0.55); }
+.podium-medal  { -fx-font-size: 20px; }
+.leader-rank   { -fx-font-family: "Exo 2"; -fx-font-size: 18px; -fx-font-weight: 800; -fx-text-fill: -nexus-text-dim; }
+.leader-honor  { -fx-font-family: "Exo 2"; -fx-font-size: 15px; -fx-font-weight: 800; -fx-text-fill: -nexus-amber; }
+.mvp-row       { -fx-border-color: rgba(255, 212, 107, 0.55); }
+.event-multiplier {
+    -fx-font-family: "Exo 2"; -fx-font-size: 22px; -fx-font-weight: 800; -fx-text-fill: -nexus-amber;
+    -fx-background-color: rgba(255, 181, 71, 0.1); -fx-background-radius: 10; -fx-padding: 6 12 6 12;
+}
+
+/* ---- Developer tab ---- */
+.dev-badge {
+    -fx-text-fill: #07060E;
+    -fx-background-color: -nexus-gradient;
+    -fx-border-color: rgba(255, 255, 255, 0.4);
+    -fx-font-size: 10px;
+    -fx-padding: 2 8 2 8;
+}
+.banned-row { -fx-border-color: rgba(255, 107, 94, 0.45); }
+.banned-row .person-badge { -fx-text-fill: #FF8A80; -fx-border-color: rgba(255, 107, 94, 0.5); -fx-background-color: rgba(255, 107, 94, 0.12); }

@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * NeonBackdrop – the neon background behind the whole launcher:
- *   - a few big, soft neon glows (cyan, violet, magenta)
+ *   - a few big, soft neon glows (logo blue, violet, deep blue)
  *   - a faint "synthwave" grid floor fading in at the bottom
  *
  * The panels on top are partly see-through ("glass"), so the glow shows through them.
@@ -29,11 +29,11 @@ public class NeonBackdrop extends Pane {
     private record Glow(Circle circle, double fx, double fy, double radiusFraction) {}
 
     private static final Color VIOLET = Color.web("#8B5CFF");
-    private static final Color MAGENTA = Color.web("#FF2BD6");
+    private static final Color DEEP_BLUE = Color.web("#2F6BFF"); // the dark blue at the bottom of the logo
 
     private final Canvas grid = new Canvas();
     private final List<Glow> glows = new ArrayList<>();
-    private Color accent = Color.web("#00E5FF");
+    private Color accent = Color.web("#3AA8FF");
 
     public NeonBackdrop() {
         getStyleClass().add("neon-backdrop");
@@ -42,7 +42,7 @@ public class NeonBackdrop extends Pane {
         // Where each glow lives (fx, fy = position as a fraction of the window) and how big it is.
         addGlow(0.92, 0.05, 0.55, 0.20); // accent colour, top right
         addGlow(0.10, 0.95, 0.60, 0.16); // violet, bottom left
-        addGlow(0.55, 0.55, 0.45, 0.08); // magenta, middle
+        addGlow(0.55, 0.55, 0.45, 0.08); // deep blue, middle
         addGlow(0.30, 0.10, 0.35, 0.10); // accent, top left (small)
         recolour();
 
@@ -77,7 +77,7 @@ public class NeonBackdrop extends Pane {
 
 
     private void recolour() {
-        Color[] colours = {accent, VIOLET, MAGENTA, accent};
+        Color[] colours = {accent, VIOLET, DEEP_BLUE, accent};
         for (int i = 0; i < glows.size(); i++) {
             Circle circle = glows.get(i).circle();
             double strength = (double) circle.getUserData();

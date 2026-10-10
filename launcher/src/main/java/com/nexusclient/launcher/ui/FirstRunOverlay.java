@@ -6,6 +6,7 @@ import com.nexusclient.launcher.settings.SettingsStore;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
+import javafx.animation.ScaleTransition;
 import javafx.animation.SequentialTransition;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Pos;
@@ -92,10 +93,20 @@ public class FirstRunOverlay extends StackPane {
     // ================================================================== 1. welcome
 
     private void showWelcome() {
-        // The logo: each letter of NEXUS rises and fades in, one after another.
+        // The logo: the hexagon grows in, then each letter of NEXUS rises and fades in.
+        NexusLogo logo = new NexusLogo(112, NexusLogo.Style.BLUE, true);
+        logo.setOpacity(0);
+        logo.setScaleX(0.7);
+        logo.setScaleY(0.7);
+        FadeTransition logoFade = new FadeTransition(Duration.millis(420), logo);
+        logoFade.setToValue(1);
+        ScaleTransition logoGrow = new ScaleTransition(Duration.millis(420), logo);
+        logoGrow.setToX(1);
+        logoGrow.setToY(1);
+
         HBox letters = new HBox(4);
         letters.setAlignment(Pos.CENTER);
-        SequentialTransition intro = new SequentialTransition();
+        SequentialTransition intro = new SequentialTransition(new ParallelTransition(logoFade, logoGrow));
         for (char c : "NEXUS".toCharArray()) {
             Label letter = new Label(String.valueOf(c));
             letter.getStyleClass().add("welcome-letter");
@@ -126,12 +137,16 @@ public class FirstRunOverlay extends StackPane {
         showRest.setToValue(1);
         intro.getChildren().addAll(new PauseTransition(Duration.millis(150)), showRest);
 
-        VBox welcome = new VBox(10, letters, after);
+        VBox welcome = new VBox(10, logo, letters, after);
+        VBox.setMargin(logo, new javafx.geometry.Insets(0, 0, 8, 0));
         welcome.setAlignment(Pos.CENTER);
         setCard(welcome);
         if (Animations.enabled) {
             intro.play();
         } else {
+            logo.setOpacity(1);
+            logo.setScaleX(1);
+            logo.setScaleY(1);
             letters.getChildren().forEach(node -> { node.setOpacity(1); node.setTranslateY(0); });
             after.setOpacity(1);
         }

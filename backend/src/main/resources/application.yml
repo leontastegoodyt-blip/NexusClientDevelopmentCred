@@ -16,5 +16,8 @@ spring:
 nexus:
   dev-auth: false           # the test sign-in without Mojang – never on the real server
   session-days: 30
-  admins: []                # the owner's Minecraft UUID goes here
+  # The Nexus owner (LeonTasteyy) – the ONLY account with developer powers. Minecraft UUIDs are public,
+  # so it's fine for this to be in the repository.
+  developers: [56b68d75-b97f-4ee9-821f-879c1d427ebd]
+  admins: []
   moderators: []

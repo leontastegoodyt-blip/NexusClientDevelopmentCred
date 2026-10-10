@@ -57,6 +57,7 @@ public final class NexusOnline {
     private volatile String token;
     private volatile String myUuid;
     private volatile String myName;
+    private volatile String role = "PLAYER";
     private volatile WebSocket socket;
     private volatile State state = State.SIGNED_OUT;
 
@@ -77,6 +78,10 @@ public final class NexusOnline {
     public State state() { return state; }
     public String myUuid() { return myUuid; }
     public String myName() { return myName; }
+    /** True when the signed-in account is the Nexus developer (the owner). */
+    public boolean isDeveloper() { return "DEVELOPER".equals(role); }
+    /** True for moderators, admins and the developer. */
+    public boolean isStaff() { return !"PLAYER".equals(role); }
     public boolean signedIn() { return token != null; }
 
     /** Hears every live event (called on the UI thread). */
@@ -97,6 +102,7 @@ public final class NexusOnline {
         }
         setState(State.CONNECTING);
         try {
+            LocalServer.ensureRunning(base); // starts the Nexus server on this PC if needed (until it's hosted online)
             AccountManager.SavedAccount active = accounts.getActive();
             JsonObject signedIn;
             if (active != null) {
@@ -113,6 +119,9 @@ public final class NexusOnline {
             token = signedIn.get("token").getAsString();
             myUuid = signedIn.get("uuid").getAsString();
             myName = signedIn.get("name").getAsString();
+            // Our role on the Nexus server (PLAYER, MODERATOR, ADMIN or DEVELOPER). The server checks it
+            // again for every admin action – this copy is only used to show or hide the Developer tab.
+            role = get("/api/me").getAsJsonObject().get("role").getAsString();
             connectLive();
         } catch (IOException | InterruptedException | RuntimeException e) {
             setState(State.OFFLINE);
@@ -253,6 +262,7 @@ public final class NexusOnline {
         JsonElement json = response.body().isBlank() ? new JsonObject() : JsonParser.parseString(response.body());
         if (response.statusCode() == 401 && token != null) {
             token = null; // signed out (expired or banned) – sign in again next time
+            role = "PLAYER";
             setState(State.SIGNED_OUT);
         }
         if (response.statusCode() >= 400) {

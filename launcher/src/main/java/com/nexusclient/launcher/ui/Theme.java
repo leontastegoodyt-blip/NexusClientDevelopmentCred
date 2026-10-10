@@ -31,7 +31,7 @@ public final class Theme {
     private static final String BASE = "/com/nexusclient/launcher/";
 
     /** The neon cyan used when the player hasn't picked their own accent colour. */
-    private static final String DEFAULT_ACCENT = "#00E5FF";
+    private static final String DEFAULT_ACCENT = "#3AA8FF";
 
     private static Scene scene;
     private static Region backgroundLayer;

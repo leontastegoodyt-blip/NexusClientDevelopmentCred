@@ -37,15 +37,12 @@ public class ServersPage extends VBox {
 
         Label title = new Label(Page.SERVERS.title());
         title.getStyleClass().add("page-title");
-        Label description = new Label(Page.SERVERS.description());
-        description.getStyleClass().add("page-description");
-        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
         Button refresh = new Button("Refresh");
         refresh.getStyleClass().add("secondary-button");
         refresh.setOnAction(event -> showTab(currentTab));
         javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox header = new HBox(new VBox(4, title, description), spacer, refresh);
+        HBox header = new HBox(PageHeader.block(Page.SERVERS, title), spacer, refresh);
         header.setAlignment(Pos.CENTER_LEFT);
 
         tabs = new TabStrip(Page.SERVERS.tabs(), this::showTab);

@@ -76,14 +76,11 @@ public class ModsPage extends VBox {
 
         Label title = new Label(Page.MODS.title());
         title.getStyleClass().add("page-title");
-        Label description = new Label(Page.MODS.description());
-        description.getStyleClass().add("page-description");
-        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
         target.getStyleClass().add("step-pill");
         target.setMinWidth(Region.USE_PREF_SIZE); // always show the whole "For: …" label
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox header = new HBox(new VBox(4, title, description), spacer, target);
+        HBox header = new HBox(PageHeader.block(Page.MODS, title), spacer, target);
         header.setAlignment(Pos.CENTER_LEFT);
 
         tabs = new TabStrip(Page.MODS.tabs(), this::showTab);

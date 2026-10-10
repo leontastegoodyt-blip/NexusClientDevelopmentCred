@@ -92,7 +92,9 @@ public class AuthService {
         }
         player.setName(name); // players can change their Minecraft name
         player.seenNow();
-        if (properties.admins().contains(uuid)) {
+        if (properties.developers().contains(uuid)) {
+            player.setRole(Player.Role.DEVELOPER); // the Nexus owner
+        } else if (properties.admins().contains(uuid)) {
             player.setRole(Player.Role.ADMIN);
         } else if (properties.moderators().contains(uuid)) {
             player.setRole(Player.Role.MODERATOR);

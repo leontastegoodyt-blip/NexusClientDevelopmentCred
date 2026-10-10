@@ -43,7 +43,7 @@ public class FabricPlatform implements Platform {
     public void showNotice(String message) {
         // "[Nexus] message" in chat, only on this player's screen (never sent to the server).
         mc.gui.getChat().addMessage(Component.literal("[Nexus] ")
-                .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x00E5FF)))
+                .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x3AA8FF)))
                 .append(Component.literal(message).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xC8C8D8)))));
     }
 }

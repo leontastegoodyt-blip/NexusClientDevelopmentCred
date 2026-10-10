@@ -14,6 +14,7 @@ import com.nexusclient.launcher.instance.Instance;
 import com.nexusclient.launcher.instance.InstanceStore;
 import com.nexusclient.launcher.minecraft.MinecraftVersion;
 import com.nexusclient.launcher.mods.ModManager;
+import com.nexusclient.launcher.online.NexusOnline;
 import com.nexusclient.launcher.settings.SettingsStore;
 import com.nexusclient.launcher.torcherrig.TorcherRig;
 import javafx.beans.binding.Bindings;
@@ -99,6 +100,13 @@ public class HomePage extends BorderPane {
 
     private Instance selected;
 
+    // The Friends/Party column and the Friends stat tile (filled from the Nexus online server).
+    private final Label friendsCount = new Label("");
+    private final VBox friendsList = new VBox();
+    private final VBox partyList = new VBox();
+    private com.google.gson.JsonObject friendsOverview;
+    private Label friendsOnlineLabel;
+
     /** The game launch in progress (downloading or playing), or null if none. */
     private GameLaunchTask runningLaunch;
 
@@ -161,26 +169,55 @@ public class HomePage extends BorderPane {
 
     // ------------------------------------------------------------------ main column
 
-    /** The welcome banner, with a row of stats along its bottom. */
+    /** The welcome banner: a greeting, live status chips, and four stat tiles that flip over. */
     private VBox buildBanner(InstancePanel instancePanel) {
-        Label eyebrow = new Label("NEXUS CLIENT  ·  DEV BUILD 0.1.0");
+        Label eyebrow = new Label();
         eyebrow.getStyleClass().add("banner-eyebrow");
-        Label title = new Label("Welcome back");
+        eyebrow.textProperty().bind(Bindings.createStringBinding(() -> (accounts.getActive() == null
+                ? "WELCOME TO NEXUS" : "WELCOME BACK") + "  ·  DEV BUILD 0.1.0", accounts.activeProperty()));
+        Label title = new Label();
         title.getStyleClass().add("banner-title");
-        Label text = new Label("Pick an instance on the left, choose its version below, and hit Launch.");
-        text.getStyleClass().add("banner-text");
-        text.setWrapText(true); // wrap onto a second line instead of being cut off next to the neon block
+        title.textProperty().bind(Bindings.createStringBinding(() -> {
+            AccountManager.SavedAccount active = accounts.getActive();
+            return active == null ? "Ready to play" : active.username();
+        }, accounts.activeProperty()));
+        title.setMinWidth(0);
 
-        // Stats. "bind" means the number updates by itself whenever the value changes.
-        HBox stats = new HBox(20,
-                stat(Icons.SERVERS, "INSTANCES", Bindings.size(instancePanel.getInstances()).asString()),
-                stat(Icons.VERSION, "LATEST MINECRAFT", instancePanel.latestVersionProperty()),
-                stat(Icons.PLAY, "PLAYTIME", playtimeText),
-                stat(Icons.FRIENDS, "FRIENDS ONLINE", null)); // friends arrive in build step 13
+        // Live status chips: is the Nexus online server up, and is the Nexus mod ready?
+        Label serverChip = new Label("Nexus servers", dot("status-dot-wait"));
+        serverChip.getStyleClass().add("status-chip");
+        NexusOnline.get().addStateListener(state -> serverChip.setGraphic(dot(switch (state) {
+            case ONLINE -> "status-dot-on";
+            case CONNECTING -> "status-dot-wait";
+            default -> "status-dot-off";
+        })));
+        Label modChip = new Label("Nexus mod ready",
+                Icons.create(Icons.BOLT, 11));
+        modChip.getStyleClass().add("status-chip");
+        HBox chips = new HBox(8, serverChip, modChip);
+
+        // Four stats. Click one to flip it over and see the details behind the number.
+        FlipTile instancesTile = new FlipTile(Icons.SERVERS, "INSTANCES", () -> instancePanel.getInstances().stream()
+                .limit(5).map(i -> i.name() + "  ·  " + (i.hasVersion() ? i.version() : "no version")).toList());
+        FlipTile versionTile = new FlipTile(Icons.VERSION, "LATEST", () -> List.of(
+                "Newest Minecraft: " + instancePanel.latestVersionProperty().get(),
+                "Nexus mod on: " + ModManager.nexusModVersionsText()));
+        FlipTile playtimeTile = new FlipTile(Icons.PLAY, "PLAYTIME", this::playtimeDetails);
+        FlipTile friendsTile = new FlipTile(Icons.FRIENDS, "FRIENDS ONLINE", this::friendDetails);
+
+        // The numbers count up from 0 when Nexus opens, then follow the real values.
+        Animations.countUp(instancesTile.value(), instancePanel.getInstances().size(), "");
+        instancePanel.getInstances().addListener((ListChangeListener<Instance>) change ->
+                instancesTile.value().setText(String.valueOf(instancePanel.getInstances().size())));
+        versionTile.value().textProperty().bind(instancePanel.latestVersionProperty());
+        playtimeTile.value().textProperty().bind(playtimeText);
+        friendsOnlineLabel = friendsTile.value();
+
+        HBox stats = new HBox(12, instancesTile, versionTile, playtimeTile, friendsTile);
         stats.getStyleClass().add("banner-stats");
 
         // The words on the left, the floating neon block on the right.
-        VBox words = new VBox(6, eyebrow, title, text);
+        VBox words = new VBox(8, eyebrow, title, chips);
         HBox.setHgrow(words, Priority.ALWAYS);
         NeonCube cube = new NeonCube();
         HBox top = new HBox(words, cube);
@@ -197,25 +234,44 @@ public class HomePage extends BorderPane {
         return banner;
     }
 
-    /**
-     * One stat: a small glowing icon, then a caption above a bigger value.
-     * If there's no value yet (null), it shows a dash.
-     */
-    private HBox stat(String icon, String caption, ObservableValue<String> value) {
-        StackPane iconBox = new StackPane(Icons.create(icon, 18));
-        iconBox.getStyleClass().add("stat-icon");
-        Label captionLabel = new Label(caption);
-        captionLabel.getStyleClass().add("stat-caption");
-        captionLabel.setMinWidth(Region.USE_PREF_SIZE); // never shorten "LATEST MINECRAFT" to "LATEST MI…"
-        Label valueLabel = new Label("—");
-        valueLabel.getStyleClass().add("stat-value");
-        if (value != null) {
-            valueLabel.textProperty().bind(value);
+    /** A small coloured dot (green = online, amber = connecting, grey = offline). */
+    private static Region dot(String style) {
+        Region dot = new Region();
+        dot.getStyleClass().addAll("status-dot", style);
+        return dot;
+    }
+
+    /** The back of the Playtime tile: total, the most-played instances, and sessions. */
+    private List<String> playtimeDetails() {
+        Playtime.Data data = Playtime.load();
+        List<String> lines = new ArrayList<>();
+        lines.add("Total: " + Playtime.format(Playtime.totalSeconds()) + "  ·  " + data.recentSessions.size() + " sessions");
+        data.secondsByInstance.entrySet().stream()
+                .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
+                .limit(3)
+                .forEach(entry -> lines.add(instanceName(entry.getKey()) + ": " + Playtime.format(entry.getValue())));
+        return lines;
+    }
+
+    private String instanceName(String id) {
+        return instancePanel.getInstances().stream().filter(i -> i.id().equals(id)).map(Instance::name)
+                .findFirst().orElse("Deleted instance");
+    }
+
+    /** The back of the Friends tile: who's online and where. */
+    private List<String> friendDetails() {
+        if (friendsOverview == null) {
+            return List.of(NexusOnline.get().state() == NexusOnline.State.ONLINE ? "Loading…" : "Not connected to Nexus yet");
         }
-        HBox stat = new HBox(10, iconBox, new VBox(0, captionLabel, valueLabel));
-        stat.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(stat, Priority.ALWAYS); // the four stats share the width equally
-        return stat;
+        List<String> lines = new ArrayList<>();
+        for (var element : friendsOverview.getAsJsonArray("friends")) {
+            var friend = element.getAsJsonObject();
+            if (friend.get("online").getAsBoolean()) {
+                String server = friend.has("server") && !friend.get("server").isJsonNull() ? friend.get("server").getAsString() : "";
+                lines.add("● " + friend.get("name").getAsString() + (server.isEmpty() ? "" : "  ·  " + server));
+            }
+        }
+        return lines.isEmpty() ? List.of("Nobody's online right now") : lines;
     }
 
     /** "Latest news" heading and a row of cards. */
@@ -292,24 +348,119 @@ public class HomePage extends BorderPane {
 
     // ------------------------------------------------------------------ social column
 
-    /** The column on the right: friends list and party. */
+    /** The column on the right: live friends list and party (from the Nexus online server). */
     private VBox buildSocialColumn() {
-        VBox friends = socialCard("FRIENDS", "0 online", Icons.FRIENDS,
-                "Sign in to see your friends",
-                "See who's online and which server they're on. Arrives in build step 13.");
+        friendsCount.getStyleClass().add("social-count");
+        VBox friends = socialCard("FRIENDS", friendsCount, friendsList);
         VBox.setVgrow(friends, Priority.ALWAYS); // friends take the spare height
-
-        VBox party = socialCard("PARTY", null, Icons.CLANS,
-                "You're not in a party",
-                "Invite friends and join servers together.");
+        VBox party = socialCard("PARTY", null, partyList);
+        showSocialMessage(friendsList, Icons.FRIENDS, "Connecting…");
+        showSocialMessage(partyList, Icons.CLANS, "Not in a party");
 
         VBox column = new VBox(16, friends, party);
         column.getStyleClass().add("social-column");
+
+        // Sign in to Nexus in the background, then keep the lists fresh from live events.
+        NexusOnline online = NexusOnline.get();
+        online.addListener(event -> {
+            String type = event.get("type").getAsString();
+            if (type.startsWith("friend.") || type.startsWith("party.")) {
+                refreshSocial();
+            }
+        });
+        Background.run("home-social", () -> {
+            online.signIn(accounts);
+            return true;
+        }, ok -> refreshSocial(), error -> showSocialMessage(friendsList, Icons.FRIENDS,
+                accounts.getActive() == null ? "Sign in to see friends" : "Nexus servers offline"));
+        accounts.activeProperty().addListener((o, a, b) -> Background.run("home-social", () -> {
+            online.signIn(accounts);
+            return true;
+        }, ok -> refreshSocial(), error -> { }));
         return column;
     }
 
-    /** A card with a small heading and an "empty" message in the middle. */
-    private VBox socialCard(String title, String count, String icon, String message, String hint) {
+    /** Reloads friends and party from the Nexus server. */
+    private void refreshSocial() {
+        NexusOnline online = NexusOnline.get();
+        Background.run("home-social", () -> new com.google.gson.JsonElement[] {online.get("/api/friends"), online.get("/api/party")},
+                result -> {
+                    friendsOverview = result[0].getAsJsonObject();
+                    var p = result[1].getAsJsonObject().get("party");
+                    showFriends();
+                    showParty(p == null || p.isJsonNull() ? null : p.getAsJsonObject());
+                }, error -> { });
+    }
+
+    /** Online friends first, each with their head, name, and the server they're on. */
+    private void showFriends() {
+        List<com.google.gson.JsonObject> list = new ArrayList<>();
+        friendsOverview.getAsJsonArray("friends").forEach(e -> list.add(e.getAsJsonObject()));
+        list.sort((a, b) -> Boolean.compare(b.get("online").getAsBoolean(), a.get("online").getAsBoolean()));
+        long onlineCount = list.stream().filter(f -> f.get("online").getAsBoolean()).count();
+        friendsCount.setText(onlineCount + " online");
+        if (friendsOnlineLabel != null) {
+            Animations.countUp(friendsOnlineLabel, onlineCount, "");
+        }
+        if (list.isEmpty()) {
+            showSocialMessage(friendsList, Icons.FRIENDS, "No friends yet");
+            return;
+        }
+        friendsList.getChildren().clear();
+        for (var friend : list.subList(0, Math.min(8, list.size()))) {
+            boolean isOnline = friend.get("online").getAsBoolean();
+            String server = friend.has("server") && !friend.get("server").isJsonNull() ? friend.get("server").getAsString() : "";
+            friendsList.getChildren().add(personRow(friend.get("uuid").getAsString(), friend.get("name").getAsString(),
+                    isOnline ? (server.isEmpty() ? "Online" : server) : "Offline", isOnline));
+        }
+        Animations.flipInCards(friendsList);
+    }
+
+    private void showParty(com.google.gson.JsonObject party) {
+        if (party == null) {
+            showSocialMessage(partyList, Icons.CLANS, "Not in a party");
+            return;
+        }
+        partyList.getChildren().clear();
+        String leader = party.get("leader").getAsString();
+        for (var element : party.getAsJsonArray("members")) {
+            var member = element.getAsJsonObject();
+            String uuid = member.get("uuid").getAsString();
+            partyList.getChildren().add(personRow(uuid, member.get("name").getAsString(),
+                    uuid.equals(leader) ? "Leader" : "Member", member.get("online").getAsBoolean()));
+        }
+    }
+
+    /** One person: skin head with a status dot, name, and a quieter line under it. */
+    private static HBox personRow(String uuid, String name, String detail, boolean isOnline) {
+        StackPane head = SkinHeads.forUuid(uuid, 28);
+        Region statusDot = dot(isOnline ? "status-dot-on" : "status-dot-off");
+        StackPane.setAlignment(statusDot, Pos.BOTTOM_RIGHT);
+        StackPane headWithDot = new StackPane(head, statusDot);
+        Label nameLabel = new Label(name);
+        nameLabel.getStyleClass().add("person-name");
+        Label detailLabel = new Label(detail);
+        detailLabel.getStyleClass().add(isOnline ? "person-detail-online" : "person-detail");
+        HBox row = new HBox(10, headWithDot, new VBox(0, nameLabel, detailLabel));
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.getStyleClass().addAll("person-row", "flip-in");
+        return row;
+    }
+
+    /** A short message with an icon, for an empty list. */
+    private static void showSocialMessage(VBox list, String icon, String message) {
+        Node iconNode = Icons.create(icon, 26);
+        iconNode.getStyleClass().add("empty-icon");
+        Label label = new Label(message);
+        label.getStyleClass().add("empty-title");
+        VBox empty = new VBox(8, iconNode, label);
+        empty.setAlignment(Pos.CENTER);
+        empty.setPadding(new Insets(18, 0, 18, 0));
+        list.getChildren().setAll(empty);
+    }
+
+    /** A card with a small heading (and optional count on the right) above a list. */
+    private static VBox socialCard(String title, Label count, VBox list) {
         Label titleLabel = new Label(title);
         titleLabel.getStyleClass().add("panel-title");
         HBox header = new HBox(8, titleLabel);
@@ -317,24 +468,15 @@ public class HomePage extends BorderPane {
         if (count != null) {
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
-            Label countLabel = new Label(count);
-            countLabel.getStyleClass().add("social-count");
-            header.getChildren().addAll(spacer, countLabel);
+            header.getChildren().addAll(spacer, count);
         }
-
-        Node iconNode = Icons.create(icon, 30);
-        iconNode.getStyleClass().add("empty-icon");
-        Label messageLabel = new Label(message);
-        messageLabel.getStyleClass().add("empty-title");
-        Label hintLabel = new Label(hint);
-        hintLabel.getStyleClass().add("empty-text");
-        hintLabel.setWrapText(true);
-
-        VBox empty = new VBox(8, iconNode, messageLabel, hintLabel);
-        empty.setAlignment(Pos.CENTER);
-        VBox.setVgrow(empty, Priority.ALWAYS);
-
-        VBox card = new VBox(12, header, empty);
+        ScrollPane scroll = new ScrollPane(list);
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.getStyleClass().add("page-scroll");
+        VBox.setVgrow(scroll, Priority.ALWAYS);
+        list.setSpacing(6);
+        VBox card = new VBox(12, header, scroll);
         card.getStyleClass().add("social-card");
         return card;
     }
@@ -407,7 +549,9 @@ public class HomePage extends BorderPane {
                 () -> !launchButton.isDisabled() && !launchButton.getStyleClass().contains("stop-mode"),
                 launchButton.disabledProperty(), launchButton.getStyleClass()));
         Animations.breathe(glow, 0.25, 0.7, Duration.seconds(1.8));
-        return new StackPane(glow, launchButton);
+        StackPane holder = new StackPane(glow, launchButton);
+        Animations.shine(holder, launchButton, 14); // a light streak sweeps across LAUNCH now and then
+        return holder;
     }
 
     /** A small rounded label with an icon, used for instance details. */

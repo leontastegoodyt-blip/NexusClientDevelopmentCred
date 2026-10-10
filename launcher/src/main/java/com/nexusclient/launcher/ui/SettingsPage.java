@@ -57,10 +57,7 @@ public class SettingsPage extends VBox {
 
         Label title = new Label(Page.SETTINGS.title());
         title.getStyleClass().add("page-title");
-        Label description = new Label(Page.SETTINGS.description());
-        description.getStyleClass().add("page-description");
-        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
-        HBox header = new HBox(new VBox(4, title, description));
+        HBox header = new HBox(PageHeader.block(Page.SETTINGS, title));
         header.setAlignment(Pos.CENTER_LEFT);
 
         tabs = new TabStrip(Page.SETTINGS.tabs(), this::showTab);
@@ -233,20 +230,20 @@ public class SettingsPage extends VBox {
     private Node appearance() {
         Settings settings = SettingsStore.get();
 
-        ColorPicker accent = new ColorPicker(Color.web(settings.accentColor != null ? settings.accentColor : "#00E5FF"));
+        ColorPicker accent = new ColorPicker(Color.web(settings.accentColor != null ? settings.accentColor : "#3AA8FF"));
         accent.getStyleClass().add("form-combo");
         accent.setOnAction(event -> {
             settings.accentColor = toHex(accent.getValue());
             SettingsStore.save();
             Theme.apply();
         });
-        Button resetAccent = new Button("Reset to Nexus cyan");
+        Button resetAccent = new Button("Reset to Nexus blue");
         resetAccent.getStyleClass().add("secondary-button");
         resetAccent.setOnAction(event -> {
             settings.accentColor = null;
             SettingsStore.save();
             Theme.apply();
-            accent.setValue(Color.web("#00E5FF"));
+            accent.setValue(Color.web("#3AA8FF"));
         });
 
         Button chooseBackground = new Button("Choose a picture…");

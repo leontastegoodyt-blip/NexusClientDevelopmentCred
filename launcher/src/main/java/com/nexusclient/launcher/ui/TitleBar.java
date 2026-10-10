@@ -41,13 +41,15 @@ public class TitleBar extends HBox {
         this.stage = stage;
         getStyleClass().add("title-bar");
 
-        // --- Left side: the logo. This whole stretch is the part you can drag. ---
+        // --- Left side: the logo (hexagon icon + NEXUS CLIENT). This whole stretch is the part you can drag. ---
         Label logo = new Label("NEXUS");
         logo.getStyleClass().add("title-logo");
         Label client = new Label("CLIENT");
         client.getStyleClass().add("title-client");
 
-        HBox dragArea = new HBox(6, logo, client);
+        NexusLogo icon = new NexusLogo(28, NexusLogo.Style.BLUE, false);
+        HBox.setMargin(icon, new Insets(0, 4, 0, 0));
+        HBox dragArea = new HBox(6, icon, logo, client);
         dragArea.getStyleClass().add("title-drag-area");
         HBox.setHgrow(dragArea, Priority.ALWAYS); // stretch to fill all the free space
         enableDragging(dragArea);

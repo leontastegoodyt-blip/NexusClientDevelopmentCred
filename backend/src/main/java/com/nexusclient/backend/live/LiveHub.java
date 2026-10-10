@@ -49,6 +49,11 @@ public class LiveHub extends TextWebSocketHandler {
         return set != null && !set.isEmpty();
     }
 
+    /** How many players have the launcher open right now. */
+    public int onlineCount() {
+        return connections.size();
+    }
+
     /** The server they're on ("" if none or offline). */
     public String serverOf(UUID player) {
         return isOnline(player) ? servers.getOrDefault(player, "") : "";

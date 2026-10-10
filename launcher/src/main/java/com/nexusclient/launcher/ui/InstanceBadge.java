@@ -12,7 +12,7 @@ import javafx.scene.control.Label;
 public final class InstanceBadge {
 
     /** The accent colours badges can have: cyan, magenta, violet, amber, mint. */
-    private static final String[] ACCENTS = {"#00E5FF", "#FF2BD6", "#8B7BFF", "#FFB547", "#3DE0A0"};
+    private static final String[] ACCENTS = {"#3AA8FF", "#FF2BD6", "#8B7BFF", "#FFB547", "#3DE0A0"};
 
     private InstanceBadge() {}
 

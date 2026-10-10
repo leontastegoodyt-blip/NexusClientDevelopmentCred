@@ -61,7 +61,7 @@ public class Settings {
 
     // ---------------- Appearance (build step 7)
 
-    /** The main neon colour, e.g. "#00E5FF". Null = the default cyan. */
+    /** The main neon colour, e.g. "#3AA8FF". Null = the default logo blue. */
     public String accentColor = null;
 
     /** A picture shown faintly behind the pages (copied into the Nexus folder). Null = none. */

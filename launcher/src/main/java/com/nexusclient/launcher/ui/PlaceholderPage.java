@@ -33,16 +33,13 @@ public class PlaceholderPage extends VBox {
         // --- Header: title + description on the left, "coming in step X" on the right ---
         Label title = new Label(page.title());
         title.getStyleClass().add("page-title");
-        Label description = new Label(page.description());
-        description.getStyleClass().add("page-description");
-        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         Label step = new Label("Coming in build step " + page.buildStep());
         step.getStyleClass().add("step-pill");
 
-        HBox header = new HBox(new VBox(4, title, description), spacer, step);
+        HBox header = new HBox(PageHeader.block(page, title), spacer, step);
         header.setAlignment(Pos.CENTER_LEFT);
 
         // --- Sub-tabs, and the area underneath that changes with them ---

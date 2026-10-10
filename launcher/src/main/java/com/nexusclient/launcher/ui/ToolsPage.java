@@ -65,9 +65,6 @@ public class ToolsPage extends VBox {
 
         Label title = new Label(Page.TOOLS.title());
         title.getStyleClass().add("page-title");
-        Label description = new Label(Page.TOOLS.description());
-        description.getStyleClass().add("page-description");
-        description.setWrapText(true); // wrap onto more lines in a narrow window instead of being cut off
 
         tabs = new TabStrip(Page.TOOLS.tabs(), this::showTab);
         ScrollPane scroll = new ScrollPane(body);
@@ -76,7 +73,7 @@ public class ToolsPage extends VBox {
         scroll.getStyleClass().add("page-scroll");
         VBox.setVgrow(scroll, Priority.ALWAYS);
 
-        getChildren().addAll(new VBox(4, title, description), tabs, scroll);
+        getChildren().addAll(PageHeader.block(Page.TOOLS, title), tabs, scroll);
         // Tabs that depend on the selected instance refresh when it changes.
         panel.selectedInstanceProperty().addListener((observable, was, now) -> {
             if (currentTab.equals("World Backups") || currentTab.equals("Safe Mode")) {
