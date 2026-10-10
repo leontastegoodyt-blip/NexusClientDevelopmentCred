@@ -75,7 +75,8 @@ public abstract class Module {
 
     /** Switched on, allowed by the server, and working in this version of the mod. */
     public boolean isActive() {
-        return enabled && !blockedByServer && supported;
+        return enabled && !blockedByServer && supported
+                && (category != Category.DEVELOPER || com.nexusclient.core.online.DeveloperMode.active());
     }
 
     public boolean isFavourite() { return favourite; }

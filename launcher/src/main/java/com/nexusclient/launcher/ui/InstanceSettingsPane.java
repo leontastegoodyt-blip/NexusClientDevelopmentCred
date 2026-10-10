@@ -89,8 +89,7 @@ public class InstanceSettingsPane extends VBox {
         });
         loaderBox.getStyleClass().add("form-combo");
         loaderBox.setMaxWidth(Double.MAX_VALUE);
-        Label loaderNote = new Label("Fabric loads Fabric mods (added in the Mods tab). Minecraft 1.8.9 uses "
-                + "Legacy Fabric. Forge support is coming soon.");
+        Label loaderNote = new Label("Fabric runs mods from the Mods tab. Forge: coming soon.");
         loaderNote.getStyleClass().add("preview-note");
         loaderNote.setWrapText(true);
 
@@ -118,7 +117,7 @@ public class InstanceSettingsPane extends VBox {
 
         // --- Java options (advanced) ---
         jvmArgsField.setText(instance.jvmArgs() == null ? "" : instance.jvmArgs());
-        jvmArgsField.setPromptText("e.g. -XX:+UseZGC   (leave empty unless you know what these do)");
+        jvmArgsField.setPromptText("Optional, e.g. -XX:+UseZGC");
 
         GridPane form = new GridPane();
         form.setHgap(14);

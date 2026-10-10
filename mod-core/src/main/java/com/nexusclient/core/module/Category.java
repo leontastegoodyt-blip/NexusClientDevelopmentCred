@@ -6,7 +6,9 @@ public enum Category {
     PVP("PvP"),
     VISUAL("Visual"),
     CHAT("Chat"),
-    UTILITY("Utility");
+    UTILITY("Utility"),
+    // Only shown to the Nexus developer (online/DeveloperMode).
+    DEVELOPER("Developer");
 
     private final String label;
 

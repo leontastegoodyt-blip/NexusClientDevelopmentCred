@@ -104,11 +104,27 @@ public class ModMenu implements NexusScreen {
         r.disableClip();
     }
 
+    /**
+     * Space between sidebar entries: 21 pixels normally, less when the game window is small, so the
+     * last category (e.g. Developer) never ends up under the "Share codes" button.
+     */
+    private int sidebarStep() {
+        int room = (py + ph - 8 - 38 - 4) - (py + 32);
+        return Math.max(13, Math.min(21, room / Math.max(1, sidebarEntries().size())));
+    }
+
+    private int rowHeight() {
+        return sidebarStep() - 3;
+    }
+
     private List<String> sidebarEntries() {
         List<String> entries = new ArrayList<String>();
         entries.add(ALL);
         entries.add(FAVOURITES);
         for (Category c : Category.values()) {
+            if (c == Category.DEVELOPER && !com.nexusclient.core.online.DeveloperMode.active()) {
+                continue; // only the Nexus developer sees the Developer tools
+            }
             entries.add(c.label());
         }
         return entries;
@@ -119,13 +135,13 @@ public class ModMenu implements NexusScreen {
         int y = py + 32;
         for (String entry : sidebarEntries()) {
             boolean active = view == View.GRID && entry.equals(category);
-            boolean hover = UiKit.inside(mouseX, mouseY, x, y, x + 88, y + 18);
+            boolean hover = UiKit.inside(mouseX, mouseY, x, y, x + 88, y + rowHeight());
             if (active || hover) {
-                UiKit.box(r, x, y, x + 88, y + 18, active ? UiKit.accent(0x20) : UiKit.PANEL_3,
+                UiKit.box(r, x, y, x + 88, y + rowHeight(), active ? UiKit.accent(0x20) : UiKit.PANEL_3,
                         active ? UiKit.accent(0xB0) : UiKit.BORDER);
             }
-            r.text(entry, x + 8, y + 5, active ? UiKit.TEXT : UiKit.TEXT_DIM, false);
-            y += 21;
+            r.text(entry, x + 8, y + (rowHeight() - 8) / 2, active ? UiKit.TEXT : UiKit.TEXT_DIM, false);
+            y += sidebarStep();
         }
         int bottom = py + ph - 8;
         UiKit.button(r, "Share codes", x, bottom - 38, x + 88, bottom - 21,
@@ -139,6 +155,9 @@ public class ModMenu implements NexusScreen {
         List<Module> list = new ArrayList<Module>();
         String query = search.toLowerCase(Locale.ROOT).trim();
         for (Module module : NexusCore.get().modules()) {
+            if (module.category() == Category.DEVELOPER && !com.nexusclient.core.online.DeveloperMode.active()) {
+                continue;
+            }
             boolean inCategory = category.equals(ALL)
                     || (category.equals(FAVOURITES) && module.isFavourite())
                     || module.category().label().equals(category);
@@ -287,13 +306,13 @@ public class ModMenu implements NexusScreen {
         int x = px + 8;
         int y = py + 32;
         for (String entry : sidebarEntries()) {
-            if (UiKit.inside(mx, my, x, y, x + 88, y + 18)) {
+            if (UiKit.inside(mx, my, x, y, x + 88, y + rowHeight())) {
                 category = entry;
                 view = View.GRID;
                 scroll = 0;
                 return true;
             }
-            y += 21;
+            y += sidebarStep();
         }
         int bottom = py + ph - 8;
         if (UiKit.inside(mx, my, x, bottom - 38, x + 88, bottom - 21)) {

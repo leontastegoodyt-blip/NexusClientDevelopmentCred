@@ -8,6 +8,7 @@ import com.nexusclient.core.hud.FrameTimes;
 import com.nexusclient.core.hud.HudModule;
 import com.nexusclient.core.hud.InputTracker;
 import com.nexusclient.core.hud.HudMods;
+import com.nexusclient.core.module.DevTools;
 import com.nexusclient.core.module.Module;
 import com.nexusclient.core.module.Mods;
 import com.nexusclient.core.module.NexusSettings;
@@ -75,6 +76,14 @@ public final class NexusCore {
         for (Module module : Mods.all()) {
             register(module);
         }
+        // The developer's tools (hidden and inactive for everyone else – see online/DeveloperMode).
+        for (HudModule module : DevTools.hudModules()) {
+            register(module);
+            hudModules.add(module);
+        }
+        for (Module module : DevTools.modules()) {
+            register(module);
+        }
         register(new NexusSettings());
         serverRules = new ServerRules(modules);
     }
@@ -107,6 +116,7 @@ public final class NexusCore {
                 });
         load();
         loadPartnerRules();
+        com.nexusclient.core.online.DeveloperMode.check(); // are we the Nexus developer? (asks the server)
     }
 
     /**
@@ -381,6 +391,14 @@ public final class NexusCore {
                 for (Setting<?> setting : module.settings()) {
                     if (settings.has(setting.id())) {
                         setting.load(settings.get(setting.id()).getAsString());
+                    }
+                }
+                // Nexus's colours changed from cyan to the logo blue (2026-10-07). Players who never
+                // picked their own menu colour still had the old cyan saved – move them to the new one.
+                if (module instanceof NexusSettings) {
+                    NexusSettings nexus = (NexusSettings) module;
+                    if (nexus.accent.get() == 0xFF00E5FF) {
+                        nexus.accent.set(0xFF3AA8FF);
                     }
                 }
             }

@@ -55,6 +55,11 @@ public final class Badges {
         return player == null ? null : badges.get(player);
     }
 
+    /** How many nearby players the server says have a badge (for the developer debug HUD). */
+    public static int known() {
+        return badges.size();
+    }
+
     /** The text that goes in front of a name for this badge ("" for none). */
     public static String prefix(Badge badge) {
         if (badge == null) {

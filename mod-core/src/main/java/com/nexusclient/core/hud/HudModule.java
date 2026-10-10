@@ -34,7 +34,13 @@ public abstract class HudModule extends Module {
 
     protected HudModule(String id, String name, String description, boolean enabledByDefault,
                         double defaultX, double defaultY) {
-        super(id, name, description, Category.HUD, enabledByDefault, false);
+        this(id, name, description, Category.HUD, enabledByDefault, defaultX, defaultY);
+    }
+
+    /** A HUD module that belongs to another category (e.g. the developer's debug HUD). */
+    protected HudModule(String id, String name, String description, Category category, boolean enabledByDefault,
+                        double defaultX, double defaultY) {
+        super(id, name, description, category, enabledByDefault, false);
         this.x = defaultX;
         this.y = defaultY;
         scale = add(new NumberSetting("scale", "Scale", 1.0, 0.5, 3.0, 0.1, "x"));

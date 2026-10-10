@@ -42,7 +42,8 @@ public final class Toast {
             System.err.println(message);
             return;
         }
-        Label toast = new Label(message);
+        Label toast = new Label(message, Icons.create(isError ? Icons.ERROR_SCAN : Icons.BOLT, 14));
+        toast.setGraphicTextGap(10);
         toast.getStyleClass().addAll("toast", isError ? "toast-error" : "toast-info");
         toast.setWrapText(true);
         toast.setMaxWidth(420);
@@ -51,10 +52,23 @@ public final class Toast {
         StackPane.setMargin(toast, new Insets(0, 28, 44, 0));
         layer.getChildren().add(toast);
 
-        // Fade in, wait, fade out, then remove it.
+        // Flip in from the right, wait, fade out, then remove it.
         toast.setOpacity(0);
-        FadeTransition in = new FadeTransition(Duration.millis(200), toast);
-        in.setToValue(1);
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(200), toast);
+        fadeIn.setToValue(1);
+        javafx.animation.ParallelTransition in = new javafx.animation.ParallelTransition(fadeIn);
+        if (Animations.enabled) {
+            toast.setTranslateX(40);
+            toast.setRotationAxis(javafx.scene.transform.Rotate.Y_AXIS);
+            toast.setRotate(50);
+            javafx.animation.TranslateTransition slide = new javafx.animation.TranslateTransition(Duration.millis(360), toast);
+            slide.setToX(0);
+            slide.setInterpolator(Animations.SPRING);
+            javafx.animation.RotateTransition turn = new javafx.animation.RotateTransition(Duration.millis(360), toast);
+            turn.setToAngle(0);
+            turn.setInterpolator(Animations.SPRING);
+            in.getChildren().addAll(slide, turn);
+        }
         PauseTransition wait = new PauseTransition(Duration.seconds(isError ? 9 : 5));
         FadeTransition out = new FadeTransition(Duration.millis(300), toast);
         out.setToValue(0);

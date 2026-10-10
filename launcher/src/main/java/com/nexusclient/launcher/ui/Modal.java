@@ -60,6 +60,14 @@ public final class Modal {
             FadeTransition fade = new FadeTransition(Duration.millis(160), backdrop);
             fade.setToValue(1);
             fade.play();
+            // The card springs open: starts a little small, overshoots slightly, settles.
+            card.setScaleX(0.9);
+            card.setScaleY(0.9);
+            javafx.animation.ScaleTransition pop = new javafx.animation.ScaleTransition(Duration.millis(320), card);
+            pop.setToX(1);
+            pop.setToY(1);
+            pop.setInterpolator(Animations.SPRING);
+            pop.play();
         }
     }
 

@@ -1424,3 +1424,5 @@
 .radar-ok .radar-icon      { -fx-fill: -nexus-green; -fx-effect: dropshadow(gaussian, rgba(61, 224, 160, 0.7), 10, 0.2, 0, 0); }
 .radar-problem .radar-ring { -fx-stroke: rgba(255, 181, 71, 0.7); }
 .radar-problem .radar-icon { -fx-fill: -nexus-amber; }
+.toast-info .icon  { -fx-fill: -nexus-cyan; }
+.toast-error .icon { -fx-fill: #FF6B5E; }

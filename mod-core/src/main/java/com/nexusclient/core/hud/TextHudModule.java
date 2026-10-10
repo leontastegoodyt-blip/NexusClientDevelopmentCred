@@ -19,6 +19,11 @@ public abstract class TextHudModule extends HudModule {
         super(id, name, description, enabledByDefault, defaultX, defaultY);
     }
 
+    protected TextHudModule(String id, String name, String description, com.nexusclient.core.module.Category category,
+                            boolean enabledByDefault, double defaultX, double defaultY) {
+        super(id, name, description, category, enabledByDefault, defaultX, defaultY);
+    }
+
     /** The lines to show. In preview mode (HUD editor, no world), return example values. */
     protected abstract List<String> lines(GameInfo game, boolean preview);
 
