@@ -99,8 +99,7 @@ public class ServersPage extends VBox {
         switch (tab) {
             case "Nexus Partners" -> {
                 if (store.partners().isEmpty()) {
-                    content.add(note("No Nexus Partner Servers yet. Servers that partner with Nexus are "
-                            + "featured here, and choose which Nexus mods are allowed on them."));
+                    content.add(People.empty(Icons.STAR, "No partners yet", null));
                 }
                 for (ServerStore.Server server : store.partners()) {
                     content.add(card(server));
@@ -120,7 +119,7 @@ public class ServersPage extends VBox {
             case "Favourites" -> {
                 content.add(addServerForm());
                 if (store.favourites().isEmpty()) {
-                    content.add(note("No favourites yet. Press ☆ on any server, or add one above."));
+                    content.add(People.empty(Icons.STAR, "No favourites yet", "Press ☆ on a server."));
                 }
                 store.favourites().forEach(server -> content.add(card(server)));
             }

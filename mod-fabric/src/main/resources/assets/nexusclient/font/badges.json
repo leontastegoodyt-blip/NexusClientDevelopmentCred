@@ -1,0 +1,7 @@
+{
+  "_comment": "Nexus name-tag badges (mod-core online/Badges.java): \\ue000 = Nexus, \\ue001 = Premium, \\ue010 = the DEV tag.",
+  "providers": [
+    { "type": "bitmap", "file": "nexusclient:font/badges.png", "height": 8, "ascent": 7, "chars": [""] },
+    { "type": "bitmap", "file": "nexusclient:font/devtag.png", "height": 8, "ascent": 7, "chars": [""] }
+  ]
+}

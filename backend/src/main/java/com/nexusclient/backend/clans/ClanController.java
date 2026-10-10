@@ -205,6 +205,7 @@ public class ClanController {
 
     @PostMapping("/api/activity")
     public HonorService.Result activity(@RequestAttribute(SignedInCheck.ME) UUID me, @RequestBody AfkDetector.Minute minute) {
+        com.nexusclient.backend.badges.BadgeController.markInGame(me); // they're in-game with Nexus (badges)
         return honor.report(me, minute);
     }
 

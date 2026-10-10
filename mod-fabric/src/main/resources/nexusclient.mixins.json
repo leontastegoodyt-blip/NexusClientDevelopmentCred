@@ -18,6 +18,7 @@
     "LightmapMixin",
     "MouseHandlerAccessor",
     "MouseHandlerMixin",
+    "BadgeMixin",
     "NametagMixin",
     "OverlayTextureAccessor",
     "ParticleEngineMixin",

@@ -118,6 +118,7 @@ public class NexusFabric implements ClientModInitializer {
             SelfTest.tick(mc);
         }
         Cosmetics.tick(mc); // Nexus capes on Nexus players
+        BadgeText.tick(mc); // Nexus badges in front of names
         while (menuKey.consumeClick()) {
             if (mc.gui.screen() == null) {
                 core.platform().openScreen(new ModMenu());

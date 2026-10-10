@@ -98,21 +98,21 @@ public class ErrorScanPage extends VBox {
         Instance instance = panel.selectedInstanceProperty().get();
         MinecraftVersion version = instance == null ? null : panel.resolveVersion(instance);
         if (version == null) {
-            body.getChildren().setAll(note("Pick an instance on the left (and choose its version) to scan it."));
+            body.getChildren().setAll(People.empty(Icons.ERROR_SCAN, "Pick an instance first", null));
             return;
         }
         Label title = new Label("Scan \"" + instance.name() + "\"");
         title.getStyleClass().add("torcher-title");
-        Label text = new Label("Checks the mods (missing mods, mods that don't work together, duplicates), the game "
-                + "files, and the logs from the last time it was played. Nexus also runs this check automatically "
-                + "before every launch.");
+        Label text = new Label("Checks mods, game files and the last log. Also runs before every launch.");
         text.getStyleClass().add("torcher-text");
         text.setWrapText(true);
+        ScanRadar radar = new ScanRadar();
         Button scan = new Button("Scan now");
         scan.getStyleClass().add("primary-button");
         VBox results = new VBox(10);
         scan.setOnAction(event -> {
             scan.setDisable(true);
+            radar.start();
             results.getChildren().setAll(note("Scanning…"));
             Background.run("scan", () -> {
                 List<Diagnosis> found = new ArrayList<>(ErrorScanner.preLaunchCheck(instance, version.id()));
@@ -122,12 +122,12 @@ public class ErrorScanPage extends VBox {
             }, result -> {
                 scan.setDisable(false);
                 @SuppressWarnings("unchecked") List<Diagnosis> found = (List<Diagnosis>) result[0];
+                radar.finish(found.isEmpty());
                 String logs = (String) result[1];
                 ScanHistory.add(instance.id(), instance.name(), "MANUAL", found, null, List.of());
                 results.getChildren().clear();
                 if (found.isEmpty()) {
-                    results.getChildren().add(note("No problems found. If the game still crashes, try "
-                            + "\"Run again with extra logging\", or safe mode in Tools."));
+                    results.getChildren().add(People.empty(Icons.CHECK, "No problems found", "Still crashing? Try extra logging or safe mode."));
                 }
                 for (Diagnosis problem : found) {
                     results.getChildren().add(ErrorScanUi.card(problem, instance, version.id(), store, "MANUAL",
@@ -143,7 +143,10 @@ public class ErrorScanPage extends VBox {
                         ErrorScanUi.sendReportButton(instance, version.id(), logs), again));
             }, null);
         });
-        VBox card = new VBox(12, title, text, scan);
+        VBox words = new VBox(10, title, text, scan);
+        HBox.setHgrow(words, javafx.scene.layout.Priority.ALWAYS);
+        HBox card = new HBox(22, radar, words);
+        card.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         card.getStyleClass().add("settings-card");
         body.getChildren().setAll(card, results);
     }

@@ -380,10 +380,40 @@ public class InstancePanel extends VBox {
                 details.getStyleClass().add("instance-version-missing");
             }
 
-            VBox text = new VBox(2, name, details);
+            // When it was last played, small on the right ("2h", "3d", "new").
+            Label played = new Label(ago(instance.lastPlayed()));
+            played.getStyleClass().add("instance-played");
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            HBox top = new HBox(6, name, spacer, played);
+            top.setAlignment(Pos.CENTER_LEFT);
+
+            VBox text = new VBox(2, top, details);
+            HBox.setHgrow(text, Priority.ALWAYS);
             HBox row = new HBox(12, InstanceBadge.create(instance, 38), text);
             row.setAlignment(Pos.CENTER_LEFT);
             setGraphic(row);
         }
+    }
+
+    /** "now", "5m", "2h", "3d", "4w" since a time (milliseconds), or "new" if never played. */
+    static String ago(long time) {
+        if (time <= 0) {
+            return "new";
+        }
+        long minutes = (System.currentTimeMillis() - time) / 60_000;
+        if (minutes < 1) {
+            return "now";
+        }
+        if (minutes < 60) {
+            return minutes + "m";
+        }
+        if (minutes < 60 * 24) {
+            return minutes / 60 + "h";
+        }
+        if (minutes < 60 * 24 * 14) {
+            return minutes / (60 * 24) + "d";
+        }
+        return minutes / (60 * 24 * 7) + "w";
     }
 }

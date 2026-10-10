@@ -160,8 +160,7 @@ public class ModsPage extends VBox {
 
         if (type != ContentType.MODPACK) {
             if (manager == null) {
-                body.getChildren().add(notice("Pick an instance on the left and choose its version, then find "
-                        + type.label().toLowerCase(Locale.ROOT) + " for it here.", null));
+                body.getChildren().add(People.empty(Icons.MODS, "Pick an instance first", null));
                 return;
             }
             String reason = manager.whyNot(type);
@@ -323,8 +322,7 @@ public class ModsPage extends VBox {
     private void showInstalled() {
         ModManager manager = manager();
         if (manager == null) {
-            body.getChildren().setAll(notice("Pick an instance on the left and choose its version to see what's "
-                    + "installed in it.", null));
+            body.getChildren().setAll(People.empty(Icons.MODS, "Pick an instance first", null));
             return;
         }
         Button check = new Button("Check for updates");

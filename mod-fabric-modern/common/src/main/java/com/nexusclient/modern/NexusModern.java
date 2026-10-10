@@ -132,6 +132,7 @@ public class NexusModern implements ClientModInitializer {
 
         freelook(mc, core);
         HitColour.tick(mc);
+        BadgeText.tick(mc); // asks the Nexus server which nearby players get a badge (every 20 s)
 
         if (mc.player == null) {
             return;

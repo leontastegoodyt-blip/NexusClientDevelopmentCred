@@ -1064,27 +1064,48 @@
     -fx-stroke: -nexus-border;
 }
 
-/* Tick boxes and round choice buttons */
+/* Tick boxes are drawn as neon on/off switches; round choice buttons stay round. */
 .check-box, .radio-button {
     -fx-text-fill: -nexus-text;
     -fx-font-size: 13px;
+    -fx-graphic-text-gap: 10;
 }
-.check-box .box, .radio-button .radio {
-    -fx-background-color: -nexus-surface-2;
+/* The switch's track: knob on the left = off, slides right = on */
+.check-box .box {
+    -fx-background-color: #24213D;
+    -fx-background-radius: 10;
     -fx-border-color: -nexus-border-hi;
-    -fx-background-radius: 6;
-    -fx-border-radius: 6;
+    -fx-border-radius: 10;
+    -fx-padding: 3 21 3 3;      /* room on the right for the knob to slide into */
+}
+.check-box .mark {
+    -fx-shape: "M0,6 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0";   /* a circle */
+    -fx-padding: 6;
+    -fx-background-color: #8A86AA;
+    -fx-translate-x: 0;
+}
+.check-box:hover .box { -fx-border-color: -nexus-gradient-edge; }
+.check-box:selected .box {
+    -fx-background-color: -nexus-gradient;
+    -fx-border-color: rgba(255, 255, 255, 0.35);
+    -fx-effect: dropshadow(gaussian, -nexus-accent-350, 8, 0.15, 0, 0);
+}
+.check-box:selected .mark {
+    -fx-background-color: white;
+    -fx-translate-x: 18;
 }
 .radio-button .radio {
+    -fx-background-color: -nexus-surface-2;
+    -fx-border-color: -nexus-border-hi;
     -fx-background-radius: 10;
     -fx-border-radius: 10;
 }
-.check-box:selected .box, .radio-button:selected .radio {
+.radio-button:selected .radio {
     -fx-border-color: -nexus-gradient-edge;
     -fx-background-color: -nexus-gradient-soft;
     -fx-effect: dropshadow(gaussian, -nexus-accent-250, 8, 0.1, 0, 0);
 }
-.check-box:selected .mark, .radio-button:selected .dot {
+.radio-button:selected .dot {
     -fx-background-color: -nexus-cyan;
 }
 
@@ -1382,3 +1403,24 @@
 }
 .banned-row { -fx-border-color: rgba(255, 107, 94, 0.45); }
 .banned-row .person-badge { -fx-text-fill: #FF8A80; -fx-border-color: rgba(255, 107, 94, 0.5); -fx-background-color: rgba(255, 107, 94, 0.12); }
+
+/* ---- Server cards: signal bars and "how full" bar ---- */
+.signal-bar { -fx-background-color: rgba(255, 255, 255, 0.12); -fx-background-radius: 1; }
+.signal-bar.lit.ping-good { -fx-background-color: -nexus-green; }
+.signal-bar.lit.ping-ok   { -fx-background-color: -nexus-amber; }
+.signal-bar.lit.ping-bad  { -fx-background-color: -nexus-red; }
+.players-track { -fx-background-color: rgba(255, 255, 255, 0.08); -fx-background-radius: 3; }
+.players-fill  { -fx-background-color: -nexus-gradient; -fx-background-radius: 3; -fx-min-height: 5px; -fx-max-height: 5px; }
+.favourite-button .icon { -fx-fill: -nexus-amber; }
+.instance-played { -fx-text-fill: -nexus-text-faint; -fx-font-size: 10px; -fx-font-weight: bold; }
+
+/* ---- Error Scan radar (ui/ScanRadar.java) – shapes only, so glowing is fine ---- */
+.radar-ring       { -fx-fill: rgba(58, 168, 255, 0.05); -fx-stroke: -nexus-accent-350; -fx-stroke-width: 1.5; }
+.radar-ring-inner { -fx-fill: rgba(58, 168, 255, 0.06); -fx-stroke: -nexus-accent-220; -fx-stroke-width: 1; }
+.radar-beam       { -fx-fill: linear-gradient(to right, -nexus-accent-550, transparent);
+                    -fx-effect: dropshadow(gaussian, -nexus-accent-450, 10, 0.2, 0, 0); }
+.radar-icon .icon, .radar-icon { -fx-fill: -nexus-gradient-down; }
+.radar-ok .radar-ring      { -fx-stroke: rgba(61, 224, 160, 0.7); }
+.radar-ok .radar-icon      { -fx-fill: -nexus-green; -fx-effect: dropshadow(gaussian, rgba(61, 224, 160, 0.7), 10, 0.2, 0, 0); }
+.radar-problem .radar-ring { -fx-stroke: rgba(255, 181, 71, 0.7); }
+.radar-problem .radar-icon { -fx-fill: -nexus-amber; }

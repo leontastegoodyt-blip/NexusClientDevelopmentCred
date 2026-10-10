@@ -70,4 +70,9 @@ public final class VersionHooks {
                     client.execute(() -> onRules.accept(json)); // back onto the game thread
                 });
     }
+
+    /** The Nexus badge font (assets/nexusclient/font/badges.json) – name-tag badges use it. */
+    public static net.minecraft.network.chat.Style badgeStyle() {
+        return net.minecraft.network.chat.Style.EMPTY.withFont(new ResourceLocation("nexusclient", "badges"));
+    }
 }

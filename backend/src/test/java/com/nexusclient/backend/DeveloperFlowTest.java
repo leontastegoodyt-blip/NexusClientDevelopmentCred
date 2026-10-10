@@ -78,6 +78,17 @@ class DeveloperFlowTest {
         assertEquals(403, call("POST", "/api/admin/players/" + devUuid + "/kick", admin, "{}").statusCode());
         assertEquals(400, call("POST", "/api/admin/players/" + devUuid + "/ban", dev, "{\"hours\":24}").statusCode());
         assertFalse(json(call("GET", "/api/me", dev, null)).get("card").isJsonNull());
+
+        // Badges: only players whose game is reporting in get one; the developer gets "developer".
+        String adminUuid = uuidOf(admin);
+        String minute = "{\"moveBlocks\":40,\"turnDegrees\":300,\"keyPresses\":60,\"clicks\":20,\"chatMessages\":0,\"menuSeconds\":0}";
+        assertEquals(200, call("POST", "/api/activity", dev, minute).statusCode());
+        assertEquals(200, call("POST", "/api/activity", admin, minute).statusCode());
+        JsonObject badges = json(call("GET", "/api/badges?uuids=" + devUuid + "," + adminUuid + "," + playerUuid + ",nonsense",
+                null, null));
+        assertEquals("developer", badges.get(devUuid).getAsString());
+        assertEquals("nexus", badges.get(adminUuid).getAsString());
+        assertFalse(badges.has(playerUuid)); // not in-game with Nexus right now
     }
 
     String uuidOf(String token) throws Exception {

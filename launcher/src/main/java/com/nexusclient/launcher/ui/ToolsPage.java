@@ -119,8 +119,7 @@ public class ToolsPage extends VBox {
             return shots;
         }, shots -> {
             if (shots.isEmpty()) {
-                body.getChildren().setAll(note("No screenshots yet. Press F2 in Minecraft to take one – they'll "
-                        + "show up here."));
+                body.getChildren().setAll(People.empty(Icons.CAMERA, "No screenshots yet", "Press F2 in game."));
                 return;
             }
             TilePane grid = new TilePane(12, 12);
@@ -181,7 +180,7 @@ public class ToolsPage extends VBox {
     private void showBackups() {
         Instance instance = panel.selectedInstanceProperty().get();
         if (instance == null) {
-            body.getChildren().setAll(note("Pick an instance on the left to see its worlds and backups."));
+            body.getChildren().setAll(People.empty(Icons.SERVERS, "Pick an instance first", null));
             return;
         }
         body.getChildren().setAll(note("Loading…"));
@@ -250,8 +249,7 @@ public class ToolsPage extends VBox {
                 backupList.getChildren().add(row);
             }
             if (backups.isEmpty()) {
-                backupList.getChildren().add(note("No backups yet. Nexus backs up the worlds you play automatically "
-                        + "after you close the game."));
+                backupList.getChildren().add(People.empty(Icons.CLANS, "No backups yet", "Worlds back up after you play."));
             }
             body.getChildren().setAll(heading("Worlds in \"" + instance.name() + "\""), worldList,
                     heading("Backups"), backupList);
@@ -264,9 +262,7 @@ public class ToolsPage extends VBox {
         Instance instance = panel.selectedInstanceProperty().get();
         Label title = new Label("Safe mode");
         title.getStyleClass().add("torcher-title");
-        Label text = new Label("Safe mode starts an instance with ALL mods switched off. If the game works in safe "
-                + "mode but not normally, one of the mods is causing the problem. Your mods aren't changed or deleted – "
-                + "they're just not loaded this one time.");
+        Label text = new Label("Starts with every mod off. Works now? Then a mod is the problem. Nothing is changed.");
         text.getStyleClass().add("torcher-text");
         text.setWrapText(true);
         Button start = new Button(instance == null ? "Pick an instance first" : "Start \"" + instance.name() + "\" in safe mode");
@@ -303,7 +299,7 @@ public class ToolsPage extends VBox {
             content.getChildren().add(bar(entry.getKey(), entry.getValue(), mostVersion));
         }
         if (data.secondsByInstance.isEmpty()) {
-            content.getChildren().add(note("Nothing yet – playtime is counted every time you play through Nexus."));
+            content.getChildren().add(People.empty(Icons.PLAY, "No playtime yet", null));
         }
         VBox card = new VBox(content);
         card.getStyleClass().add("settings-card");

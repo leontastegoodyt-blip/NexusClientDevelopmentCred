@@ -124,7 +124,7 @@ public class SettingsPage extends VBox {
                 status.setText("★ You have Premium until " + me.get("premiumUntil").getAsString().substring(0, 10) + ".");
             }
         }, error -> status.setText(online.signedIn() ? "Couldn't check: " + error.getMessage()
-                : "Open the Friends or Clans tab to sign in to Nexus, then come back here."));
+                : "Sign in to Nexus to see your status."));
         return new VBox(12, title, status, perks, buy);
     }
 
@@ -138,7 +138,7 @@ public class SettingsPage extends VBox {
         VBox behaviourChoices = new VBox(8);
         for (String[] choice : new String[][] {
                 {"STAY_OPEN", "Stay open"},
-                {"MINIMISE_TO_TRAY", "Minimise to the system tray (the icons next to the clock)"},
+                {"MINIMISE_TO_TRAY", "Minimise to tray"},
                 {"HIDE", "Hide until the game closes"}}) {
             RadioButton option = new RadioButton(choice[1]);
             option.setToggleGroup(behaviour);
@@ -158,10 +158,10 @@ public class SettingsPage extends VBox {
             SettingsStore.save();
         });
         Label discordNote = hint(DiscordPresence.isConfigured() ? "Works while the Discord app is open."
-                : "Not active yet: Nexus needs its own Discord application ID first (see DiscordPresence.java).");
+                : "Coming soon.");
 
         // --- Updates ---
-        CheckBox updates = new CheckBox("Check for Nexus updates when it opens (Nexus always asks before updating)");
+        CheckBox updates = new CheckBox("Check for updates on start");
         updates.setSelected(settings.checkForUpdates);
         updates.setOnAction(event -> {
             settings.checkForUpdates = updates.isSelected();
@@ -185,8 +185,7 @@ public class SettingsPage extends VBox {
                 heading("Updates"), updates, checkNow,
                 hint("You're on Nexus " + Updater.CURRENT_VERSION + "."),
                 heading("Crash reports"), crashReports,
-                hint("Off unless you switch it on. A report has your PC's details, your mod list and the end of the "
-                        + "game log – never passwords or sign-in details. It helps us fix crashes."));
+                hint("PC details, mod list and the log ending. Never passwords."));
     }
 
     /**
@@ -286,12 +285,11 @@ public class SettingsPage extends VBox {
         });
 
         return new VBox(12,
-                heading("Accent colour"), hint("The neon colour used for highlights, buttons and glows."),
+                heading("Accent colour"), hint("Highlights, buttons and glows."),
                 new HBox(10, accent, resetAccent),
-                heading("Interface size"), hint("How big everything is drawn. Automatic makes the launcher bigger on "
-                        + "large screens like 1440p and 4K. Takes effect when Nexus restarts."),
+                heading("Interface size"), hint("Automatic = bigger on 1440p and 4K. Needs a restart."),
                 size,
-                heading("Background picture"), hint("Shown faintly behind the pages. Keeps the launcher dark and readable."),
+                heading("Background picture"), hint("Shown faintly behind the pages."),
                 new HBox(10, chooseBackground, removeBackground));
     }
 
@@ -346,8 +344,8 @@ public class SettingsPage extends VBox {
         VBox colourChoices = new VBox(8);
         for (String[] choice : new String[][] {
                 {"OFF", "Off"},
-                {"RED_GREEN", "Red–green (protanopia / deuteranopia): uses blue and orange instead of green and red"},
-                {"BLUE_YELLOW", "Blue–yellow (tritanopia): uses pink instead of cyan"}}) {
+                {"RED_GREEN", "Red–green (blue and orange instead)"},
+                {"BLUE_YELLOW", "Blue–yellow (pink instead of blue)"}}) {
             RadioButton option = new RadioButton(choice[1]);
             option.setToggleGroup(colourblind);
             option.setSelected(choice[0].equals(settings.colourblindMode));
@@ -361,7 +359,7 @@ public class SettingsPage extends VBox {
 
         return new VBox(12, heading("Motion and text"), reducedMotion, biggerText,
                 heading("Colourblind mode"), colourChoices,
-                hint("These settings will also apply inside the game once the Nexus mod arrives (build step 10)."));
+                hint("Also used in-game."));
     }
 
     // ================================================================== Language
@@ -386,8 +384,7 @@ public class SettingsPage extends VBox {
             }
         });
         return new VBox(12, heading("Language"), picker,
-                hint("English for now – more languages are coming. Translators: see the lang folder "
-                        + "(messages_en.properties)."));
+                hint("More languages coming."));
     }
 
     // ================================================================== About
