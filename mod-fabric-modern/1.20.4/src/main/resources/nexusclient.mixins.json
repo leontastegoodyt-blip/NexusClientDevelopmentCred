@@ -27,6 +27,7 @@
     "NametagMixin",
     "OverlayTextureAccessor",
     "ParticleEngineMixin",
+    "PlayerInfoCapeMixin",
     "ScreenEffectRendererMixin",
     "TurnMixin"
   ],

@@ -6,6 +6,7 @@
   "client": [
     "ArmorGlintColourMixin",
     "BadgeMixin",
+    "CapeMixin",
     "ChatHudAccessor",
     "ChatHudMixin",
     "ChatScreenMixin",

@@ -50,7 +50,7 @@ public class NexusLegacy implements ClientModInitializer {
     public static void tick(MinecraftClient mc) {
         NexusCore core = NexusCore.get();
         // Ask the Nexus server (every 20 s) which nearby players get a name-tag badge.
-        com.nexusclient.core.online.Badges.tick(() -> {
+        java.util.concurrent.Callable<java.util.Collection<java.util.UUID>> nearby = () -> {
             java.util.List<java.util.UUID> ids = new java.util.ArrayList<java.util.UUID>();
             if (mc.world != null) {
                 for (net.minecraft.entity.player.PlayerEntity player : mc.world.playerEntities) {
@@ -58,7 +58,9 @@ public class NexusLegacy implements ClientModInitializer {
                 }
             }
             return ids;
-        });
+        };
+        com.nexusclient.core.online.Badges.tick(nearby);
+        com.nexusclient.core.online.Capes.tick(nearby); // Nexus capes on nearby players
         if (SelfTest.enabled()) {
             SelfTest.tick(mc);
         }

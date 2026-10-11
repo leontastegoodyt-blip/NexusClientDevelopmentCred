@@ -120,4 +120,36 @@ public final class VersionHooks {
 
     public static void setMotionBlur(int strength) {
     }
+
+    private static final java.util.Map<String, net.minecraft.core.ClientAsset.Texture> CAPES = new java.util.HashMap<>();
+
+    /**
+     * The Nexus cape this player wears, as a texture (made from the downloaded picture the first time
+     * it's needed – see mod-core Capes). null = no Nexus cape, or not downloaded yet.
+     */
+    public static net.minecraft.core.ClientAsset.Texture capeTexture(java.util.UUID player) {
+        String id = com.nexusclient.core.online.Capes.capeOf(player);
+        if (id == null) {
+            return null;
+        }
+        net.minecraft.core.ClientAsset.Texture done = CAPES.get(id);
+        if (done != null) {
+            return done;
+        }
+        byte[] png = com.nexusclient.core.online.Capes.picture(id);
+        if (png == null) {
+            return null;
+        }
+        try {
+            NativeImage image = NativeImage.read(new java.io.ByteArrayInputStream(png));
+            Identifier location = Identifier.fromNamespaceAndPath("nexusclient", "cosmetics/" + id);
+            Minecraft.getInstance().getTextureManager().register(location,
+                    new net.minecraft.client.renderer.texture.DynamicTexture(() -> "Nexus cape " + id, image));
+            net.minecraft.core.ClientAsset.Texture texture = new net.minecraft.core.ClientAsset.ResourceTexture(location, location);
+            CAPES.put(id, texture);
+            return texture;
+        } catch (java.io.IOException e) {
+            return null;
+        }
+    }
 }

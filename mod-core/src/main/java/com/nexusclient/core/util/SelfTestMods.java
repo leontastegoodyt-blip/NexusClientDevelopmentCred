@@ -29,6 +29,14 @@ public final class SelfTestMods {
         core.get(Mods.ItemPhysics.class).setEnabled(true);
         core.get(Mods.EnchantGlint.class).setEnabled(true);
         core.get(Mods.MotionBlur.class).setEnabled(true);
+        // Everyone wears the Nexus test cape (the picture from the backend folder, when running from the project).
+        for (java.io.File folder = new java.io.File(".").getAbsoluteFile(); folder != null; folder = folder.getParentFile()) {
+            java.io.File cape = new java.io.File(folder, "backend/src/main/resources/static/cosmetics/nexus_cape.png");
+            if (cape.isFile()) {
+                System.setProperty("nexus.capeTest", cape.getAbsolutePath());
+                break;
+            }
+        }
         // The developer tools (normally only for the Nexus developer's account).
         System.setProperty("nexus.devTools", "true");
         core.get(com.nexusclient.core.module.DevTools.DebugHud.class).setEnabled(true);

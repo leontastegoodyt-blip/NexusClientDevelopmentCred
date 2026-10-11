@@ -126,4 +126,35 @@ public final class VersionHooks {
                     .nexus$loadEffect(new ResourceLocation("shaders/post/nexus_motion_blur_" + strength + ".json"));
         }
     }
+
+    private static final java.util.Map<String, ResourceLocation> CAPES = new java.util.HashMap<>();
+
+    /**
+     * The Nexus cape this player wears, as a texture (made from the downloaded picture the first time
+     * it's needed – see mod-core Capes). null = no Nexus cape, or not downloaded yet.
+     */
+    public static ResourceLocation capeTexture(java.util.UUID player) {
+        String id = com.nexusclient.core.online.Capes.capeOf(player);
+        if (id == null) {
+            return null;
+        }
+        ResourceLocation done = CAPES.get(id);
+        if (done != null) {
+            return done;
+        }
+        byte[] png = com.nexusclient.core.online.Capes.picture(id);
+        if (png == null) {
+            return null;
+        }
+        try {
+            NativeImage image = NativeImage.read(new java.io.ByteArrayInputStream(png));
+            ResourceLocation location = new ResourceLocation("nexusclient", "cosmetics/" + id);
+            Minecraft.getInstance().getTextureManager().register(location,
+                    new net.minecraft.client.renderer.texture.DynamicTexture(image));
+            CAPES.put(id, location);
+            return location;
+        } catch (java.io.IOException e) {
+            return null;
+        }
+    }
 }

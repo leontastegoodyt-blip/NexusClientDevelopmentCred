@@ -99,7 +99,7 @@ public final class SelfTest {
             // Face the player (F5) with the developer badge forced on, so the screenshot shows the
             // name tag with its Nexus badge and DEV tag.
             System.setProperty("nexus.badgeTest", "DEVELOPER");
-            mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
+            mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK); // from behind: cape + name tag
         } else if (worldTicks == 66) {
             mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
         } else if (worldTicks == 69) {

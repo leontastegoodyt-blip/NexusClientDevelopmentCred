@@ -48,6 +48,7 @@ public final class BadgeText {
 
     /** Every tick: lets Badges ask the Nexus server about the players near us (every 20 seconds). */
     public static void tick(Minecraft mc) {
+        com.nexusclient.core.online.Capes.tick(() -> nearby(mc));
         Badges.tick(() -> {
             Collection<UUID> ids = new ArrayList<>();
             if (mc.level != null) {
@@ -57,6 +58,17 @@ public final class BadgeText {
             }
             return ids;
         });
+    }
+
+    /** The players near us (for asking the Nexus server about badges and capes). */
+    private static Collection<UUID> nearby(Minecraft mc) {
+        Collection<UUID> ids = new ArrayList<>();
+        if (mc.level != null) {
+            for (Player player : mc.level.players()) {
+                ids.add(player.getUUID());
+            }
+        }
+        return ids;
     }
 
     /** True if this text is the entity's own name (not, say, the score line under it). */
