@@ -35,41 +35,115 @@ public class HudEditor implements NexusScreen {
         lastRenderer = r;
         r.rect(0, 0, r.width(), r.height(), 0x70050508);
         // Faint centre lines to help line things up.
-        r.rect(r.width() / 2, 0, r.width() / 2 + 1, r.height(), 0x18FFFFFF);
-        r.rect(0, r.height() / 2, r.width(), r.height() / 2 + 1, 0x18FFFFFF);
+        r.rect(r.width() / 2, 0, r.width() / 2 + 1, r.height(), 0x14FFFFFF);
+        r.rect(0, r.height() / 2, r.width(), r.height() / 2 + 1, 0x14FFFFFF);
 
         boolean preview = !NexusCore.get().game().inWorld();
+        HudModule hovered = null;
         for (HudModule module : enabledModules()) {
             module.render(r, NexusCore.get().game(), preview);
             int x = module.pixelX(r);
             int y = module.pixelY(r);
-            boolean hover = module == dragging || UiKit.inside(mouseX, mouseY, x, y, x + module.width(), y + module.height());
-            r.outline(x - 1, y - 1, x + module.width() + 1, y + module.height() + 1,
-                    hover ? UiKit.accent() : UiKit.accent(0x60));
+            boolean hover = module == dragging
+                    || (dragging == null && UiKit.inside(mouseX, mouseY, x, y, x + module.width(), y + module.height()));
             if (hover) {
-                String label = module.name() + "  ·  " + module.scale.display();
-                r.text(label, x, Math.max(0, y - r.lineHeight() - 3), UiKit.accent(), true);
+                hovered = module;
+                r.outline(x - 2, y - 2, x + module.width() + 2, y + module.height() + 2, UiKit.accent());
+                r.rect(x - 2, y - 2, x + module.width() + 2, y + module.height() + 2, UiKit.accent(0x18));
+            } else {
+                dashedOutline(r, x - 1, y - 1, x + module.width() + 1, y + module.height() + 1, UiKit.accent(0x70));
             }
         }
         if (guideX >= 0) r.rect(guideX, 0, guideX + 1, r.height(), UiKit.accent(0xC0));
         if (guideY >= 0) r.rect(0, guideY, r.width(), guideY + 1, UiKit.accent(0xC0));
 
-        // Top bar with the editor's buttons.
-        int cx = r.width() / 2;
-        int y = 6;
+        // A name tag above the element under the mouse: "Keystrokes · 1.0x".
+        if (hovered != null) {
+            String label = hovered.name() + "  " + hovered.scale.display();
+            int lw = r.textWidth(label) + 10;
+            int lx = Math.max(2, Math.min(hovered.pixelX(r), r.width() - lw - 2));
+            int ly = hovered.pixelY(r) - 15;
+            if (ly < 2) {
+                ly = hovered.pixelY(r) + hovered.height() + 4; // no room above – show it below
+            }
+            UiKit.roundBox(r, lx, ly, lx + lw, ly + 12, 4, 0xF0101018, UiKit.accent());
+            r.text(label, lx + 5, ly + 2, UiKit.TEXT, false);
+        }
+
+        // The control panel in the middle (hidden while dragging, so it never gets in the way).
+        if (dragging == null) {
+            drawPanel(r, mouseX, mouseY);
+        }
+        UiKit.centered(r, "Drag to move  ·  Scroll to resize  ·  Right-click for settings", r.width() / 2,
+                r.height() - 14, UiKit.TEXT_DIM, true);
+    }
+
+    // The panel's buttons: x1, y1, x2, y2 (worked out in drawPanel, used by mouseClicked).
+    private int[] modsButton = new int[4];
+    private int[] snapButton = new int[4];
+    private int[] resetButton = new int[4];
+    private int[] doneButton = new int[4];
+
+    /**
+     * The floating panel in the centre, like Lunar Client's:
+     *   ┌───────────────────────────┐
+     *   │   ⬡  [      MODS      ]   │
+     *   │  (Snap: On) (Reset) (Done)│
+     *   └───────────────────────────┘
+     */
+    private void drawPanel(Renderer r, int mouseX, int mouseY) {
+        int w = 172;
+        int h = 52;
+        int x = (r.width() - w) / 2;
+        int y = (r.height() - h) / 2;
+        UiKit.round(r, x - 1, y - 1, x + w + 1, y + h + 1, 8, 0x50000000);
+        UiKit.roundBox(r, x, y, x + w, y + h, 7, 0xF20B0B12, 0xFF26263E);
+        UiKit.gradientLine(r, x + 8, y, x + w - 8, 0xE0);
+
+        UiKit.logo(r, x + 9, y + 7);
+        modsButton = new int[] {x + 31, y + 6, x + w - 8, y + 24};
+        boolean modsHover = UiKit.inside(mouseX, mouseY, modsButton[0], modsButton[1], modsButton[2], modsButton[3]);
+        UiKit.round(r, modsButton[0], modsButton[1], modsButton[2], modsButton[3], 4,
+                modsHover ? 0xFF000000 | UiKit.mix(UiKit.accent() & 0xFFFFFF, 0xFFFFFF, 0.2) : UiKit.accent() | 0xFF000000);
+        UiKit.centered(r, "MODS", (modsButton[0] + modsButton[2]) / 2, y + 11, 0xFF06060A, false);
+
         boolean snapping = NexusCore.get().settings().snapping.isOn();
-        UiKit.button(r, "Done", cx - 110, y, cx - 50, y + 16, UiKit.inside(mouseX, mouseY, cx - 110, y, cx - 50, y + 16), true);
-        UiKit.button(r, snapping ? "Snap: On" : "Snap: Off", cx - 46, y, cx + 16, y + 16,
-                UiKit.inside(mouseX, mouseY, cx - 46, y, cx + 16, y + 16), false);
-        UiKit.button(r, "Mod menu", cx + 20, y, cx + 80, y + 16, UiKit.inside(mouseX, mouseY, cx + 20, y, cx + 80, y + 16), false);
-        UiKit.button(r, "Reset", cx + 84, y, cx + 124, y + 16, UiKit.inside(mouseX, mouseY, cx + 84, y, cx + 124, y + 16), false);
-        UiKit.centered(r, "Drag to move  ·  Scroll to resize  ·  Right-click for settings", cx, r.height() - 14,
-                UiKit.TEXT_DIM, true);
+        int by = y + 30;
+        int third = (w - 16 - 8) / 3;
+        snapButton = new int[] {x + 8, by, x + 8 + third, by + 15};
+        resetButton = new int[] {x + 12 + third, by, x + 12 + third * 2, by + 15};
+        doneButton = new int[] {x + 16 + third * 2, by, x + w - 8, by + 15};
+        smallButton(r, snapping ? "Snap: On" : "Snap: Off", snapButton, mouseX, mouseY, snapping);
+        smallButton(r, "Reset", resetButton, mouseX, mouseY, false);
+        smallButton(r, "Done", doneButton, mouseX, mouseY, false);
+    }
+
+    private static void smallButton(Renderer r, String label, int[] b, int mouseX, int mouseY, boolean lit) {
+        boolean hover = UiKit.inside(mouseX, mouseY, b[0], b[1], b[2], b[3]);
+        UiKit.roundBox(r, b[0], b[1], b[2], b[3], 4, lit ? UiKit.accent(0x30) : (hover ? 0xFF1E1E2E : 0xFF14141F),
+                lit ? UiKit.accent() : (hover ? UiKit.accent(0x90) : 0xFF2A2A40));
+        UiKit.centered(r, label, (b[0] + b[2]) / 2, b[1] + 4, lit || hover ? UiKit.TEXT : UiKit.TEXT_DIM, false);
+    }
+
+    /** A dotted border: 3 pixels on, 2 off. */
+    private static void dashedOutline(Renderer r, int x1, int y1, int x2, int y2, int colour) {
+        for (int x = x1; x < x2; x += 5) {
+            r.rect(x, y1, Math.min(x + 3, x2), y1 + 1, colour);
+            r.rect(x, y2 - 1, Math.min(x + 3, x2), y2, colour);
+        }
+        for (int y = y1; y < y2; y += 5) {
+            r.rect(x1, y, x1 + 1, Math.min(y + 3, y2), colour);
+            r.rect(x2 - 1, y, x2, Math.min(y + 3, y2), colour);
+        }
     }
 
     private List<HudModule> enabledModules() {
         List<HudModule> list = new ArrayList<HudModule>();
         for (HudModule module : NexusCore.get().hudModules()) {
+            if (module.category() == com.nexusclient.core.module.Category.DEVELOPER
+                    && !com.nexusclient.core.online.DeveloperMode.active()) {
+                continue; // the developer's own tools stay hidden for everyone else
+            }
             if (module.isEnabled() && module.isSupported()) {
                 list.add(module);
             }
@@ -95,21 +169,21 @@ public class HudEditor implements NexusScreen {
         if (lastRenderer == null) {
             return false;
         }
-        int cx = lastRenderer.width() / 2;
-        if (UiKit.inside(mx, my, cx - 110, 6, cx - 50, 22)) {
+        // The centre panel's buttons (worked out in drawPanel).
+        if (inside(mx, my, doneButton)) {
             NexusCore.get().platform().closeScreen();
             return true;
         }
-        if (UiKit.inside(mx, my, cx - 46, 6, cx + 16, 22)) {
+        if (inside(mx, my, snapButton)) {
             NexusCore.get().settings().snapping.toggle();
             return true;
         }
-        if (UiKit.inside(mx, my, cx + 20, 6, cx + 80, 22)) {
+        if (inside(mx, my, modsButton)) {
             NexusCore.get().save();
             NexusCore.get().platform().openScreen(new ModMenu());
             return true;
         }
-        if (UiKit.inside(mx, my, cx + 84, 6, cx + 124, 22)) {
+        if (inside(mx, my, resetButton)) {
             resetLayout();
             return true;
         }
@@ -126,6 +200,10 @@ public class HudEditor implements NexusScreen {
         grabOffsetX = mx - module.pixelX(lastRenderer);
         grabOffsetY = my - module.pixelY(lastRenderer);
         return true;
+    }
+
+    private static boolean inside(double mx, double my, int[] b) {
+        return UiKit.inside(mx, my, b[0], b[1], b[2], b[3]);
     }
 
     @Override

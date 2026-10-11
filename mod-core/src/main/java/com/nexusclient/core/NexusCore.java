@@ -18,6 +18,7 @@ import com.nexusclient.core.platform.Renderer;
 import com.nexusclient.core.online.ActivityReporter;
 import com.nexusclient.core.record.ClipRecorder;
 import com.nexusclient.core.server.ServerRules;
+import com.nexusclient.core.settings.ColorSetting;
 import com.nexusclient.core.settings.Setting;
 
 import java.io.File;
@@ -393,12 +394,16 @@ public final class NexusCore {
                         setting.load(settings.get(setting.id()).getAsString());
                     }
                 }
-                // Nexus's colours changed from cyan to the logo blue (2026-10-07). Players who never
-                // picked their own menu colour still had the old cyan saved – move them to the new one.
-                if (module instanceof NexusSettings) {
-                    NexusSettings nexus = (NexusSettings) module;
-                    if (nexus.accent.get() == 0xFF00E5FF) {
-                        nexus.accent.set(0xFF3AA8FF);
+                // Nexus's colours changed from cyan to the logo blue (2026-10-07). Colours still on the
+                // OLD cyan default (the player never picked their own) move to the new default,
+                // keeping their see-through-ness (e.g. the pressed keys in Keystrokes, the menu accent).
+                for (Setting<?> setting : module.settings()) {
+                    if (setting instanceof ColorSetting) {
+                        ColorSetting colour = (ColorSetting) setting;
+                        int newDefault = colour.defaultValue();
+                        if ((colour.get() & 0xFFFFFF) == 0x00E5FF && (newDefault & 0xFFFFFF) == 0x3AA8FF) {
+                            colour.set((colour.get() & 0xFF000000) | 0x3AA8FF);
+                        }
                     }
                 }
             }

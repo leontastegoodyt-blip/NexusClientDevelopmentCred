@@ -126,6 +126,11 @@ public final class SelfTest {
                     : "[Nexus] self-test FAILED: Right Shift didn't open the mod menu (" + mc.gui.screen() + ")");
         } else if (worldTicks == 100) {
             Screenshot.grab(mc, false);
+        } else if (worldTicks == 104) {
+            // A mod's settings page, for the screenshot below.
+            NexusCore.get().platform().openScreen(com.nexusclient.core.ui.ModMenu.forModule(NexusCore.get().module("crosshair")));
+        } else if (worldTicks == 114) {
+            Screenshot.grab(mc, false);
         } else if (worldTicks == 120) {
             System.out.println("[Nexus] self-test finished");
             mc.stop();

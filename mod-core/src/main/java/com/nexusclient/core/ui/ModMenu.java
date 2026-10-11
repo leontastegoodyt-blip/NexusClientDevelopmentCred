@@ -5,6 +5,8 @@ import com.nexusclient.core.ShareCodes;
 import com.nexusclient.core.hud.HudModule;
 import com.nexusclient.core.module.Category;
 import com.nexusclient.core.module.Module;
+import com.nexusclient.core.module.NexusSettings;
+import com.nexusclient.core.online.DeveloperMode;
 import com.nexusclient.core.platform.Renderer;
 import com.nexusclient.core.settings.BooleanSetting;
 import com.nexusclient.core.settings.ChoiceSetting;
@@ -20,39 +22,86 @@ import java.util.Locale;
 
 /**
  * ModMenu – the in-game Nexus menu, opened with Right Shift (the project brief: search bar, categories,
- * favourites, on/off toggles, and a settings page per mod).
+ * favourites, on/off toggles, and a settings page per mod). Laid out like Lunar Client's menu:
  *
- * It's drawn "immediate mode": every frame, render() draws everything from scratch based on the
- * current state, and the click handlers work out what was under the mouse using the same layout.
+ *   ┌──────────────────────────────────────────────────────────────────┐
+ *   │ ⬡ NEXUS   Mods  Edit HUD  Share  Settings            [ search ] │  header
+ *   │ (All) (★ Favourites) (HUD) (PvP) (Visual) (Chat) (Utility)       │  category chips
+ *   │ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐                     │
+ *   │ │ [FP] │ │ [CP] │ │ [Zo] │ │ ...  │ │      │   mod cards: icon,   │
+ *   │ │ FPS  │ │ CPS  │ │ Zoom │ │      │ │      │   name, and a big    │
+ *   │ │ON/OFF│ │ON/OFF│ │ON/OFF│ │      │ │      │   ENABLED bar        │
+ *   │ └──────┘ └──────┘ └──────┘ └──────┘ └──────┘                     │
+ *   │ the hovered mod's description …                 Esc back · RShift │  footer
+ *   └──────────────────────────────────────────────────────────────────┘
+ *
+ * Click a card's bar to switch the mod on/off, the ★ to favourite it, anywhere else (or right-click)
+ * to open its settings page.
+ *
+ * How it's drawn: "immediate mode" – every frame, render() draws everything from scratch. While
+ * drawing, each clickable thing also records its rectangle and what clicking it does (a "hit"), so
+ * the click handler can never disagree with what's on screen.
  */
 public class ModMenu implements NexusScreen {
 
     private enum View { GRID, SETTINGS, SHARE }
 
-    // The sidebar entries: "All", "Favourites", then each category.
     private static final String ALL = "All";
-    private static final String FAVOURITES = "★ Favourites";
+    private static final String FAVOURITES = "Favourites"; // shown with a drawn star in front
 
     /** Colour presets offered for colour settings. */
-    private static final int[] PRESETS = {0xFF3AA8FF, 0xFFFF2BD6, 0xFF8B7BFF, 0xFFFFB547, 0xFF3DE0A0,
-            0xFFFF5A5A, 0xFFFFFFFF, 0xFF101018};
+    private static final int[] PRESETS = {0xFF3AA8FF, 0xFF5FD3FF, 0xFF8B5CFF, 0xFFFF2BD6, 0xFFFFB547,
+            0xFF3DE0A0, 0xFFFF5A5A, 0xFFFFFFFF, 0xFF101018};
 
+    // Card and layout sizes (Minecraft "GUI pixels").
+    private static final int CARD_MIN_W = 94;
+    private static final int CARD_H = 76;
+    private static final int GAP = 6;
+    private static final int ROW_H = 22;
+
+    // ------------------------------------------------------------------ state
     private View view = View.GRID;
+    private boolean settingsFromTab;       // opened with the "Settings" tab (Back → grid)
     private String category = ALL;
     private String search = "";
-    private boolean searchFocused = false;
-    private double scroll = 0;
+    private boolean searchFocused;
+    private double scroll;
+    private double maxScroll;
     private Module selected;
     private TextSetting focusedText;
     private NumberSetting draggingSlider;
+    private int sliderX1, sliderX2;
     private String shareInput = "";
-    private boolean shareFocused = false;
+    private boolean shareFocused;
     private String shareMessage = "";
+    private String footer = "";
+    private final long openedAt = System.currentTimeMillis();
 
-    // The layout, worked out each frame (so the click handlers can use it too).
-    private int px, py, pw, ph;       // the panel
+    // The layout, worked out each frame.
+    private int px, py, pw, ph;
     private int contentX, contentY, contentW, contentH;
-    private int sliderX1, sliderX2;   // the slider being dragged
+
+    /** Something clickable on screen: where it is and what clicking it does. */
+    private interface Click {
+        void run(double mx, double my, int button);
+    }
+
+    private static final class Hit {
+        final int x1, y1, x2, y2;
+        final boolean inContent; // only clickable where the scrolling area is visible
+        final Click click;
+
+        Hit(int x1, int y1, int x2, int y2, boolean inContent, Click click) {
+            this.x1 = x1;
+            this.y1 = y1;
+            this.x2 = x2;
+            this.y2 = y2;
+            this.inContent = inContent;
+            this.click = click;
+        }
+    }
+
+    private final List<Hit> hits = new ArrayList<Hit>();
 
     public ModMenu() {}
 
@@ -65,33 +114,48 @@ public class ModMenu implements NexusScreen {
     }
 
     private void layout(Renderer r) {
-        pw = Math.min(470, r.width() - 20);
-        ph = Math.min(290, r.height() - 20);
+        pw = Math.min(560, r.width() - 24);
+        ph = Math.min(330, r.height() - 16);
         px = (r.width() - pw) / 2;
         py = (r.height() - ph) / 2;
-        contentX = px + 104;
-        contentY = py + 32;
-        contentW = pw - 112;
-        contentH = ph - 40;
+        contentX = px + 12;
+        contentY = py + (view == View.GRID ? 56 : 38);
+        contentW = pw - 24;
+        contentH = py + ph - 18 - contentY;
+    }
+
+    private void hit(int x1, int y1, int x2, int y2, Click click) {
+        hits.add(new Hit(x1, y1, x2, y2, false, click));
+    }
+
+    private void contentHit(int x1, int y1, int x2, int y2, Click click) {
+        hits.add(new Hit(x1, y1, x2, y2, true, click));
     }
 
     // ================================================================== drawing
 
     @Override
     public void render(Renderer r, int mouseX, int mouseY) {
+        hits.clear();
+        footer = "";
         layout(r);
-        r.rect(0, 0, r.width(), r.height(), UiKit.BACKDROP);
-        UiKit.box(r, px, py, px + pw, py + ph, UiKit.PANEL, UiKit.BORDER);
-        r.rect(px, py, px + pw, py + 1, UiKit.accent(0xA0)); // neon line along the top
 
-        // Header: logo and search box.
-        r.text("NEXUS", px + 12, py + 11, UiKit.accent(), true);
-        r.text("CLIENT", px + 12 + r.textWidth("NEXUS") + 4, py + 11, UiKit.TEXT_DIM, false);
+        // Opening animation: the backdrop fades in and the panel glides up a few pixels (180 ms).
+        double t = Math.min(1, (System.currentTimeMillis() - openedAt) / 180.0);
+        double eased = 1 - Math.pow(1 - t, 3);
+        r.rect(0, 0, r.width(), r.height(), ((int) (0xC0 * eased) << 24) | 0x05050A);
+        int slide = (int) Math.round((1 - eased) * 8);
+        r.push(0, slide, 1);
+
+        // The panel: rounded, near-black, with a soft outer edge and the logo gradient along the top.
+        UiKit.round(r, px - 1, py - 1, px + pw + 1, py + ph + 1, 8, 0x40000000);
+        UiKit.roundBox(r, px, py, px + pw, py + ph, 7, 0xF20B0B12, 0xFF22223A);
+        UiKit.gradientLine(r, px + 8, py, px + pw - 8, 0xE0);
+
+        drawHeader(r, mouseX, mouseY);
         if (view == View.GRID) {
-            UiKit.textField(r, search, "Search mods…", px + pw - 160, py + 7, px + pw - 8, py + 23, searchFocused);
+            drawChips(r, mouseX, mouseY);
         }
-
-        drawSidebar(r, mouseX, mouseY);
 
         r.enableClip(contentX, contentY, contentX + contentW, contentY + contentH);
         if (view == View.GRID) {
@@ -102,27 +166,89 @@ public class ModMenu implements NexusScreen {
             drawShare(r, mouseX, mouseY);
         }
         r.disableClip();
+        drawScrollbar(r);
+        drawFooter(r);
+        r.pop();
     }
 
-    /**
-     * Space between sidebar entries: 21 pixels normally, less when the game window is small, so the
-     * last category (e.g. Developer) never ends up under the "Share codes" button.
-     */
-    private int sidebarStep() {
-        int room = (py + ph - 8 - 38 - 4) - (py + 32);
-        return Math.max(13, Math.min(21, room / Math.max(1, sidebarEntries().size())));
+    // ------------------------------------------------------------------ header
+
+    private void drawHeader(Renderer r, int mouseX, int mouseY) {
+        UiKit.logo(r, px + 12, py + 7);
+        r.text("NEXUS", px + 33, py + 11, 0xFFFFFFFF, true);
+        int x = px + 33 + r.textWidth("NEXUS") + 16;
+
+        // Tabs.
+        String[] tabs = {"Mods", "Edit HUD", "Share", "Settings"};
+        for (String tab : tabs) {
+            int w = r.textWidth(tab) + 14;
+            boolean active = (tab.equals("Mods") && view == View.GRID)
+                    || (tab.equals("Share") && view == View.SHARE)
+                    || (tab.equals("Settings") && view == View.SETTINGS && settingsFromTab);
+            boolean hover = UiKit.inside(mouseX, mouseY, x, py + 6, x + w, py + 24);
+            if (active) {
+                UiKit.round(r, x, py + 6, x + w, py + 24, 4, UiKit.accent(0x26));
+                r.rect(x + 5, py + 23, x + w - 5, py + 24, UiKit.accent());
+            } else if (hover) {
+                UiKit.round(r, x, py + 6, x + w, py + 24, 4, 0x14FFFFFF);
+            }
+            r.text(tab, x + 7, py + 11, active || hover ? UiKit.TEXT : UiKit.TEXT_DIM, false);
+            final String name = tab;
+            hit(x, py + 6, x + w, py + 24, (mx, my, button) -> openTab(name));
+            x += w + 2;
+        }
+
+        // Search box (in the Mods view).
+        if (view == View.GRID) {
+            int sw = Math.min(130, Math.max(70, px + pw - 12 - x - 8));
+            int sx = px + pw - 12 - sw;
+            UiKit.roundBox(r, sx, py + 7, sx + sw, py + 23, 4, 0xFF08080E, searchFocused ? UiKit.accent() : 0xFF26263C);
+            drawSearchGlass(r, sx + 6, py + 11, searchFocused ? UiKit.accent() : UiKit.TEXT_FAINT);
+            String shown = search.isEmpty() && !searchFocused ? "Search mods" : search;
+            shown = fitEnd(r, shown, sw - 24);
+            r.text(shown, sx + 18, py + 11, search.isEmpty() && !searchFocused ? UiKit.TEXT_FAINT : UiKit.TEXT, false);
+            if (searchFocused && (System.currentTimeMillis() / 500) % 2 == 0) {
+                int cx = sx + 18 + r.textWidth(shown);
+                r.rect(cx, py + 10, cx + 1, py + 20, UiKit.accent());
+            }
+            hit(sx, py + 7, sx + sw, py + 23, (mx, my, button) -> searchFocused = true);
+        }
+        r.rect(px + 1, py + 30, px + pw - 1, py + 31, 0xFF17172A); // divider under the header
     }
 
-    private int rowHeight() {
-        return sidebarStep() - 3;
+    /** A tiny magnifying glass made of rectangles. */
+    private static void drawSearchGlass(Renderer r, int x, int y, int colour) {
+        r.outline(x, y, x + 6, y + 6, colour);
+        r.rect(x + 6, y + 6, x + 7, y + 7, colour);
+        r.rect(x + 7, y + 7, x + 8, y + 8, colour);
     }
 
-    private List<String> sidebarEntries() {
+    private void openTab(String tab) {
+        searchFocused = false;
+        scroll = 0;
+        if (tab.equals("Mods")) {
+            view = View.GRID;
+            settingsFromTab = false;
+        } else if (tab.equals("Edit HUD")) {
+            NexusCore.get().save();
+            NexusCore.get().platform().openScreen(new HudEditor());
+        } else if (tab.equals("Share")) {
+            view = View.SHARE;
+        } else {
+            selected = NexusCore.get().settings();
+            view = View.SETTINGS;
+            settingsFromTab = true;
+        }
+    }
+
+    // ------------------------------------------------------------------ category chips
+
+    private List<String> chips() {
         List<String> entries = new ArrayList<String>();
         entries.add(ALL);
         entries.add(FAVOURITES);
         for (Category c : Category.values()) {
-            if (c == Category.DEVELOPER && !com.nexusclient.core.online.DeveloperMode.active()) {
+            if (c == Category.DEVELOPER && !DeveloperMode.active()) {
                 continue; // only the Nexus developer sees the Developer tools
             }
             entries.add(c.label());
@@ -130,32 +256,69 @@ public class ModMenu implements NexusScreen {
         return entries;
     }
 
-    private void drawSidebar(Renderer r, int mouseX, int mouseY) {
-        int x = px + 8;
-        int y = py + 32;
-        for (String entry : sidebarEntries()) {
-            boolean active = view == View.GRID && entry.equals(category);
-            boolean hover = UiKit.inside(mouseX, mouseY, x, y, x + 88, y + rowHeight());
-            if (active || hover) {
-                UiKit.box(r, x, y, x + 88, y + rowHeight(), active ? UiKit.accent(0x20) : UiKit.PANEL_3,
-                        active ? UiKit.accent(0xB0) : UiKit.BORDER);
-            }
-            r.text(entry, x + 8, y + (rowHeight() - 8) / 2, active ? UiKit.TEXT : UiKit.TEXT_DIM, false);
-            y += sidebarStep();
+    private void drawChips(Renderer r, int mouseX, int mouseY) {
+        List<String> chips = chips();
+        // Shrink the padding when the panel is narrow, so every chip fits on one line.
+        int textTotal = 0;
+        for (String chip : chips) {
+            textTotal += chipWidth(r, chip);
         }
-        int bottom = py + ph - 8;
-        UiKit.button(r, "Share codes", x, bottom - 38, x + 88, bottom - 21,
-                UiKit.inside(mouseX, mouseY, x, bottom - 38, x + 88, bottom - 21), false);
-        UiKit.button(r, "Edit HUD", x, bottom - 17, x + 88, bottom,
-                UiKit.inside(mouseX, mouseY, x, bottom - 17, x + 88, bottom), true);
+        int padding = Math.max(3, Math.min(9, (contentW - textTotal - (chips.size() - 1) * 4) / (chips.size() * 2)));
+        int x = contentX;
+        int y = py + 37;
+        for (String chip : chips) {
+            int w = chipWidth(r, chip) + padding * 2;
+            boolean active = chip.equals(category);
+            boolean hover = UiKit.inside(mouseX, mouseY, x, y, x + w, y + 14);
+            int colour = chip.equals(ALL) || chip.equals(FAVOURITES) ? UiKit.accent() | 0xFF000000 : categoryColour(chip);
+            if (active) {
+                UiKit.roundBox(r, x, y, x + w, y + 14, 7, (0x30 << 24) | (colour & 0xFFFFFF), colour);
+            } else {
+                UiKit.roundBox(r, x, y, x + w, y + 14, 7, hover ? 0xFF1C1C2C : 0xFF121220, hover ? 0xFF34344E : 0xFF20203A);
+            }
+            int textColour = active ? 0xFFFFFFFF : (hover ? UiKit.TEXT : UiKit.TEXT_DIM);
+            int tx = x + padding;
+            if (chip.equals(FAVOURITES)) {
+                UiKit.star(r, tx, y + 3, active ? 0xFFFFB547 : textColour);
+                tx += 10;
+            }
+            r.text(chip, tx, y + 3, textColour, false);
+            final String name = chip;
+            hit(x, y, x + w, y + 14, (mx, my, button) -> {
+                category = name;
+                scroll = 0;
+            });
+            x += w + 4;
+        }
     }
+
+    /** A chip's text width (Favourites also has its star in front). */
+    private static int chipWidth(Renderer r, String chip) {
+        return r.textWidth(chip) + (chip.equals(FAVOURITES) ? 10 : 0);
+    }
+
+    /** Each category has its own colour (chips and the mods' icon tiles). */
+    private static int categoryColour(String label) {
+        if (label.equals(Category.HUD.label())) return 0xFF3AA8FF;
+        if (label.equals(Category.PVP.label())) return 0xFFFF6B5E;
+        if (label.equals(Category.VISUAL.label())) return 0xFF8B5CFF;
+        if (label.equals(Category.CHAT.label())) return 0xFF3DE0A0;
+        if (label.equals(Category.UTILITY.label())) return 0xFFFFB547;
+        if (label.equals(Category.DEVELOPER.label())) return 0xFFFF2BD6;
+        return 0xFF3AA8FF;
+    }
+
+    // ------------------------------------------------------------------ grid of mod cards
 
     /** The modules shown in the grid (by category, favourites and search). */
     private List<Module> visibleModules() {
         List<Module> list = new ArrayList<Module>();
         String query = search.toLowerCase(Locale.ROOT).trim();
         for (Module module : NexusCore.get().modules()) {
-            if (module.category() == Category.DEVELOPER && !com.nexusclient.core.online.DeveloperMode.active()) {
+            if (module instanceof NexusSettings) {
+                continue; // that's the "Settings" tab
+            }
+            if (module.category() == Category.DEVELOPER && !DeveloperMode.active()) {
                 continue;
             }
             boolean inCategory = category.equals(ALL)
@@ -170,128 +333,381 @@ public class ModMenu implements NexusScreen {
         return list;
     }
 
-    private static final int CARD_H = 38;
-    private static final int GAP = 6;
-
-    private int cardWidth() {
-        return (contentW - GAP) / 2;
-    }
-
     private void drawGrid(Renderer r, int mouseX, int mouseY) {
         List<Module> list = visibleModules();
         if (list.isEmpty()) {
-            r.text(category.equals(FAVOURITES) ? "No favourites yet – press ★ on a mod." : "No mods match your search.",
-                    contentX + 4, contentY + 6, UiKit.TEXT_DIM, false);
+            String message = category.equals(FAVOURITES) ? "No favourites yet – press the star on a mod." : "No mods match \"" + search + "\".";
+            UiKit.centered(r, message, contentX + contentW / 2, contentY + 30, UiKit.TEXT_DIM, false);
+            maxScroll = 0;
             return;
         }
-        int cw = cardWidth();
+        int columns = Math.max(2, (contentW + GAP) / (CARD_MIN_W + GAP));
+        int cardW = (contentW - (columns - 1) * GAP) / columns;
+        int rows = (list.size() + columns - 1) / columns;
+        maxScroll = Math.max(0, rows * (CARD_H + GAP) - GAP - contentH);
+        scroll = Math.min(scroll, maxScroll);
+        boolean mouseInContent = UiKit.inside(mouseX, mouseY, contentX, contentY, contentX + contentW, contentY + contentH);
         for (int i = 0; i < list.size(); i++) {
-            Module module = list.get(i);
-            int x = contentX + (i % 2) * (cw + GAP);
-            int y = contentY + (i / 2) * (CARD_H + GAP) - (int) scroll;
+            int x = contentX + (i % columns) * (cardW + GAP);
+            int y = contentY + (i / columns) * (CARD_H + GAP) - (int) scroll;
             if (y + CARD_H < contentY || y > contentY + contentH) {
-                continue; // off screen
+                continue; // scrolled out of view
             }
-            boolean hover = UiKit.inside(mouseX, mouseY, x, y, x + cw, y + CARD_H) && mouseY >= contentY;
-            UiKit.box(r, x, y, x + cw, y + CARD_H, hover ? UiKit.PANEL_3 : UiKit.PANEL_2,
-                    module.isActive() ? UiKit.accent(0x90) : UiKit.BORDER);
-            r.text(UiKit.fit(r, module.name(), cw - 44), x + 7, y + 7, UiKit.TEXT, false);
-            r.text(UiKit.fit(r, module.description(), cw - 14), x + 7, y + 21, UiKit.TEXT_FAINT, false);
-            // Favourite star.
-            r.text("★", x + cw - 38, y + 6, module.isFavourite() ? 0xFFFFB547 : UiKit.TEXT_FAINT, false);
-            // On/off switch, or a badge if it can't be switched on here.
-            if (!module.isSupported()) {
-                r.text("Soon", x + cw - 26, y + 7, UiKit.TEXT_FAINT, false);
-            } else if (module.isBlockedByServer()) {
-                r.text("Blocked", x + cw - 38, y + 7, UiKit.DANGER, false);
-            } else {
-                UiKit.toggle(r, x + cw - 26, y + 6, module.isEnabled(), hover);
-            }
+            drawCard(r, list.get(i), x, y, cardW, mouseInContent ? mouseX : -1, mouseY);
         }
     }
+
+    private void drawCard(Renderer r, final Module module, int x, int y, int w, int mouseX, int mouseY) {
+        boolean hover = UiKit.inside(mouseX, mouseY, x, y, x + w, y + CARD_H);
+        boolean on = module.isEnabled() && module.isSupported() && !module.isBlockedByServer();
+        int colour = categoryColour(module.category().label());
+        if (hover) {
+            footer = module.description();
+        }
+
+        // The card.
+        UiKit.roundBox(r, x, y, x + w, y + CARD_H, 5, hover ? 0xFF171726 : 0xFF11111B,
+                on ? UiKit.accent(hover ? 0xD0 : 0x70) : (hover ? 0xFF38385A : 0xFF1F1F33));
+        if (on) {
+            r.rect(x + 6, y + 1, x + w - 6, y + 2, UiKit.accent(0x60)); // a lit edge on the top
+        }
+
+        // Favourite star (top left) and the "settings" dots (top right).
+        boolean starHover = UiKit.inside(mouseX, mouseY, x + 3, y + 3, x + 14, y + 13);
+        UiKit.star(r, x + 5, y + 5, module.isFavourite() ? 0xFFFFB547 : (starHover ? UiKit.TEXT_DIM : 0xFF33334C));
+        for (int d = 0; d < 3; d++) {
+            r.rect(x + w - 13 + d * 3, y + 7, x + w - 11 + d * 3, y + 9, hover ? UiKit.TEXT_DIM : 0xFF33334C);
+        }
+
+        // The icon tile: the mod's initials on a tile in its category's colour.
+        int tile = 26;
+        int tx = x + (w - tile) / 2;
+        int ty = y + 9;
+        UiKit.roundBox(r, tx, ty, tx + tile, ty + tile, 6, (on ? 0x34 : 0x1C) << 24 | (colour & 0xFFFFFF),
+                (on ? 0xC0 : 0x60) << 24 | (colour & 0xFFFFFF));
+        String initials = initials(module.name());
+        // Whole-number sizes only – the pixel font looks uneven at sizes like 1.35x.
+        float scale = initials.length() == 1 ? 2f : 1f;
+        int textW = (int) (r.textWidth(initials) * scale);
+        r.push(tx + (tile - textW) / 2f, ty + (tile - 8 * scale) / 2f + 1, scale);
+        r.text(initials, 0, 0, on ? 0xFFFFFFFF : (0xD0 << 24 | (colour & 0xFFFFFF)), false);
+        r.pop();
+
+        // The name.
+        UiKit.centered(r, UiKit.fit(r, module.name(), w - 10), x + w / 2, y + 41, on ? 0xFFFFFFFF : UiKit.TEXT, false);
+
+        // The big status bar along the bottom (click it to switch the mod on/off).
+        int bx1 = x + 4, by1 = y + CARD_H - 19, bx2 = x + w - 4, by2 = y + CARD_H - 4;
+        boolean barHover = UiKit.inside(mouseX, mouseY, bx1, by1, bx2, by2);
+        String label;
+        int fill;
+        int text;
+        if (!module.isSupported()) {
+            label = "SOON";
+            fill = 0xFF181824;
+            text = UiKit.TEXT_FAINT;
+        } else if (module.isBlockedByServer()) {
+            label = "BLOCKED";
+            fill = 0x40FF6B5E;
+            text = UiKit.DANGER;
+        } else if (module.isEnabled()) {
+            label = "ENABLED";
+            fill = barHover ? (0xFF000000 | UiKit.mix(UiKit.accent() & 0xFFFFFF, 0xFFFFFF, 0.25)) : (UiKit.accent() | 0xFF000000);
+            text = 0xFF06060A;
+        } else {
+            label = "DISABLED";
+            fill = barHover ? 0xFF2C2A40 : 0xFF1E1D2C;
+            text = barHover ? UiKit.TEXT : UiKit.TEXT_DIM;
+        }
+        UiKit.round(r, bx1, by1, bx2, by2, 4, fill);
+        UiKit.centered(r, label, (bx1 + bx2) / 2, by1 + 4, text, false);
+
+        // What clicking does.
+        contentHit(x + 3, y + 3, x + 14, y + 13, (mx, my, button) -> {
+            module.setFavourite(!module.isFavourite());
+            NexusCore.get().save();
+        });
+        contentHit(bx1, by1, bx2, by2, (mx, my, button) -> {
+            if (button == 1) {
+                openSettings(module);
+            } else if (module.isSupported() && !module.isBlockedByServer()) {
+                module.toggle();
+                NexusCore.get().save();
+            }
+        });
+        contentHit(x, y, x + w, y + CARD_H, (mx, my, button) -> openSettings(module));
+    }
+
+    /** "Toggle Sprint" → "TS", "FPS" → "FPS", "Zoom" → "Z". */
+    static String initials(String name) {
+        String[] words = name.replace("(", " ").replace(")", " ").trim().split("[\\s\\-/]+");
+        if (words.length >= 2) {
+            return ("" + words[0].charAt(0) + words[1].charAt(0)).toUpperCase(Locale.ROOT);
+        }
+        String word = words[0];
+        if (word.length() <= 3 || (word.length() <= 4 && word.equals(word.toUpperCase(Locale.ROOT)))) {
+            return word.toUpperCase(Locale.ROOT);
+        }
+        return word.substring(0, 1).toUpperCase(Locale.ROOT);
+    }
+
+    private void openSettings(Module module) {
+        selected = module;
+        view = View.SETTINGS;
+        settingsFromTab = false;
+        scroll = 0;
+    }
+
+    // ------------------------------------------------------------------ a mod's settings page
 
     private void drawSettings(Renderer r, int mouseX, int mouseY) {
-        Module module = selected;
+        final Module module = selected;
         int x = contentX;
         int y = contentY - (int) scroll;
-        UiKit.button(r, "< Back", x, y, x + 46, y + 16, UiKit.inside(mouseX, mouseY, x, y, x + 46, y + 16), false);
-        r.text(module.name(), x + 54, y + 4, UiKit.TEXT, true);
-        if (module.isSupported() && !(module instanceof com.nexusclient.core.module.NexusSettings)) {
-            UiKit.toggle(r, contentX + contentW - 22, y + 3, module.isEnabled(), false);
+        int right = contentX + contentW;
+        boolean nexusSettings = module instanceof NexusSettings;
+
+        // Header: back button, icon tile, name + description, on/off switch.
+        if (!settingsFromTab) {
+            boolean backHover = UiKit.inside(mouseX, mouseY, x, y + 4, x + 44, y + 20);
+            UiKit.roundBox(r, x, y + 4, x + 44, y + 20, 4, backHover ? 0xFF1C1C2C : 0xFF121220, backHover ? UiKit.accent(0xA0) : 0xFF26263C);
+            r.text("< Back", x + 7, y + 8, backHover ? UiKit.TEXT : UiKit.TEXT_DIM, false);
+            contentHit(x, y + 4, x + 44, y + 20, (mx, my, button) -> {
+                view = View.GRID;
+                scroll = 0;
+            });
+            x += 52;
         }
-        y += 22;
-        r.text(UiKit.fit(r, module.description(), contentW), x, y, UiKit.TEXT_DIM, false);
-        y += 14;
+        int colour = nexusSettings ? (UiKit.accent() | 0xFF000000) : categoryColour(module.category().label());
+        UiKit.roundBox(r, x, y, x + 24, y + 24, 6, 0x30 << 24 | (colour & 0xFFFFFF), 0xC0 << 24 | (colour & 0xFFFFFF));
+        String initials = nexusSettings ? "N" : initials(module.name());
+        UiKit.centered(r, initials, x + 12, y + 8, 0xFFFFFFFF, false);
+        r.text(module.name(), x + 32, y + 3, 0xFFFFFFFF, true);
+        r.text(UiKit.fit(r, module.description(), right - x - 70), x + 32, y + 15, UiKit.TEXT_DIM, false);
+        if (module.isSupported() && !nexusSettings && !module.isBlockedByServer()) {
+            boolean hover = UiKit.inside(mouseX, mouseY, right - 26, y + 6, right - 2, y + 18);
+            UiKit.pillToggle(r, right - 24, y + 6, module.isEnabled(), hover);
+            contentHit(right - 26, y + 4, right, y + 20, (mx, my, button) -> {
+                module.toggle();
+                NexusCore.get().save();
+            });
+        }
+        y += 32;
         if (!module.isSupported()) {
-            r.text("Coming soon to this version of Nexus.", x, y, UiKit.accent(), false);
-            y += 14;
+            notice(r, x - (settingsFromTab ? 0 : 52), y, right, "Coming soon to this version of Nexus.", UiKit.accent());
+            y += 18;
         }
         if (module.isBlockedByServer()) {
-            r.text("This server doesn't allow this mod, so it's switched off here.", x, y, UiKit.DANGER, false);
-            y += 14;
+            notice(r, contentX, y, right, "This server doesn't allow this mod, so it's switched off here.", UiKit.DANGER);
+            y += 18;
         }
-        y += 4;
+
+        // One row per setting.
+        x = contentX;
         for (Setting<?> setting : module.settings()) {
-            drawSettingRow(r, setting, x, y, mouseX, mouseY);
-            y += 22;
+            drawSettingRow(r, setting, x, y, right, mouseX, mouseY);
+            y += ROW_H + 3;
         }
+
+        // Buttons at the end.
+        y += 4;
+        int bx = x;
         if (module instanceof HudModule) {
-            UiKit.button(r, "Move it in the HUD editor", x, y + 4, x + 150, y + 20,
-                    UiKit.inside(mouseX, mouseY, x, y + 4, x + 150, y + 20), true);
-            y += 26;
+            int w = r.textWidth("Move it in the HUD editor") + 16;
+            button(r, "Move it in the HUD editor", bx, y, bx + w, y + 16, mouseX, mouseY, true, (mx, my, b) -> {
+                NexusCore.get().save();
+                NexusCore.get().platform().openScreen(new HudEditor());
+            });
+            bx += w + 6;
         }
-        UiKit.button(r, "Reset to defaults", x, y + 4, x + 110, y + 20,
-                UiKit.inside(mouseX, mouseY, x, y + 4, x + 110, y + 20), false);
+        int w = r.textWidth("Reset to defaults") + 16;
+        button(r, "Reset to defaults", bx, y, bx + w, y + 16, mouseX, mouseY, false, (mx, my, b) -> {
+            for (Setting<?> setting : module.settings()) {
+                setting.reset();
+                if (setting instanceof ColorSetting) {
+                    ((ColorSetting) setting).setChroma(false);
+                }
+            }
+            NexusCore.get().save();
+        });
+        y += 22;
+        maxScroll = Math.max(0, y + (int) scroll - contentY - contentH);
     }
 
-    private void drawSettingRow(Renderer r, Setting<?> setting, int x, int y, int mouseX, int mouseY) {
-        int right = contentX + contentW - 4;
-        r.text(UiKit.fit(r, setting.name(), contentW / 2), x, y + 5, UiKit.TEXT, false);
+    private static void notice(Renderer r, int x, int y, int right, String text, int colour) {
+        UiKit.round(r, x, y, right, y + 14, 3, (0x18 << 24) | (colour & 0xFFFFFF));
+        r.rect(x, y, x + 2, y + 14, colour | 0xFF000000);
+        r.text(text, x + 8, y + 3, colour | 0xFF000000, false);
+    }
+
+    private void drawSettingRow(Renderer r, final Setting<?> setting, int x, int y, final int right, int mouseX, int mouseY) {
+        boolean rowHover = UiKit.inside(mouseX, mouseY, x, y, right, y + ROW_H);
+        UiKit.roundBox(r, x, y, right, y + ROW_H, 4, rowHover ? 0xFF151522 : 0xFF10101A, rowHover ? 0xFF2A2A44 : 0xFF1A1A2C);
+        r.text(UiKit.fit(r, setting.name(), (right - x) / 2 - 10), x + 8, y + 7, UiKit.TEXT, false);
+        final int cy = y + (ROW_H - 12) / 2;
+        final int end = right - 8;
         if (setting instanceof BooleanSetting) {
-            UiKit.toggle(r, right - 20, y + 3, ((BooleanSetting) setting).isOn(),
-                    UiKit.inside(mouseX, mouseY, right - 20, y, right, y + 16));
+            UiKit.pillToggle(r, end - 22, cy, ((BooleanSetting) setting).isOn(), rowHover);
+            contentHit(x, y, right, y + ROW_H, (mx, my, b) -> {
+                ((BooleanSetting) setting).toggle();
+                NexusCore.get().save();
+            });
         } else if (setting instanceof NumberSetting) {
-            NumberSetting number = (NumberSetting) setting;
-            UiKit.slider(r, right - 100, y + 3, right, number.fraction(), setting == draggingSlider);
+            final NumberSetting number = (NumberSetting) setting;
+            int sliderW = Math.min(140, (right - x) / 3);
+            final int s1 = end - sliderW;
+            UiKit.smoothSlider(r, s1, cy, end, number.fraction(), setting == draggingSlider);
             String value = number.display();
-            r.text(value, right - 106 - r.textWidth(value), y + 5, UiKit.TEXT_DIM, false);
+            UiKit.round(r, s1 - r.textWidth(value) - 14, cy, s1 - 6, cy + 12, 3, 0xFF1C1C2C);
+            r.text(value, s1 - r.textWidth(value) - 10, cy + 2, UiKit.TEXT, false);
+            contentHit(s1 - 4, y, end + 4, y + ROW_H, (mx, my, b) -> {
+                draggingSlider = number;
+                sliderX1 = s1;
+                sliderX2 = end;
+                number.setFraction((mx - s1) / (double) (end - s1));
+            });
         } else if (setting instanceof ColorSetting) {
-            ColorSetting colour = (ColorSetting) setting;
-            int sx = right - PRESETS.length * 12 - 48;
-            for (int preset : PRESETS) {
+            final ColorSetting colour = (ColorSetting) setting;
+            int chromaW = r.textWidth("Chroma") + 12;
+            int sx = end - chromaW - 6 - PRESETS.length * 13;
+            for (final int preset : PRESETS) {
                 boolean current = (colour.get() & 0xFFFFFF) == (preset & 0xFFFFFF) && !colour.chroma();
-                UiKit.box(r, sx, y + 3, sx + 10, y + 13, preset, current ? 0xFFFFFFFF : UiKit.BORDER);
-                sx += 12;
+                UiKit.roundBox(r, sx, cy, sx + 11, cy + 11, 3, preset, current ? 0xFFFFFFFF : 0xFF2A2A40);
+                contentHit(sx, cy, sx + 11, cy + 11, (mx, my, b) -> {
+                    int alpha = colour.get() >>> 24;
+                    colour.set((alpha << 24) | (preset & 0xFFFFFF)); // keep its see-through-ness
+                    colour.setChroma(false);
+                    NexusCore.get().save();
+                });
+                sx += 13;
             }
-            UiKit.button(r, "Chroma", right - 44, y + 1, right, y + 15, colour.chroma(), colour.chroma());
+            boolean chromaOn = colour.chroma();
+            int c1 = end - chromaW;
+            if (chromaOn) {
+                // A rainbow edge for the chroma button.
+                for (int i = 0; i < chromaW; i++) {
+                    r.rect(c1 + i, cy - 1, c1 + i + 1, cy + 13, 0xFF000000 | java.awt.Color.HSBtoRGB(i / (float) chromaW, 0.7f, 1f));
+                }
+                UiKit.round(r, c1 + 1, cy, end - 1, cy + 12, 2, 0xFF10101A);
+            } else {
+                UiKit.roundBox(r, c1, cy, end, cy + 12, 3, 0xFF1A1A28, 0xFF2A2A40);
+            }
+            r.text("Chroma", c1 + 6, cy + 2, chromaOn ? 0xFFFFFFFF : UiKit.TEXT_DIM, false);
+            contentHit(c1, cy, end, cy + 12, (mx, my, b) -> {
+                colour.setChroma(!colour.chroma());
+                NexusCore.get().save();
+            });
         } else if (setting instanceof ChoiceSetting) {
-            UiKit.button(r, ((ChoiceSetting) setting).get(), right - 96, y + 1, right, y + 15,
-                    UiKit.inside(mouseX, mouseY, right - 96, y + 1, right, y + 15), false);
+            final ChoiceSetting choice = (ChoiceSetting) setting;
+            int w = Math.max(80, r.textWidth(choice.get()) + 26);
+            boolean hover = UiKit.inside(mouseX, mouseY, end - w, cy - 1, end, cy + 13);
+            UiKit.roundBox(r, end - w, cy - 1, end, cy + 13, 3, hover ? 0xFF22223A : 0xFF181826, hover ? UiKit.accent(0xA0) : 0xFF2A2A40);
+            r.text(choice.get(), end - w + 7, cy + 2, UiKit.TEXT, false);
+            r.text(">", end - 9, cy + 2, UiKit.accent() | 0xFF000000, false);
+            contentHit(end - w, cy - 1, end, cy + 13, (mx, my, b) -> {
+                choice.next();
+                NexusCore.get().save();
+            });
         } else if (setting instanceof TextSetting) {
-            UiKit.textField(r, ((TextSetting) setting).get(), "", right - 150, y, right, y + 16, setting == focusedText);
+            final TextSetting text = (TextSetting) setting;
+            int w = Math.min(160, (right - x) / 2);
+            UiKit.textField(r, text.get(), "", end - w, cy - 2, end, cy + 14, setting == focusedText);
+            contentHit(end - w, cy - 2, end, cy + 14, (mx, my, b) -> focusedText = text);
         }
     }
+
+    /** A rounded button that records its own click. */
+    private void button(Renderer r, String label, int x1, int y1, int x2, int y2, int mouseX, int mouseY,
+                        boolean primary, Click click) {
+        boolean hover = UiKit.inside(mouseX, mouseY, x1, y1, x2, y2);
+        if (primary) {
+            UiKit.round(r, x1, y1, x2, y2, 4, hover ? 0xFF000000 | UiKit.mix(UiKit.accent() & 0xFFFFFF, 0xFFFFFF, 0.2)
+                    : UiKit.accent() | 0xFF000000);
+            UiKit.centered(r, label, (x1 + x2) / 2, y1 + (y2 - y1 - 8) / 2, 0xFF06060A, false);
+        } else {
+            UiKit.roundBox(r, x1, y1, x2, y2, 4, hover ? 0xFF1E1E2E : 0xFF14141F, hover ? UiKit.accent(0x90) : 0xFF26263C);
+            UiKit.centered(r, label, (x1 + x2) / 2, y1 + (y2 - y1 - 8) / 2, hover ? UiKit.TEXT : UiKit.TEXT_DIM, false);
+        }
+        contentHit(x1, y1, x2, y2, click);
+    }
+
+    // ------------------------------------------------------------------ share codes
 
     private void drawShare(Renderer r, int mouseX, int mouseY) {
         int x = contentX;
         int y = contentY - (int) scroll;
-        r.text("Share codes", x, y + 2, UiKit.TEXT, true);
-        y += 16;
-        r.text("Share your crosshair or HUD layout with a code. Friends paste it below.", x, y, UiKit.TEXT_DIM, false);
-        y += 18;
-        UiKit.button(r, "Copy my crosshair code", x, y, x + 150, y + 16, UiKit.inside(mouseX, mouseY, x, y, x + 150, y + 16), true);
-        y += 22;
-        UiKit.button(r, "Copy my HUD layout code", x, y, x + 150, y + 16, UiKit.inside(mouseX, mouseY, x, y, x + 150, y + 16), true);
-        y += 30;
-        r.text("Paste a code:", x, y, UiKit.TEXT, false);
+        int right = contentX + contentW;
+        r.text("Share codes", x, y + 3, 0xFFFFFFFF, true);
+        r.text("Send your crosshair or HUD layout to a friend as a short code.", x, y + 16, UiKit.TEXT_DIM, false);
+        y += 32;
+
+        int half = (contentW - 6) / 2;
+        shareCard(r, x, y, x + half, "Crosshair", "Your crosshair's shape and colour", mouseX, mouseY, (mx, my, b) -> {
+            NexusCore.get().platform().copyToClipboard(ShareCodes.crosshairCode(NexusCore.get().module("crosshair")));
+            shareMessage = "Crosshair code copied!";
+        });
+        shareCard(r, x + half + 6, y, right, "HUD layout", "Where all your HUD mods sit", mouseX, mouseY, (mx, my, b) -> {
+            NexusCore.get().platform().copyToClipboard(ShareCodes.hudCode());
+            shareMessage = "HUD layout code copied!";
+        });
+        y += 54;
+
+        r.text("Got a code from a friend?", x, y, UiKit.TEXT, false);
         y += 12;
-        UiKit.textField(r, shareInput, "NXC-… or NXH-…", x, y, x + contentW - 70, y + 16, shareFocused);
-        UiKit.button(r, "Import", x + contentW - 64, y, x + contentW - 4, y + 16,
-                UiKit.inside(mouseX, mouseY, x + contentW - 64, y, x + contentW - 4, y + 16), false);
-        UiKit.button(r, "Paste", x, y + 20, x + 50, y + 36, UiKit.inside(mouseX, mouseY, x, y + 20, x + 50, y + 36), false);
+        UiKit.textField(r, shareInput, "NXC-… or NXH-…", x, y, right - 116, y + 18, shareFocused);
+        contentHit(x, y, right - 116, y + 18, (mx, my, b) -> shareFocused = true);
+        button(r, "Paste", right - 110, y + 1, right - 62, y + 17, mouseX, mouseY, false, (mx, my, b) -> {
+            String pasted = NexusCore.get().platform().clipboard();
+            shareInput = pasted == null ? "" : pasted.trim();
+        });
+        button(r, "Use code", right - 56, y + 1, right, y + 17, mouseX, mouseY, true,
+                (mx, my, b) -> shareMessage = ShareCodes.apply(shareInput));
+        y += 24;
         if (!shareMessage.isEmpty()) {
-            r.text(shareMessage, x + 58, y + 25, UiKit.accent(), false);
+            notice(r, x, y, right, shareMessage, UiKit.accent());
         }
+        maxScroll = 0;
+    }
+
+    private void shareCard(Renderer r, int x1, int y, int x2, String title, String text, int mouseX, int mouseY, Click copy) {
+        boolean hover = UiKit.inside(mouseX, mouseY, x1, y, x2, y + 46);
+        UiKit.roundBox(r, x1, y, x2, y + 46, 5, hover ? 0xFF171726 : 0xFF11111B, hover ? UiKit.accent(0xA0) : 0xFF1F1F33);
+        r.text(title, x1 + 8, y + 7, 0xFFFFFFFF, false);
+        r.text(UiKit.fit(r, text, x2 - x1 - 16), x1 + 8, y + 18, UiKit.TEXT_DIM, false);
+        r.text("Copy code >", x1 + 8, y + 32, UiKit.accent() | 0xFF000000, false);
+        contentHit(x1, y, x2, y + 46, copy);
+    }
+
+    // ------------------------------------------------------------------ scrollbar and footer
+
+    private void drawScrollbar(Renderer r) {
+        if (maxScroll <= 0) {
+            return;
+        }
+        int trackX = contentX + contentW + 4;
+        int barH = Math.max(16, (int) (contentH * contentH / (double) (contentH + maxScroll)));
+        int barY = contentY + (int) ((contentH - barH) * (scroll / maxScroll));
+        UiKit.round(r, trackX, contentY, trackX + 2, contentY + contentH, 1, 0x14FFFFFF);
+        UiKit.round(r, trackX, barY, trackX + 2, barY + barH, 1, UiKit.accent(0xC0));
+    }
+
+    private void drawFooter(Renderer r) {
+        int y = py + ph - 13;
+        r.rect(px + 1, y - 4, px + pw - 1, y - 3, 0xFF17172A);
+        String hints = view == View.GRID ? "Esc or Right Shift to close" : "Esc back";
+        r.text(hints, px + pw - 12 - r.textWidth(hints), y, UiKit.TEXT_FAINT, false);
+        String left = footer.isEmpty() ? "Nexus Client" : footer;
+        r.text(UiKit.fit(r, left, pw - 40 - r.textWidth(hints)), px + 12, y,
+                footer.isEmpty() ? UiKit.TEXT_FAINT : UiKit.TEXT_DIM, false);
+    }
+
+    /** Cuts the start of text so its end (what you're typing) fits. */
+    private static String fitEnd(Renderer r, String text, int maxWidth) {
+        String shown = text;
+        while (r.textWidth(shown) > maxWidth && shown.length() > 1) {
+            shown = shown.substring(1);
+        }
+        return shown;
     }
 
     // ================================================================== clicks
@@ -301,175 +717,16 @@ public class ModMenu implements NexusScreen {
         searchFocused = false;
         focusedText = null;
         shareFocused = false;
-
-        // Sidebar
-        int x = px + 8;
-        int y = py + 32;
-        for (String entry : sidebarEntries()) {
-            if (UiKit.inside(mx, my, x, y, x + 88, y + rowHeight())) {
-                category = entry;
-                view = View.GRID;
-                scroll = 0;
+        boolean inContent = UiKit.inside(mx, my, contentX, contentY, contentX + contentW, contentY + contentH);
+        // The newest hits are on top (e.g. the ★ on a card), so check those first.
+        for (int i = hits.size() - 1; i >= 0; i--) {
+            Hit hit = hits.get(i);
+            if ((!hit.inContent || inContent) && UiKit.inside(mx, my, hit.x1, hit.y1, hit.x2, hit.y2)) {
+                hit.click.run(mx, my, button);
                 return true;
             }
-            y += sidebarStep();
         }
-        int bottom = py + ph - 8;
-        if (UiKit.inside(mx, my, x, bottom - 38, x + 88, bottom - 21)) {
-            view = View.SHARE;
-            scroll = 0;
-            return true;
-        }
-        if (UiKit.inside(mx, my, x, bottom - 17, x + 88, bottom)) {
-            NexusCore.get().save();
-            NexusCore.get().platform().openScreen(new HudEditor());
-            return true;
-        }
-        if (view == View.GRID && UiKit.inside(mx, my, px + pw - 160, py + 7, px + pw - 8, py + 23)) {
-            searchFocused = true;
-            return true;
-        }
-        if (!UiKit.inside(mx, my, contentX, contentY, contentX + contentW, contentY + contentH)) {
-            return false;
-        }
-        if (view == View.GRID) {
-            return clickGrid(mx, my, button);
-        }
-        if (view == View.SETTINGS) {
-            return clickSettings(mx, my);
-        }
-        return clickShare(mx, my);
-    }
-
-    private boolean clickGrid(double mx, double my, int button) {
-        List<Module> list = visibleModules();
-        int cw = cardWidth();
-        for (int i = 0; i < list.size(); i++) {
-            Module module = list.get(i);
-            int x = contentX + (i % 2) * (cw + GAP);
-            int y = contentY + (i / 2) * (CARD_H + GAP) - (int) scroll;
-            if (!UiKit.inside(mx, my, x, y, x + cw, y + CARD_H)) {
-                continue;
-            }
-            if (UiKit.inside(mx, my, x + cw - 40, y + 3, x + cw - 28, y + 16)) {
-                module.setFavourite(!module.isFavourite());
-            } else if (button == 0 && module.isSupported() && !module.isBlockedByServer()
-                    && UiKit.inside(mx, my, x + cw - 28, y + 3, x + cw, y + 18)) {
-                module.toggle();
-            } else {
-                selected = module;
-                view = View.SETTINGS;
-                scroll = 0;
-            }
-            NexusCore.get().save();
-            return true;
-        }
-        return false;
-    }
-
-    private boolean clickSettings(double mx, double my) {
-        Module module = selected;
-        int x = contentX;
-        int y = contentY - (int) scroll;
-        if (UiKit.inside(mx, my, x, y, x + 46, y + 16)) {
-            view = View.GRID;
-            scroll = 0;
-            return true;
-        }
-        if (module.isSupported() && UiKit.inside(mx, my, contentX + contentW - 24, y, contentX + contentW, y + 16)) {
-            module.toggle();
-            NexusCore.get().save();
-            return true;
-        }
-        y += 22 + 14 + (module.isSupported() ? 0 : 14) + (module.isBlockedByServer() ? 14 : 0) + 4;
-        int right = contentX + contentW - 4;
-        for (Setting<?> setting : module.settings()) {
-            if (my >= y && my < y + 22) {
-                clickSetting(setting, mx, y, right);
-                NexusCore.get().save();
-                return true;
-            }
-            y += 22;
-        }
-        if (module instanceof HudModule) {
-            if (UiKit.inside(mx, my, x, y + 4, x + 150, y + 20)) {
-                NexusCore.get().platform().openScreen(new HudEditor());
-                return true;
-            }
-            y += 26;
-        }
-        if (UiKit.inside(mx, my, x, y + 4, x + 110, y + 20)) {
-            for (Setting<?> setting : module.settings()) {
-                setting.reset();
-                if (setting instanceof ColorSetting) {
-                    ((ColorSetting) setting).setChroma(false);
-                }
-            }
-            NexusCore.get().save();
-            return true;
-        }
-        return false;
-    }
-
-    private void clickSetting(Setting<?> setting, double mx, int y, int right) {
-        if (setting instanceof BooleanSetting && mx >= right - 24) {
-            ((BooleanSetting) setting).toggle();
-        } else if (setting instanceof NumberSetting && mx >= right - 104) {
-            draggingSlider = (NumberSetting) setting;
-            sliderX1 = right - 100;
-            sliderX2 = right;
-            draggingSlider.setFraction((mx - sliderX1) / (sliderX2 - sliderX1));
-        } else if (setting instanceof ColorSetting) {
-            ColorSetting colour = (ColorSetting) setting;
-            if (mx >= right - 44) {
-                colour.setChroma(!colour.chroma());
-                return;
-            }
-            int sx = right - PRESETS.length * 12 - 48;
-            for (int preset : PRESETS) {
-                if (mx >= sx && mx < sx + 10) {
-                    int alpha = colour.get() >>> 24;
-                    colour.set((alpha << 24) | (preset & 0xFFFFFF)); // keep its see-through-ness
-                    colour.setChroma(false);
-                }
-                sx += 12;
-            }
-        } else if (setting instanceof ChoiceSetting && mx >= right - 96) {
-            ((ChoiceSetting) setting).next();
-        } else if (setting instanceof TextSetting && mx >= right - 150) {
-            focusedText = (TextSetting) setting;
-        }
-    }
-
-    private boolean clickShare(double mx, double my) {
-        int x = contentX;
-        int y = contentY - (int) scroll + 16 + 18;
-        if (UiKit.inside(mx, my, x, y, x + 150, y + 16)) {
-            NexusCore.get().platform().copyToClipboard(ShareCodes.crosshairCode(NexusCore.get().module("crosshair")));
-            shareMessage = "Crosshair code copied!";
-            return true;
-        }
-        y += 22;
-        if (UiKit.inside(mx, my, x, y, x + 150, y + 16)) {
-            NexusCore.get().platform().copyToClipboard(ShareCodes.hudCode());
-            shareMessage = "HUD layout code copied!";
-            return true;
-        }
-        y += 30 + 12;
-        if (UiKit.inside(mx, my, x, y, x + contentW - 70, y + 16)) {
-            shareFocused = true;
-            return true;
-        }
-        if (UiKit.inside(mx, my, x + contentW - 64, y, x + contentW - 4, y + 16)) {
-            shareMessage = ShareCodes.apply(shareInput);
-            return true;
-        }
-        if (UiKit.inside(mx, my, x, y + 20, x + 50, y + 36)) {
-            String pasted = NexusCore.get().platform().clipboard();
-            shareInput = pasted == null ? "" : pasted.trim();
-            return true;
-        }
-        return false;
+        return UiKit.inside(mx, my, px, py, px + pw, py + ph);
     }
 
     @Override
@@ -493,7 +750,7 @@ public class ModMenu implements NexusScreen {
 
     @Override
     public boolean mouseScrolled(double x, double y, double amount) {
-        scroll = Math.max(0, scroll - amount * 14);
+        scroll = Math.max(0, Math.min(maxScroll, scroll - amount * 18));
         return true;
     }
 
@@ -529,6 +786,7 @@ public class ModMenu implements NexusScreen {
             }
             if (view != View.GRID) {
                 view = View.GRID;
+                settingsFromTab = false;
                 scroll = 0;
                 return true;
             }

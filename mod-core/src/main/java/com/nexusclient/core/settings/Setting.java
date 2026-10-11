@@ -39,6 +39,11 @@ public abstract class Setting<T> {
         this.value = newValue;
     }
 
+    /** The value it starts with (and goes back to on "Reset"). */
+    public T defaultValue() {
+        return defaultValue;
+    }
+
     public void reset() {
         this.value = defaultValue;
     }

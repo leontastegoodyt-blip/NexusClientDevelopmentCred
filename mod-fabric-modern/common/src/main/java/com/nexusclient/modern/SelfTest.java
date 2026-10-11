@@ -102,6 +102,11 @@ public final class SelfTest {
                     : "FAILED: Right Shift didn't open the mod menu (" + screenName(mc) + ")");
         } else if (worldTicks == 100) {
             screenshot(mc, "in-game menu");
+        } else if (worldTicks == 104) {
+            // A mod's settings page, for the screenshot below.
+            NexusCore.get().platform().openScreen(com.nexusclient.core.ui.ModMenu.forModule(NexusCore.get().module("crosshair")));
+        } else if (worldTicks == 114) {
+            screenshot(mc, "settings page");
         } else if (worldTicks == 120) {
             log("finished");
             mc.stop();
