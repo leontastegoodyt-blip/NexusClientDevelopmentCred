@@ -25,7 +25,7 @@ javafx {
     // JavaFX 21 is the long-term-support version that matches Java 21.
     version = "21.0.12"
     // The parts of JavaFX we use. "controls" gives us buttons, labels, layouts etc.
-    modules = listOf("javafx.controls")
+    modules = listOf("javafx.controls", "javafx.media") // media = the clip player (Tools → Clips)
 }
 
 dependencies {

@@ -3,6 +3,7 @@ package com.nexusclient.launcher.ui;
 import com.nexusclient.launcher.game.NexusPaths;
 import com.nexusclient.launcher.instance.Instance;
 import com.nexusclient.launcher.instance.InstanceStore;
+import com.nexusclient.launcher.tools.Clips;
 import com.nexusclient.launcher.tools.Playtime;
 import com.nexusclient.launcher.tools.Storage;
 import com.nexusclient.launcher.tools.WorldBackups;
@@ -12,6 +13,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
@@ -22,6 +24,10 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
+import javafx.util.Duration;
 
 import java.awt.Desktop;
 import java.nio.file.Files;
@@ -38,6 +44,7 @@ import java.util.stream.Stream;
  * ToolsPage – the Tools tab (the project brief: Launcher → Tools):
  *
  *   Screenshots    – every instance's screenshots: view, copy, delete, open folder
+ *   Clips          – the Clip Recorder's videos (F8 in game): play, copy the file, delete
  *   World Backups  – back up, restore and delete copies of singleplayer worlds
  *   Safe Mode      – start the selected instance with all mods off
  *   Playtime       – hours played per instance and per version
@@ -88,6 +95,7 @@ public class ToolsPage extends VBox {
         currentTab = tab;
         tabs.select(tab);
         switch (tab) {
+            case "Clips" -> showClips();
             case "World Backups" -> showBackups();
             case "Safe Mode" -> showSafeMode();
             case "Playtime" -> showPlaytime();
@@ -173,6 +181,172 @@ public class ToolsPage extends VBox {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         Modal.show(new VBox(12, view, new HBox(10, copy, folder, spacer, delete)), 880);
+    }
+
+    // ================================================================== Clips
+
+    /** Every instance's clips (Clip Recorder, F8 in game), newest first; previews load one by one. */
+    private void showClips() {
+        body.getChildren().setAll(note("Loading clips…"));
+        List<Instance> instances = List.copyOf(store.instances());
+        Background.run("clips", () -> Clips.all(instances), clips -> {
+            if (clips.isEmpty()) {
+                body.getChildren().setAll(People.empty(Icons.PLAY, "No clips yet",
+                        "Switch on Clip Recorder in game (Right Shift → Utility), then press F8."));
+                return;
+            }
+            TilePane grid = new TilePane(12, 12);
+            grid.setPrefTileWidth(232);
+            grid.setMaxWidth(Double.MAX_VALUE);
+            long total = 0;
+            for (Clips.Clip clip : clips) {
+                grid.getChildren().add(clipTile(clip));
+                total += clip.bytes();
+            }
+            body.getChildren().setAll(note(clips.size() + (clips.size() == 1 ? " clip" : " clips") + " · "
+                    + megabytes(total) + ". Click one to play it."), grid);
+        }, null);
+    }
+
+    private Node clipTile(Clips.Clip clip) {
+        StackPane frame = new StackPane();
+        frame.getStyleClass().add("screenshot-tile");
+        frame.setPrefSize(232, 130);
+        frame.setMinSize(232, 130);
+        // A play button on top (and on its own until the preview picture is ready).
+        StackPane play = new StackPane(Icons.create(Icons.PLAY, 22));
+        play.setMaxSize(42, 42);
+        play.setStyle("-fx-background-color: rgba(6, 6, 12, 0.62); -fx-background-radius: 21;"
+                + " -fx-border-color: rgba(255, 255, 255, 0.35); -fx-border-radius: 21;");
+        play.lookupAll(".icon").forEach(icon -> icon.setStyle("-fx-fill: white;"));
+        frame.getChildren().add(play);
+        Background.run("clip-thumb", () -> Clips.thumbnail(clip), thumb -> {
+            if (thumb != null) {
+                ImageView view = new ImageView(new Image(thumb.toUri().toString(), 232, 130, true, true, true));
+                frame.getChildren().add(0, view);
+            }
+        }, null);
+        Label caption = new Label(clip.instance().name() + "  ·  "
+                + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(new Date(clip.time()))
+                + "  ·  " + megabytes(clip.bytes()));
+        caption.getStyleClass().add("mod-meta");
+        VBox tile = new VBox(6, frame, caption);
+        tile.getStyleClass().add("flip-in");
+        tile.setOnMouseClicked(event -> openClip(clip));
+        tile.setStyle("-fx-cursor: hand;");
+        return tile;
+    }
+
+    /** Opens the newest clip in the player (for the developer screen tour). */
+    public void openNewestClip() {
+        List<Instance> instances = List.copyOf(store.instances());
+        Background.run("newest-clip", () -> Clips.all(instances), clips -> {
+            if (!clips.isEmpty()) {
+                openClip(clips.get(0));
+            }
+        }, null);
+    }
+
+    /** A pop-up player: play/pause, a seek bar and the time, plus copy / open folder / delete. */
+    private void openClip(Clips.Clip clip) {
+        MediaPlayer player;
+        try {
+            player = new MediaPlayer(new Media(clip.file().toUri().toString()));
+        } catch (RuntimeException e) {
+            Toast.error("This clip can't be played here: " + e.getMessage());
+            return;
+        }
+        MediaView view = new MediaView(player);
+        view.setPreserveRatio(true);
+        view.setFitWidth(820);
+        StackPane screen = new StackPane(view);
+        screen.setStyle("-fx-background-color: black; -fx-background-radius: 8;");
+        screen.setMinHeight(300);
+
+        Button playPause = new Button("Pause");
+        playPause.getStyleClass().add("primary-button");
+        playPause.setMinWidth(80);
+        playPause.setOnAction(event -> {
+            if (player.getStatus() == MediaPlayer.Status.PLAYING) {
+                player.pause();
+            } else {
+                if (player.getCurrentTime().greaterThanOrEqualTo(player.getTotalDuration())) {
+                    player.seek(Duration.ZERO); // finished: start again
+                }
+                player.play();
+            }
+        });
+        player.statusProperty().addListener((o, was, now) ->
+                playPause.setText(now == MediaPlayer.Status.PLAYING ? "Pause" : "Play"));
+        player.setOnEndOfMedia(player::pause);
+
+        // The seek bar follows the video; dragging it jumps there.
+        Slider seek = new Slider(0, 1, 0);
+        HBox.setHgrow(seek, Priority.ALWAYS);
+        Label time = new Label("0:00");
+        time.getStyleClass().add("mod-meta");
+        time.setMinWidth(80);
+        player.currentTimeProperty().addListener((o, was, now) -> {
+            Duration total = player.getTotalDuration();
+            if (!seek.isValueChanging() && total != null && total.toMillis() > 0) {
+                seek.setValue(now.toMillis() / total.toMillis());
+            }
+            time.setText(clock(now) + " / " + (total == null ? "?" : clock(total)));
+        });
+        seek.valueChangingProperty().addListener((o, was, dragging) -> {
+            if (!dragging && player.getTotalDuration() != null) {
+                player.seek(player.getTotalDuration().multiply(seek.getValue()));
+            }
+        });
+        seek.setOnMouseReleased(event -> {
+            if (player.getTotalDuration() != null) {
+                player.seek(player.getTotalDuration().multiply(seek.getValue()));
+            }
+        });
+
+        Button copy = new Button("Copy file");
+        copy.getStyleClass().add("secondary-button");
+        copy.setOnAction(event -> {
+            ClipboardContent content = new ClipboardContent();
+            content.putFiles(List.of(clip.file().toFile()));
+            Clipboard.getSystemClipboard().setContent(content);
+            Toast.info("Clip copied – paste it into Discord or a folder.");
+        });
+        Button folder = new Button("Open folder");
+        folder.getStyleClass().add("secondary-button");
+        folder.setOnAction(event -> open(clip.file().getParent()));
+        Button delete = new Button("Delete");
+        delete.getStyleClass().add("danger-button");
+        delete.setOnAction(event -> Modal.confirm("Delete this clip?", "It can't be recovered.", "Delete", () -> {
+            player.dispose();
+            Background.run("delete-clip", () -> {
+                Clips.delete(clip);
+                return null;
+            }, done -> showClips(), null);
+        }));
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox controls = new HBox(10, playPause, seek, time);
+        controls.setAlignment(Pos.CENTER_LEFT);
+        VBox content = new VBox(12, screen, controls, new HBox(10, copy, folder, spacer, delete));
+        // Stop the video when the pop-up closes.
+        content.sceneProperty().addListener((o, was, now) -> {
+            if (now == null) {
+                player.dispose();
+            }
+        });
+        Modal.show(content, 880);
+        player.play();
+    }
+
+    /** 75 seconds → "1:15". */
+    private static String clock(Duration duration) {
+        int seconds = (int) Math.floor(duration.toSeconds());
+        return seconds / 60 + ":" + String.format("%02d", seconds % 60);
+    }
+
+    private static String megabytes(long bytes) {
+        return String.format(java.util.Locale.ROOT, "%.1f MB", bytes / 1048576.0);
     }
 
     // ================================================================== World backups

@@ -372,6 +372,17 @@ public class NexusLauncher extends Application {
                 toolsPage.showTab("Playtime");
             }
         }, 600));
+        stops.add(new DevTour.Stop("tools-clips", () -> {
+            if (pages.get(Page.TOOLS) instanceof ToolsPage toolsPage) {
+                toolsPage.showTab("Clips");
+            }
+        }, 4000)); // previews are made by FFmpeg
+        stops.add(new DevTour.Stop("tools-clip-player", () -> {
+            if (pages.get(Page.TOOLS) instanceof ToolsPage toolsPage) {
+                toolsPage.openNewestClip();
+            }
+        }, 2500));
+        stops.add(new DevTour.Stop("close-clip-player", com.nexusclient.launcher.ui.Modal::close, 300));
         stops.add(new DevTour.Stop("skins", () -> showPage(Page.SKINS), 1200));
         stops.add(new DevTour.Stop("home", () -> showPage(Page.HOME), 4000));
         stops.add(new DevTour.Stop("instance-settings",

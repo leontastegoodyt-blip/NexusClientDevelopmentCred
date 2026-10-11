@@ -39,8 +39,8 @@ public enum Page {
             "Finds out why Minecraft crashed, explains it in plain English and offers to fix it.", 9,
             List.of("Scan", "History", "Game Logs")),
     TOOLS("Tools", "Tools", Icons.TOOLS,
-            "Screenshots, world backups, safe mode, playtime stats and the storage cleaner.", 8,
-            List.of("Screenshots", "World Backups", "Safe Mode", "Playtime", "Storage")),
+            "Screenshots, clips, world backups, safe mode, playtime stats and the storage cleaner.", 8,
+            List.of("Screenshots", "Clips", "World Backups", "Safe Mode", "Playtime", "Storage")),
     // Only shown to the Nexus developer (the owner's account) – see NavRail.showDeveloperTab.
     DEVELOPER("Developer", "Dev", Icons.CODE,
             "Owner-only tools: players, kicks and bans, reports, honor events and partners.", 0,
