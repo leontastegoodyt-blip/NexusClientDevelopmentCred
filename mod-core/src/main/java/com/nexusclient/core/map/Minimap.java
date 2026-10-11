@@ -6,7 +6,6 @@ import com.nexusclient.core.module.Category;
 import com.nexusclient.core.platform.GameInfo;
 import com.nexusclient.core.platform.Renderer;
 import com.nexusclient.core.settings.BooleanSetting;
-import com.nexusclient.core.settings.ChoiceSetting;
 import com.nexusclient.core.settings.NumberSetting;
 import com.nexusclient.core.ui.UiKit;
 
@@ -23,13 +22,17 @@ import com.nexusclient.core.ui.UiKit;
  *
  * Each pixel is coloured like the top block there (Minecraft's own map colours), lit from the
  * north-west: slopes facing up-left are lighter, slopes facing down-right darker, so hills show.
- * Also drawn: you (an arrow pointing where you face), waypoints, and "N" for north.
+ * Also drawn: you (an arrow pointing where you face), waypoints, a compass (N on a tab, E S W) and
+ * optional chunk lines, in a neon frame (soft glow, logo-gradient edge, corner brackets) with a
+ * coordinates pill underneath. "Map range" shows 1x–5x as much ground.
  * Server-blockable (some servers ban minimaps).
  */
 public class Minimap extends HudModule {
 
     public final NumberSetting size = add(new NumberSetting("size", "Size", 96, 64, 192, 8, ""));
-    public final ChoiceSetting zoom = add(new ChoiceSetting("zoom", "Zoom", "1 block", "1 block", "2 blocks", "4 blocks"));
+    /** How much ground the map shows: 1x = 48 blocks across a 96-pixel map, 5x = 240. */
+    public final NumberSetting range = add(new NumberSetting("range", "Map range", 1, 1, 5, 0.25, "x"));
+    public final BooleanSetting chunkGrid = add(new BooleanSetting("chunkGrid", "Chunk grid", false));
     public final BooleanSetting showCoords = add(new BooleanSetting("coords", "Show coordinates", true));
     public final BooleanSetting showWaypoints = add(new BooleanSetting("waypoints", "Show waypoints", true));
 
@@ -39,6 +42,8 @@ public class Minimap extends HudModule {
     private static final long RESCAN_EVERY = 60;
     private static final int RESCAN_ROWS = 6;
     private static final int UNKNOWN = 0xFF0E0E16;
+    /** The frame around the map, in pixels. */
+    private static final int FRAME = 3;
 
     // The picture: n x n blocks, its top-left corner at world block (originX, originZ).
     private int n;
@@ -60,39 +65,152 @@ public class Minimap extends HudModule {
     @Override
     protected int[] draw(Renderer r, GameInfo game, boolean preview) {
         int mapSize = size.get().intValue();
-        int footer = showCoords.isOn() ? 12 : 0;
+        int box = mapSize + 2 * FRAME;
+        int footer = showCoords.isOn() ? 16 : 0;
+        int mid = FRAME + mapSize / 2;
 
-        // The frame: rounded, with the Nexus gradient line along the top.
-        UiKit.roundBox(r, 0, 0, mapSize + 4, mapSize + 4 + footer, 4, 0xE00A0A12, 0xFF26263E);
+        drawFrame(r, box);
 
-        r.enableClip(2, 2, 2 + mapSize, 2 + mapSize);
+        // The map itself (clipped to its window).
+        r.enableClip(FRAME, FRAME, FRAME + mapSize, FRAME + mapSize);
+        double scale = 1 / blocksPerPixel();
         if (preview || !game.inWorld()) {
             drawPreview(r, mapSize);
         } else {
-            double blocksPerPixel = zoom.is("4 blocks") ? 2 : zoom.is("2 blocks") ? 1 : 0.5;
-            update(game, (int) Math.ceil(mapSize * blocksPerPixel));
+            update(game, (int) Math.ceil(mapSize * blocksPerPixel()));
             // Slide the picture so you're exactly in the middle (smooth, not block by block).
-            double scale = 1 / blocksPerPixel;
-            float left = (float) (2 + mapSize / 2.0 - (game.x() - originX) * scale);
-            float top = (float) (2 + mapSize / 2.0 - (game.z() - originZ) * scale);
+            float left = (float) (mid - (game.x() - originX) * scale);
+            float top = (float) (mid - (game.z() - originZ) * scale);
             r.push(left, top, (float) scale);
             r.picture("minimap", pixels, n, n, version, 0, 0, n, n);
             r.pop();
+            if (chunkGrid.isOn()) {
+                drawChunkGrid(r, game, mapSize, scale);
+            }
+        }
+        drawInnerShade(r, mapSize);
+        if (!preview && game.inWorld()) {
             drawWaypoints(r, game, mapSize, scale);
         }
         r.disableClip();
-        UiKit.gradientLine(r, 4, 0, mapSize - 4, 0xD0);
-        drawPlayer(r, preview ? 135 : game.yaw(), 2 + mapSize / 2f, 2 + mapSize / 2f);
 
-        // North marker.
-        UiKit.round(r, mapSize / 2 - 2, 3, mapSize / 2 + 7, 12, 2, 0xC0101018);
-        r.text("N", mapSize / 2, 4, 0xFFFF6B5E, false);
+        drawCornerBrackets(r, mapSize);
+        drawCompass(r, mapSize);
+        drawPlayer(r, preview ? 135 : game.yaw(), mid, mid);
+
         if (footer > 0) {
-            String coords = preview ? "128, 64, -303"
-                    : (int) Math.floor(game.x()) + ", " + (int) Math.floor(game.y()) + ", " + (int) Math.floor(game.z());
-            UiKit.centered(r, coords, (mapSize + 4) / 2, mapSize + 6, UiKit.TEXT, false);
+            drawFooter(r, game, preview, box);
         }
-        return new int[] {mapSize + 4, mapSize + 4 + footer};
+        return new int[] {box, box + footer};
+    }
+
+    /** How many blocks one map pixel shows: "Map range" 1x = half a block, 5x = two and a half. */
+    private double blocksPerPixel() {
+        return 0.5 * range.get();
+    }
+
+    // ------------------------------------------------------------------ the frame
+
+    /** A soft neon glow, a dark rounded body and the Nexus gradient edge. */
+    private void drawFrame(Renderer r, int box) {
+        int accent = UiKit.accent() & 0xFFFFFF;
+        // Glow: three faint rings outside the frame, fading out.
+        int[] glow = {0x30, 0x18, 0x0A};
+        for (int i = 0; i < glow.length; i++) {
+            UiKit.roundOutline(r, -1 - i, -1 - i, box + 1 + i, box + 1 + i, 7 + i, (glow[i] << 24) | accent);
+        }
+        UiKit.round(r, 0, 0, box, box, 6, 0xEA07070D);
+        UiKit.roundOutline(r, 0, 0, box, box, 6, (0x90 << 24) | accent);
+        // The edge brightens into the logo gradient at the top and fades at the bottom.
+        UiKit.gradientLine(r, 5, 0, box - 5, 0xFF);
+        UiKit.gradientLine(r, 5, box - 1, box - 5, 0x70);
+    }
+
+    /** Darkens the map's edges a little, so it looks set into the frame. */
+    private void drawInnerShade(Renderer r, int mapSize) {
+        int x1 = FRAME;
+        int y1 = FRAME;
+        int x2 = FRAME + mapSize;
+        int y2 = FRAME + mapSize;
+        int[] alpha = {0x70, 0x40, 0x20, 0x0C};
+        for (int i = 0; i < alpha.length; i++) {
+            int c = alpha[i] << 24;
+            r.rect(x1, y1 + i, x2, y1 + i + 1, c);                                // top
+            r.rect(x1, y2 - i - 1, x2, y2 - i, c);                                // bottom
+            r.rect(x1 + i, y1 + alpha.length, x1 + i + 1, y2 - alpha.length, c);  // left
+            r.rect(x2 - i - 1, y1 + alpha.length, x2 - i, y2 - alpha.length, c);  // right
+        }
+    }
+
+    /** Small L-shaped marks in each corner of the map, coloured along the logo gradient. */
+    private void drawCornerBrackets(Renderer r, int mapSize) {
+        int len = Math.max(5, mapSize / 12);
+        int x1 = FRAME + 2;
+        int y1 = FRAME + 2;
+        int x2 = FRAME + mapSize - 2;
+        int y2 = FRAME + mapSize - 2;
+        int topLeft = 0xFF000000 | UiKit.gradient(0);
+        int topRight = 0xFF000000 | UiKit.gradient(0.45);
+        int bottomLeft = 0xFF000000 | UiKit.gradient(0.6);
+        int bottomRight = 0xFF000000 | UiKit.gradient(1);
+        r.rect(x1, y1, x1 + len, y1 + 1, topLeft);
+        r.rect(x1, y1, x1 + 1, y1 + len, topLeft);
+        r.rect(x2 - len, y1, x2, y1 + 1, topRight);
+        r.rect(x2 - 1, y1, x2, y1 + len, topRight);
+        r.rect(x1, y2 - 1, x1 + len, y2, bottomLeft);
+        r.rect(x1, y2 - len, x1 + 1, y2, bottomLeft);
+        r.rect(x2 - len, y2 - 1, x2, y2, bottomRight);
+        r.rect(x2 - 1, y2 - len, x2, y2, bottomRight);
+    }
+
+    /** N (red, on a little tab over the top edge), and E, S, W along the other edges. */
+    private void drawCompass(Renderer r, int mapSize) {
+        int mid = FRAME + mapSize / 2;
+        UiKit.round(r, mid - 6, -3, mid + 6, 9, 3, 0xF20A0A12);
+        UiKit.roundOutline(r, mid - 6, -3, mid + 6, 9, 3, 0xFFFF6B5E);
+        UiKit.centered(r, "N", mid + 1, -1, 0xFFFF6B5E, false);
+        int dim = 0xC0B8B8CC;
+        UiKit.centered(r, "S", mid + 1, FRAME + mapSize - 10, dim, true);
+        r.text("W", FRAME + 3, mid - 4, dim, true);
+        r.text("E", FRAME + mapSize - 3 - r.textWidth("E"), mid - 4, dim, true);
+    }
+
+    /** Coordinates and the way you face, in a small floating pill under the map. */
+    private void drawFooter(Renderer r, GameInfo game, boolean preview, int box) {
+        String coords = preview ? "128  64  -303"
+                : (int) Math.floor(game.x()) + "  " + (int) Math.floor(game.y()) + "  " + (int) Math.floor(game.z());
+        String facing = facing(preview ? 135 : game.yaw());
+        int width = r.textWidth(coords) + r.textWidth(facing) + 18;
+        int x1 = (box - width) / 2;
+        int y1 = box + 3;
+        UiKit.roundBox(r, x1, y1, x1 + width, y1 + 13, 4, 0xEA07070D, 0xFF26263E);
+        UiKit.gradientLine(r, x1 + 4, y1, x1 + width - 4, 0xB0);
+        r.text(facing, x1 + 6, y1 + 3, UiKit.accent() | 0xFF000000, false);
+        r.text(coords, x1 + 12 + r.textWidth(facing), y1 + 3, UiKit.TEXT, false);
+    }
+
+    /** "N", "NE", "E"... from Minecraft's yaw (0 = south, 90 = west). */
+    private static String facing(float yaw) {
+        String[] names = {"S", "SW", "W", "NW", "N", "NE", "E", "SE"};
+        int index = (int) Math.floor(((yaw % 360 + 360) % 360 + 22.5) / 45) % 8;
+        return names[index];
+    }
+
+    /** Faint lines on chunk borders (every 16 blocks). */
+    private void drawChunkGrid(Renderer r, GameInfo game, int mapSize, double scale) {
+        double half = mapSize / 2.0 / scale; // blocks from the middle to the edge
+        int mid = FRAME + mapSize / 2;
+        for (int axis = 0; axis < 2; axis++) {
+            double centre = axis == 0 ? game.x() : game.z();
+            for (int line = (int) Math.ceil((centre - half) / 16) * 16; line <= centre + half; line += 16) {
+                int at = (int) Math.round(mid + (line - centre) * scale);
+                if (axis == 0) {
+                    r.rect(at, FRAME, at + 1, FRAME + mapSize, 0x22FFFFFF);
+                } else {
+                    r.rect(FRAME, at, FRAME + mapSize, at + 1, 0x22FFFFFF);
+                }
+            }
+        }
     }
 
     // ------------------------------------------------------------------ keeping the picture up to date
@@ -223,8 +341,8 @@ public class Minimap extends HudModule {
             // Far away: keep it on the map's edge, in the right direction.
             mx = Math.max(3, Math.min(mapSize - 3, mx));
             my = Math.max(3, Math.min(mapSize - 3, my));
-            int x = 2 + (int) mx;
-            int y = 2 + (int) my;
+            int x = FRAME + (int) mx;
+            int y = FRAME + (int) my;
             UiKit.round(r, x - 3, y - 3, x + 3, y + 3, 2, 0xFF07060E);
             UiKit.round(r, x - 2, y - 2, x + 2, y + 2, 1, 0xFF000000 | waypoint.colour);
         }
@@ -273,7 +391,7 @@ public class Minimap extends HudModule {
             for (int cx = 0; cx < cells; cx++) {
                 double wave = Math.sin(cx * 0.35) + Math.cos(cz * 0.3);
                 int rgb = wave > 1.1 ? 0x4060C0 : wave > -0.6 ? 0x5C9A3A : 0xB8A86A;
-                r.rect(2 + cx * 4, 2 + cz * 4, 2 + (cx + 1) * 4, 2 + (cz + 1) * 4,
+                r.rect(FRAME + cx * 4, FRAME + cz * 4, FRAME + (cx + 1) * 4, FRAME + (cz + 1) * 4,
                         0xFF000000 | shade(rgb, (cx + cz) % 7 == 0 ? 0.88 : 1.0));
             }
         }
