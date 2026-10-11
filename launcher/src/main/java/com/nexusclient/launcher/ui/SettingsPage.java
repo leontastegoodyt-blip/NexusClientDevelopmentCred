@@ -295,7 +295,7 @@ public class SettingsPage extends VBox {
 
     private void chooseBackground() {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Choose a background picture");
+        chooser.setTitle(com.nexusclient.launcher.i18n.Translator.tr("Choose a background picture"));
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Pictures", "*.png", "*.jpg", "*.jpeg"));
         File file = chooser.showOpenDialog(getScene().getWindow());
         if (file == null) {

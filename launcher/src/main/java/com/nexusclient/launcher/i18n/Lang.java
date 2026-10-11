@@ -17,8 +17,9 @@ import java.util.ResourceBundle;
  * To add a language, copy messages_en.properties to e.g. messages_fr.properties, translate the
  * right-hand sides, and add the language to LANGUAGES below.
  *
- * (Moving every piece of text into these files is ongoing: the tab bar, page titles and sub-tabs are
- * done; other text will move over step by step.)
+ * All the OTHER text on screen is translated by Translator, which looks up each English text in
+ * lang/strings_<code>.json – so a new language usually only needs a strings file. LANGUAGES also picks
+ * up strings files players put in <Nexus folder>/lang.
  */
 public final class Lang {
 
@@ -27,6 +28,19 @@ public final class Lang {
 
     static {
         LANGUAGES.put("en", "English");
+        // Translations being tried out: <Nexus folder>/lang/strings_<code>.json (see Translator).
+        java.nio.file.Path folder = com.nexusclient.launcher.game.NexusPaths.root().resolve("lang");
+        try (var files = java.nio.file.Files.list(folder)) {
+            files.forEach(file -> {
+                String name = file.getFileName().toString();
+                if (name.startsWith("strings_") && name.endsWith(".json") && !name.equals("strings_template.json")) {
+                    String code = name.substring("strings_".length(), name.length() - ".json".length());
+                    LANGUAGES.putIfAbsent(code, Translator.languageName(file, code));
+                }
+            });
+        } catch (java.io.IOException e) {
+            // no lang folder – only the built-in languages
+        }
     }
 
     private static ResourceBundle bundle;

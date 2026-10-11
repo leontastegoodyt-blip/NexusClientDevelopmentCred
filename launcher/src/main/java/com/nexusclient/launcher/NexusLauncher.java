@@ -195,6 +195,8 @@ public class NexusLauncher extends Application {
 
         // Accent colour, background picture, bigger text, colourblind mode, reduced motion.
         Theme.install(scene, backgroundLayer, backdrop);
+        // Every piece of text in the player's language (lang/strings_<language>.json).
+        com.nexusclient.launcher.i18n.Translator.install(scene, SettingsStore.get().language);
         // Minimise/hide the launcher while the game runs (Settings → General).
         WindowBehaviour.install(stage);
 

@@ -166,7 +166,7 @@ public class SkinsPage extends HBox {
         choose.getStyleClass().add("secondary-button");
         choose.setOnAction(event -> {
             FileChooser chooser = new FileChooser();
-            chooser.setTitle("Choose a skin");
+            chooser.setTitle(com.nexusclient.launcher.i18n.Translator.tr("Choose a skin"));
             chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Skin pictures", "*.png"));
             File file = chooser.showOpenDialog(getScene().getWindow());
             if (file == null) {

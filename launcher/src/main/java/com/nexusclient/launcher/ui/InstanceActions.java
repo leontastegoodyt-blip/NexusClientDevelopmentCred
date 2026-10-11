@@ -59,7 +59,7 @@ public class InstanceActions {
     /** Asks where to save, then exports the instance's setup to a .zip file. */
     public void export(Instance instance, Window window) {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Export \"" + instance.name() + "\"");
+        chooser.setTitle(com.nexusclient.launcher.i18n.Translator.tr("Export \"" + instance.name() + "\""));
         chooser.setInitialFileName(NexusPaths.safeFileName(instance.name()) + ".nexus.zip");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Nexus instance", "*.zip"));
         File file = chooser.showSaveDialog(window);
@@ -76,7 +76,7 @@ public class InstanceActions {
     /** Asks for a .zip made by Export, or a Modrinth modpack (.mrpack), then adds it as a new instance. */
     public void importFile(Window window) {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Import an instance or modpack");
+        chooser.setTitle(com.nexusclient.launcher.i18n.Translator.tr("Import an instance or modpack"));
         chooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Nexus instance or Modrinth modpack", "*.zip", "*.mrpack"));
         File file = chooser.showOpenDialog(window);

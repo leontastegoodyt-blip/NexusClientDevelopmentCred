@@ -504,7 +504,7 @@ public class ModsPage extends VBox {
 
     private void addOwnFiles(ModManager manager, ContentType type) {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Add " + type.label().toLowerCase(Locale.ROOT));
+        chooser.setTitle(com.nexusclient.launcher.i18n.Translator.tr("Add " + type.label().toLowerCase(Locale.ROOT)));
         chooser.getExtensionFilters().add(type == ContentType.MOD
                 ? new FileChooser.ExtensionFilter("Mod files", "*.jar")
                 : new FileChooser.ExtensionFilter("Pack files", "*.zip"));
