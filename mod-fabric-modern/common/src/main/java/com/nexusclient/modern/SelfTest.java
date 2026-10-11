@@ -140,7 +140,13 @@ public final class SelfTest {
             } else {
                 dfr.setEnabled(false);
             }
-        } else if (worldTicks == 250) {
+        } else if (worldTicks > 245 && worldTicks < 262 && mc.player != null) {
+            // Motion Blur (switched on by SelfTestMods): spin the camera so the screenshot shows a trail.
+            mc.player.setYRot(mc.player.getYRot() + 12);
+            if (worldTicks == 261) {
+                screenshot(mc, "motion blur");
+            }
+        } else if (worldTicks == 266) {
             log("finished");
             mc.stop();
         }

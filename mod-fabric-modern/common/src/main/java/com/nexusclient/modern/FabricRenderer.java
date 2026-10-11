@@ -64,6 +64,11 @@ public class FabricRenderer implements Renderer {
     }
 
     @Override
+    public void picture(String id, int[] pixels, int width, int height, int version, int x1, int y1, int x2, int y2) {
+        VersionHooks.picture(graphics, id, pixels, width, height, version, x1, y1, x2, y2);
+    }
+
+    @Override
     public void push(float x, float y, float scale) {
         GameHooks.push(graphics, x, y, scale);
     }

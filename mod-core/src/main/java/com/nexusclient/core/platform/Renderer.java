@@ -36,6 +36,27 @@ public interface Renderer {
      */
     void item(Object item, int x, int y);
 
+    /**
+     * Draws a picture made of pixels, stretched over (x1, y1)–(x2, y2). Each loader keeps it on the
+     * graphics card and only sends it again when {@code version} changes, so drawing a big picture
+     * every frame costs about as much as one rectangle (the minimap uses this).
+     *
+     * @param id      a name for the picture – each name keeps its own copy on the graphics card
+     * @param pixels  ARGB colours, row by row ({@code width} x {@code height})
+     * @param version change this whenever the pixels change
+     */
+    default void picture(String id, int[] pixels, int width, int height, int version, int x1, int y1, int x2, int y2) {
+        // Fallback (a loader without pictures): one rectangle per pixel – correct, but slow.
+        float sx = (x2 - x1) / (float) width;
+        float sy = (y2 - y1) / (float) height;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                rect(x1 + Math.round(x * sx), y1 + Math.round(y * sy), x1 + Math.round((x + 1) * sx),
+                        y1 + Math.round((y + 1) * sy), pixels[y * width + x]);
+            }
+        }
+    }
+
     /** Starts drawing moved to (x, y) and scaled – everything until pop() is affected. */
     void push(float x, float y, float scale);
 

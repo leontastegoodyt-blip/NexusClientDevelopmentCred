@@ -145,7 +145,15 @@ public final class SelfTest {
             NexusCore.get().platform().openScreen(com.nexusclient.core.ui.ModMenu.forModule(NexusCore.get().module("crosshair")));
         } else if (worldTicks == 114) {
             Screenshot.grab(mc, false);
-        } else if (worldTicks == 120) {
+        } else if (worldTicks == 118) {
+            NexusCore.get().platform().closeScreen();
+        } else if (worldTicks > 120 && worldTicks < 136 && mc.player != null) {
+            // Motion Blur (switched on by SelfTestMods): spin the camera so the screenshot shows a trail.
+            mc.player.setYRot(mc.player.getYRot() + 12);
+            if (worldTicks == 135) {
+                Screenshot.grab(mc, false);
+            }
+        } else if (worldTicks == 140) {
             System.out.println("[Nexus] self-test finished");
             mc.stop();
         }

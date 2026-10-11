@@ -25,6 +25,7 @@
     "KeyBindingMixin",
     "LivingEntityRendererMixin",
     "MinecraftClientMixin",
+    "MotionBlurMixin",
     "MouseInputMixin",
     "OldAnimationsMixin",
     "ParticleManagerMixin",

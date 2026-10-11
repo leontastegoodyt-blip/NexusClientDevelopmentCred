@@ -62,6 +62,43 @@ public class FabricRenderer implements Renderer {
         }
     }
 
+    /** A picture kept on the graphics card (see picture()). */
+    private static final class Picture {
+        net.minecraft.client.renderer.texture.DynamicTexture texture;
+        net.minecraft.resources.Identifier location;
+        int width;
+        int height;
+        int version = Integer.MIN_VALUE;
+    }
+
+    private static final java.util.Map<String, Picture> PICTURES = new java.util.HashMap<>();
+
+    @Override
+    public void picture(String id, int[] pixels, int width, int height, int version, int x1, int y1, int x2, int y2) {
+        Picture picture = PICTURES.computeIfAbsent(id, key -> new Picture());
+        if (picture.texture == null || picture.width != width || picture.height != height) {
+            picture.texture = new net.minecraft.client.renderer.texture.DynamicTexture(() -> "Nexus picture " + id, width, height, false);
+            picture.location = net.minecraft.resources.Identifier.fromNamespaceAndPath("nexusclient", "picture/" + id);
+            Minecraft.getInstance().getTextureManager().register(picture.location, picture.texture);
+            picture.width = width;
+            picture.height = height;
+            picture.version = Integer.MIN_VALUE;
+        }
+        if (picture.version != version) {
+            // Only sent to the graphics card when the pixels changed.
+            com.mojang.blaze3d.platform.NativeImage image = picture.texture.getPixels();
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    image.setPixel(x, y, pixels[y * width + x]);
+                }
+            }
+            picture.texture.upload();
+            picture.version = version;
+        }
+        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, picture.location, x1, y1, 0f, 0f,
+                x2 - x1, y2 - y1, width, height, width, height);
+    }
+
     @Override
     public void push(float x, float y, float scale) {
         graphics.pose().pushMatrix();

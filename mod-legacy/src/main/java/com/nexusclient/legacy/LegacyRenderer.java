@@ -90,6 +90,44 @@ public class LegacyRenderer implements Renderer {
         GlStateManager.color(1, 1, 1, 1);
     }
 
+    /** A picture kept on the graphics card (see picture()). */
+    private static final class Picture {
+        net.minecraft.client.texture.NativeImageBackedTexture texture;
+        net.minecraft.util.Identifier location;
+        int width;
+        int height;
+        int version = Integer.MIN_VALUE;
+    }
+
+    private static final java.util.Map<String, Picture> PICTURES = new java.util.HashMap<String, Picture>();
+
+    @Override
+    public void picture(String id, int[] pixels, int width, int height, int version, int x1, int y1, int x2, int y2) {
+        Picture picture = PICTURES.get(id);
+        if (picture == null) {
+            picture = new Picture();
+            PICTURES.put(id, picture);
+        }
+        if (picture.texture == null || picture.width != width || picture.height != height) {
+            picture.texture = new net.minecraft.client.texture.NativeImageBackedTexture(width, height);
+            picture.location = new net.minecraft.util.Identifier("nexusclient", "picture/" + id);
+            mc.getTextureManager().loadTexture(picture.location, picture.texture);
+            picture.width = width;
+            picture.height = height;
+            picture.version = Integer.MIN_VALUE;
+        }
+        if (picture.version != version) {
+            // Only sent to the graphics card when the pixels changed.
+            System.arraycopy(pixels, 0, picture.texture.getPixels(), 0, width * height);
+            picture.texture.upload();
+            picture.version = version;
+        }
+        mc.getTextureManager().bindTexture(picture.location);
+        GlStateManager.enableTexture();
+        GlStateManager.color(1, 1, 1, 1);
+        DrawableHelper.drawTexture(x1, y1, 0, 0, width, height, x2 - x1, y2 - y1, width, height);
+    }
+
     @Override
     public void push(float x, float y, float scale) {
         GlStateManager.pushMatrix();

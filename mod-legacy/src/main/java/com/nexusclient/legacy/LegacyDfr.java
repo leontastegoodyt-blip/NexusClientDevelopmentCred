@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
  *   Smooth      – before real frame N is shown: show N drawn half see-through over N-1, then N
  *   Low lag     – after real frame N is shown: show N again, slid by the mouse movement that arrived
  *                 since (the movement is "borrowed" and handed back to the game – see MouseInputMixin)
- *   Motion Blur – each frame shown is the new frame with the last shown picture laid over it
+ *   Motion Blur – the world (not the HUD) mixed with a 16-bit "trail" of the frames before (blurWorld)
  *
  * Hooked around MinecraftClient.updateDisplay (DfrMixin), where the frame is swapped onto the screen.
  * Every OpenGL setting is saved first (glPushAttrib + the matrix stacks) and put back after, so
@@ -48,51 +48,94 @@ public final class LegacyDfr {
     public static void beforeShow() {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (failed || mc.world == null) {
-            havePrevious = blurHasPrevious = false;
+            havePrevious = false;
             return;
         }
-        NexusCore core = NexusCore.get();
-        Dfr dfr = core.get(Dfr.class);
-        Mods.MotionBlur blur = core.get(Mods.MotionBlur.class);
-        boolean dfrOn = shouldRun(dfr);
-        boolean blurOn = !dfrOn && blur.isActive();
-        if (!dfrOn) {
+        Dfr dfr = NexusCore.get().get(Dfr.class);
+        if (!shouldRun(dfr)) {
             havePrevious = false;
+            return;
         }
-        if (!blurOn) {
-            blurHasPrevious = false;
-        }
-        if ((!dfrOn && !blurOn) || mc.width <= 0 || mc.height <= 0 || !onScreen()) {
+        if (mc.width <= 0 || mc.height <= 0 || !onScreen()) {
             return;
         }
         save();
         try {
             ensureTextures(mc.width, mc.height);
             grab(newest);
-            if (dfrOn) {
-                if (!dfr.lowLag() && havePrevious && worthGenerating()) {
-                    draw(older, 0, 0, 1);
-                    draw(newest, 0, 0, 1 - 0.5f * dfr.effectiveStrength());
-                    Display.swapBuffers(); // the in-between frame…
-                    draw(newest, 0, 0, 1);  // …then the real one goes back for Minecraft to show
-                    dfr.frameGenerated();
-                }
-                int swap = newest;
-                newest = older;
-                older = swap; // the frame just finished is "the one before" next time
-                havePrevious = true;
-            } else {
-                if (blurHasPrevious) {
-                    // How much of the last picture stays (the setting, adjusted for the frame rate).
-                    draw(older, 0, 0, blur.keepThisFrame());
-                }
-                grab(older); // what's shown is what the next frame mixes with
-                blurHasPrevious = true;
+            if (!dfr.lowLag() && havePrevious && worthGenerating()) {
+                draw(older, 0, 0, 1);
+                draw(newest, 0, 0, 1 - 0.5f * dfr.effectiveStrength());
+                Display.swapBuffers(); // the in-between frame…
+                draw(newest, 0, 0, 1);  // …then the real one goes back for Minecraft to show
+                dfr.frameGenerated();
             }
+            int swap = newest;
+            newest = older;
+            older = swap; // the frame just finished is "the one before" next time
+            havePrevious = true;
         } catch (Exception e) {
             giveUp(e);
         } finally {
             restore();
+        }
+    }
+
+    // ------------------------------------------------------------------ Motion Blur
+
+    private static int trail;     // 16-bit colour picture: the world mixed with the frames before
+    private static int trailFbo;
+    private static int trailWidth;
+    private static int trailHeight;
+
+    /**
+     * Motion Blur, called when Minecraft has drawn the world but not the HUD yet (MotionBlurMixin), so
+     * only the world blurs – never the hotbar, chat or text. The world is laid see-through over a
+     * "trail" picture kept in 16-bit colour (with normal 8-bit colour the tiny changes at high FPS
+     * round away and leave ghost images that never fade), then the trail is copied back.
+     */
+    public static void blurWorld() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        NexusCore core = NexusCore.get();
+        Mods.MotionBlur blur = core.get(Mods.MotionBlur.class);
+        net.minecraft.client.gl.Framebuffer world = mc.getFramebuffer();
+        if (failed || !blur.isActive() || core.get(Dfr.class).isActive() || mc.world == null
+                || world == null || world.fbo <= 0 || !GLContext.getCapabilities().OpenGL30) {
+            blurHasPrevious = false;
+            return;
+        }
+        int w = world.viewportWidth;
+        int h = world.viewportHeight;
+        float u = w / (float) world.textureWidth;
+        float v = h / (float) world.textureHeight;
+        save();
+        try {
+            if (trail == 0 || trailWidth != w || trailHeight != h) {
+                if (trail != 0) {
+                    GL30.glDeleteFramebuffers(trailFbo);
+                    GL11.glDeleteTextures(trail);
+                }
+                trail = texture(w, h, GL30.GL_RGBA16F, GL11.GL_FLOAT);
+                trailFbo = GL30.glGenFramebuffers();
+                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, trailFbo);
+                GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, trail, 0);
+                trailWidth = w;
+                trailHeight = h;
+                blurHasPrevious = false;
+            }
+            GL11.glViewport(0, 0, w, h);
+            // 1. The world, see-through, onto the trail (the first time: solid, so the trail starts as it).
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, trailFbo);
+            drawPart(world.colorAttachment, u, v, blurHasPrevious ? 1 - blur.keepThisFrame() : 1);
+            blurHasPrevious = true;
+            // 2. The trail back into the world picture.
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, world.fbo);
+            drawPart(trail, 1, 1, 1);
+        } catch (Exception e) {
+            giveUp(e);
+        } finally {
+            restore();
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, world.fbo); // Minecraft keeps drawing the HUD into it
         }
     }
 
@@ -218,8 +261,10 @@ public final class LegacyDfr {
         GL11.glColorMask(true, true, true, true);
         GL11.glTexEnvi(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GL11.glReadBuffer(GL11.GL_BACK);
-        GL11.glDrawBuffer(GL11.GL_BACK);
+        if (onScreen()) { // (choosing the back buffer is an error while a framebuffer is in use)
+            GL11.glReadBuffer(GL11.GL_BACK);
+            GL11.glDrawBuffer(GL11.GL_BACK);
+        }
     }
 
     private static void restore() {
@@ -237,6 +282,27 @@ public final class LegacyDfr {
     private static void grab(int texture) {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
         GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, width, height);
+    }
+
+    /** Draws part of a texture (0–u across, 0–v down) over the whole drawing area, with the given opacity. */
+    private static void drawPart(int texture, float u, float v, float alpha) {
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
+        if (alpha < 1) {
+            GL11.glEnable(GL11.GL_BLEND);
+        } else {
+            GL11.glDisable(GL11.GL_BLEND);
+        }
+        GL11.glColor4f(1, 1, 1, alpha);
+        GL11.glBegin(GL11.GL_QUADS);
+        GL11.glTexCoord2f(0, 0);
+        GL11.glVertex2f(0, 0);
+        GL11.glTexCoord2f(u, 0);
+        GL11.glVertex2f(1, 0);
+        GL11.glTexCoord2f(u, v);
+        GL11.glVertex2f(1, 1);
+        GL11.glTexCoord2f(0, v);
+        GL11.glVertex2f(0, 1);
+        GL11.glEnd();
     }
 
     /** Draws a texture over the whole window, slid by (shiftX, shiftY), with the given opacity. */
@@ -277,13 +343,18 @@ public final class LegacyDfr {
     }
 
     private static int texture(int w, int h) {
+        return texture(w, h, GL11.GL_RGBA8, GL11.GL_UNSIGNED_BYTE);
+    }
+
+    /** A picture on the graphics card: GL_RGBA8 (normal colour) or GL_RGBA16F (precise, for the blur trail). */
+    private static int texture(int w, int h, int format, int type) {
         int id = GL11.glGenTextures();
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, id);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, 0x812F); // clamp to edge
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, 0x812F);
-        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, w, h, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, format, w, h, 0, GL11.GL_RGBA, type, (ByteBuffer) null);
         return id;
     }
 

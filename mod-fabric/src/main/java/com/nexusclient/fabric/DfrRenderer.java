@@ -88,36 +88,78 @@ public final class DfrRenderer {
     }
 
     private static boolean blurHasPrevious;
+    /** Motion Blur's trail: the world mixed with the frames before, in 16-bit colour (two, used in turn). */
+    private static final GpuTexture[] trail = new GpuTexture[2];
+    private static final GpuTextureView[] trailView = new GpuTextureView[2];
+
+    /** The same shader, writing 16-bit colour (for the Motion Blur trail). */
+    private static final RenderPipeline PRECISE_PIPELINE = RenderPipeline.builder()
+            .withLocation(Identifier.fromNamespaceAndPath("nexusclient", "pipeline/dfr_precise"))
+            .withVertexShader(Identifier.withDefaultNamespace("core/screenquad"))
+            .withFragmentShader(Identifier.fromNamespaceAndPath("nexusclient", "core/dfr"))
+            .withBindGroupLayout(BindGroupLayout.builder()
+                    .withUniform("CurrentSampler", UniformType.COMBINED_IMAGE_SAMPLER)
+                    .withUniform("PreviousSampler", UniformType.COMBINED_IMAGE_SAMPLER)
+                    .withUniform("ParamsSampler", UniformType.COMBINED_IMAGE_SAMPLER)
+                    .build())
+            .withColorTargetState(new ColorTargetState(Optional.empty(), GpuFormat.RGBA16_UNORM, 15))
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
+            .build();
 
     /**
-     * Motion Blur (uses the same GPU blending as DFR): each frame shown is the new frame mixed with
-     * the picture shown last time, so fast camera turns leave a soft trail. Returns the picture to show
-     * (the blurred one, or the original frame when Motion Blur is off or DFR is running).
+     * Motion Blur (uses the same GPU blending as DFR), called when Minecraft has drawn the world but
+     * not the HUD yet (MotionBlurMixin) – so only the world blurs, never the hotbar, chat or text.
+     * The world is mixed with a "trail" of the frames before, kept in 16-bit colour: with normal 8-bit
+     * colour the tiny changes at high FPS round away and leave ghost images that never fade.
      */
-    public static GpuTextureView motionBlur(GpuTextureView current) {
+    public static void blurWorld() {
+        Minecraft mc = Minecraft.getInstance();
         com.nexusclient.core.module.Mods.MotionBlur blur = NexusCore.get().get(com.nexusclient.core.module.Mods.MotionBlur.class);
-        if (failed || !blur.isActive() || NexusCore.get().get(Dfr.class).isActive() || Minecraft.getInstance().level == null) {
+        if (failed || !blur.isActive() || NexusCore.get().get(Dfr.class).isActive() || mc.level == null) {
             blurHasPrevious = false;
-            return current;
+            return;
         }
-        GpuTexture texture = current.texture();
-        if (!ensureTextures(texture.getWidth(0), texture.getHeight(0))) {
-            return current;
+        GpuTextureView world = mc.gameRenderer.mainRenderTarget().getColorTextureView();
+        if (world == null || !ensureTrail(world.texture().getWidth(0), world.texture().getHeight(0))) {
+            return;
         }
-        CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
         if (!blurHasPrevious) {
-            encoder.copyTextureToTexture(texture, previous, 0, 0, 0, 0, 0, texture.getWidth(0), texture.getHeight(0));
+            drawInto(trailView[0], PRECISE_PIPELINE, world, world, 0, 0, 0, 0); // the trail starts as this frame
             blurHasPrevious = true;
-            return current;
+            return;
         }
-        // How much of the last picture stays (the setting, adjusted for the frame rate).
-        drawGenerated(current, 2, blur.keepThisFrame(), 0, 0);
-        if (failed) {
-            return current;
+        // world + the trail so far → the new trail (strength adjusted for the frame rate)…
+        drawInto(trailView[1], PRECISE_PIPELINE, world, trailView[0], 2, blur.keepThisFrame(), 0, 0);
+        GpuTexture texture = trail[0];
+        trail[0] = trail[1];
+        trail[1] = texture;
+        GpuTextureView view = trailView[0];
+        trailView[0] = trailView[1];
+        trailView[1] = view;
+        // …which goes back into the world picture (Smooth at strength 0 = a plain copy).
+        drawInto(world, PIPELINE, trailView[0], trailView[0], 0, 0, 0, 0);
+    }
+
+    private static boolean ensureTrail(int width, int height) {
+        if (trail[0] != null && trail[0].getWidth(0) == width && trail[0].getHeight(0) == height) {
+            return true;
         }
-        // The blurred picture is both what's shown and what the next frame mixes with.
-        encoder.copyTextureToTexture(generated, previous, 0, 0, 0, 0, 0, texture.getWidth(0), texture.getHeight(0));
-        return generatedView;
+        try {
+            ensureParams();
+            GpuDevice device = RenderSystem.getDevice();
+            for (int i = 0; i < 2; i++) {
+                if (trailView[i] != null) trailView[i].close();
+                if (trail[i] != null) trail[i].close();
+                trail[i] = device.createTexture("nexus_blur_trail", GpuTexture.USAGE_RENDER_ATTACHMENT
+                        | GpuTexture.USAGE_TEXTURE_BINDING, GpuFormat.RGBA16_UNORM, width, height, 1, 1);
+                trailView[i] = device.createTextureView(trail[i]);
+            }
+            blurHasPrevious = false;
+            return true;
+        } catch (RuntimeException e) {
+            giveUp(e);
+            return false;
+        }
     }
 
     /** Called just after Minecraft presented frame `current` (Low lag mode works here). */
@@ -192,9 +234,7 @@ public final class DfrRenderer {
             generated = device.createTexture("nexus_dfr_generated", GpuTexture.USAGE_RENDER_ATTACHMENT
                     | GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_SRC, GpuFormat.RGBA8_UNORM, width, height, 1, 1);
             generatedView = device.createTextureView(generated);
-            params = device.createTexture("nexus_dfr_params", GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
-                    GpuFormat.RGBA8_UNORM, 2, 1, 1, 1);
-            paramsView = device.createTextureView(params);
+            ensureParams();
             havePrevious = false;
             return true;
         } catch (RuntimeException e) {
@@ -203,8 +243,24 @@ public final class DfrRenderer {
         }
     }
 
+    /** The tiny 2x1 picture that carries the shader's settings (made once). */
+    private static void ensureParams() {
+        if (params == null) {
+            GpuDevice device = RenderSystem.getDevice();
+            params = device.createTexture("nexus_dfr_params", GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
+                    GpuFormat.RGBA8_UNORM, 2, 1, 1, 1);
+            paramsView = device.createTextureView(params);
+        }
+    }
+
     /** Runs the DFR shader into the "generated" picture. */
     private static void drawGenerated(GpuTextureView current, int mode, float strength, float shiftX, float shiftY) {
+        drawInto(generatedView, PIPELINE, current, previousView, mode, strength, shiftX, shiftY);
+    }
+
+    /** Runs the DFR shader into a picture. */
+    private static void drawInto(GpuTextureView target, RenderPipeline pipeline, GpuTextureView current,
+                                 GpuTextureView previous, int mode, float strength, float shiftX, float shiftY) {
         try {
             CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
             try (NativeImage image = new NativeImage(2, 1, false)) {
@@ -217,10 +273,10 @@ public final class DfrRenderer {
             }
             GpuSampler linear = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
             GpuSampler nearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
-            try (RenderPass pass = encoder.createRenderPass(() -> "Nexus DFR", generatedView, Optional.empty())) {
-                pass.setPipeline(RenderSystem.getCompiledPipeline(PIPELINE));
+            try (RenderPass pass = encoder.createRenderPass(() -> "Nexus DFR", target, Optional.empty())) {
+                pass.setPipeline(RenderSystem.getCompiledPipeline(pipeline));
                 pass.setUniform("CurrentSampler", current, linear);
-                pass.setUniform("PreviousSampler", previousView, linear);
+                pass.setUniform("PreviousSampler", previous, linear);
                 pass.setUniform("ParamsSampler", paramsView, nearest);
                 pass.draw(3, 1, 0, 0); // one triangle that covers the whole screen
             }
@@ -282,6 +338,12 @@ public final class DfrRenderer {
     }
 
     private static void close() {
+        for (int i = 0; i < 2; i++) {
+            if (trailView[i] != null) trailView[i].close();
+            if (trail[i] != null) trail[i].close();
+            trail[i] = null;
+            trailView[i] = null;
+        }
         if (previousView != null) previousView.close();
         if (previous != null) previous.close();
         if (generatedView != null) generatedView.close();

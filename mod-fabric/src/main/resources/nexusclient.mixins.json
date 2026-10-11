@@ -10,6 +10,7 @@
     "ChatScreenMixin",
     "ClockMixin",
     "DfrMixin",
+    "MotionBlurMixin",
     "FirstPersonItemMixin",
     "ItemPhysicsMixin",
     "ItemSpinMixin",

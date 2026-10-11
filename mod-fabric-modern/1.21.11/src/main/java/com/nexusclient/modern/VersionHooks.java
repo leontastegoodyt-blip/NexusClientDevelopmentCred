@@ -146,4 +146,47 @@ public final class VersionHooks {
             return null;
         }
     }
+
+    /** A picture kept on the graphics card for Renderer.picture (see FabricRenderer). */
+    private static final class Picture {
+        net.minecraft.client.renderer.texture.DynamicTexture texture;
+        Identifier location;
+        int width;
+        int height;
+        int version = Integer.MIN_VALUE;
+    }
+
+    private static final java.util.Map<String, Picture> PICTURES = new java.util.HashMap<>();
+
+    /** Renderer.picture: sends the pixels to the graphics card only when they change, then draws them. */
+    public static void picture(net.minecraft.client.gui.GuiGraphics graphics, String id, int[] pixels, int w, int h,
+                               int version, int x1, int y1, int x2, int y2) {
+        Picture picture = PICTURES.computeIfAbsent(id, key -> new Picture());
+        if (picture.texture == null || picture.width != w || picture.height != h) {
+            picture.texture = new net.minecraft.client.renderer.texture.DynamicTexture(() -> "Nexus picture " + id, w, h, false);
+            picture.location = Identifier.fromNamespaceAndPath("nexusclient", "picture/" + id);
+            Minecraft.getInstance().getTextureManager().register(picture.location, picture.texture);
+            picture.width = w;
+            picture.height = h;
+            picture.version = Integer.MIN_VALUE;
+        }
+        if (picture.version != version) {
+            NativeImage image = picture.texture.getPixels();
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    int argb = pixels[y * w + x];
+                    image.setPixel(x, y, argb);
+                }
+            }
+            picture.texture.upload();
+            picture.version = version;
+        }
+        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, picture.location, x1, y1, 0f, 0f, x2 - x1, y2 - y1, w, h, w, h);
+    }
+
+    /** Minecraft's main picture (the world, before the HUD is drawn on it): {OpenGL texture, width, height}. */
+    public static int[] mainPicture() {
+        com.mojang.blaze3d.pipeline.RenderTarget target = Minecraft.getInstance().getMainRenderTarget();
+        return new int[] {((com.mojang.blaze3d.opengl.GlTexture) target.getColorTexture()).glId(), target.width, target.height};
+    }
 }

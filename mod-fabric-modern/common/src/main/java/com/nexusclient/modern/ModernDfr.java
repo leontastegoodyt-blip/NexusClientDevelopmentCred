@@ -24,8 +24,8 @@ import static org.lwjgl.opengl.GL33C.*;
  *             since (camera prediction)
  * The in-between frame is drawn by a tiny OpenGL program (the shaders are the strings below).
  *
- * The same blending gives Motion Blur on every 1.20–1.21 version: each frame shown is mixed with the
- * one shown before (MotionBlur.keepThisFrame keeps the trail the same length at any FPS).
+ * The same shader also makes Motion Blur (blurWorld): the world – not the HUD – is mixed with a
+ * 16-bit "trail" of the frames before (MotionBlur.keepThisFrame keeps it the same length at any FPS).
  *
  * Minecraft remembers which OpenGL settings it last used, so everything changed here is put back
  * exactly as it was (GlState) – otherwise Minecraft's next frame would draw wrongly.
@@ -92,20 +92,14 @@ public final class ModernDfr {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        NexusCore core = NexusCore.get();
-        Dfr dfr = core.get(Dfr.class);
-        Mods.MotionBlur blur = core.get(Mods.MotionBlur.class);
-        boolean dfrOn = shouldRun(dfr, mc);
-        boolean blurOn = !dfrOn && blur.isActive() && mc.level != null;
-        if (!dfrOn) {
+        Dfr dfr = NexusCore.get().get(Dfr.class);
+        if (!shouldRun(dfr, mc)) {
             havePrevious = false;
-        }
-        if (!blurOn) {
-            blurHasPrevious = false;
+            return;
         }
         int w = mc.getWindow().getWidth();
         int h = mc.getWindow().getHeight();
-        if ((!dfrOn && !blurOn) || w <= 0 || h <= 0) {
+        if (w <= 0 || h <= 0) {
             return;
         }
         GlState saved = GlState.save();
@@ -113,31 +107,101 @@ public final class ModernDfr {
             if (!ensureTextures(w, h)) {
                 return;
             }
-            prepare();
-            copy(0, newestFbo); // the frame Minecraft just finished → "newest"
-            if (dfrOn) {
-                if (!dfr.lowLag() && havePrevious && worthGenerating(mc)) {
-                    draw(0, dfr.effectiveStrength(), 0, 0, newestTexture, olderTexture);
-                    GLFW.glfwSwapBuffers(GLFW.glfwGetCurrentContext()); // show the in-between frame…
-                    copy(newestFbo, 0);                                  // …then put the real one back
-                    dfr.frameGenerated();
-                }
-                // The newest frame becomes "the one before" for next time.
-                swapRoles();
-                havePrevious = true;
-            } else if (blurHasPrevious) {
-                // How much of the last picture stays (the setting, adjusted for the frame rate).
-                draw(2, blur.keepThisFrame(), 0, 0, newestTexture, olderTexture);
-                copy(0, olderFbo); // what's shown is what the next frame mixes with
-            } else {
-                copy(newestFbo, olderFbo);
-                blurHasPrevious = true;
+            prepare(width, height);
+            copy(0, newestFbo, width, height); // the frame Minecraft just finished → "newest"
+            if (!dfr.lowLag() && havePrevious && worthGenerating(mc)) {
+                draw(0, 0, dfr.effectiveStrength(), 0, 0, newestTexture, olderTexture);
+                GLFW.glfwSwapBuffers(GLFW.glfwGetCurrentContext()); // show the in-between frame…
+                copy(newestFbo, 0, width, height);                   // …then put the real one back
+                dfr.frameGenerated();
             }
+            // The newest frame becomes "the one before" for next time.
+            swapRoles();
+            havePrevious = true;
         } catch (RuntimeException e) {
             giveUp(e);
         } finally {
             saved.restore();
         }
+    }
+
+    // ------------------------------------------------------------------ Motion Blur
+
+    /** Motion Blur's pictures: a copy of the world, and the blurred world (two, used in turn). */
+    private static int blurTarget;    // Minecraft's main picture (we don't own it)
+    private static int blurTargetFbo; // our framebuffer pointing at it
+    private static int worldCopy;
+    private static int worldCopyFbo;
+    private static final int[] trail = new int[2];
+    private static final int[] trailFbo = new int[2];
+    private static int blurWidth;
+    private static int blurHeight;
+
+    /**
+     * Motion Blur, called when Minecraft has drawn the world but not the HUD yet (MotionBlurMixin), so
+     * only the world blurs – never the hotbar, chat or text. The "trail" (the world mixed with the
+     * trail so far) is kept in 16-bit colour: with normal 8-bit colour the tiny changes at high FPS
+     * round away and leave ghost images that never fade.
+     */
+    public static void blurWorld() {
+        Minecraft mc = Minecraft.getInstance();
+        NexusCore core = NexusCore.get();
+        Mods.MotionBlur blur = core.get(Mods.MotionBlur.class);
+        if (failed || !blur.isActive() || core.get(Dfr.class).isActive() || mc.level == null) {
+            blurHasPrevious = false;
+            return;
+        }
+        int[] main = VersionHooks.mainPicture();
+        if (main[0] == 0 || main[1] <= 0 || main[2] <= 0) {
+            return;
+        }
+        GlState saved = GlState.save();
+        try {
+            ensureBlurPictures(main[0], main[1], main[2]);
+            prepare(blurWidth, blurHeight);
+            if (!blurHasPrevious) {
+                copy(blurTargetFbo, trailFbo[0], blurWidth, blurHeight); // the trail starts as this frame
+                blurHasPrevious = true;
+                return;
+            }
+            // world (copied, so we sample a texture we set up ourselves) + the trail so far → new trail
+            copy(blurTargetFbo, worldCopyFbo, blurWidth, blurHeight);
+            draw(trailFbo[1], 2, blur.keepThisFrame(), 0, 0, worldCopy, trail[0]);
+            swap(trail);
+            swap(trailFbo);
+            copy(trailFbo[0], blurTargetFbo, blurWidth, blurHeight); // the blurred world goes back in
+        } catch (RuntimeException e) {
+            giveUp(e);
+        } finally {
+            saved.restore();
+        }
+    }
+
+    private static void ensureBlurPictures(int target, int w, int h) {
+        ensureProgram();
+        if (target != blurTarget || w != blurWidth || h != blurHeight) {
+            if (blurTargetFbo != 0) {
+                glDeleteFramebuffers(new int[] {blurTargetFbo, worldCopyFbo, trailFbo[0], trailFbo[1]});
+                glDeleteTextures(new int[] {worldCopy, trail[0], trail[1]});
+            }
+            blurTarget = target;
+            blurWidth = w;
+            blurHeight = h;
+            blurTargetFbo = framebuffer(target);
+            worldCopy = texture(w, h, GL_RGBA8, GL_UNSIGNED_BYTE);
+            worldCopyFbo = framebuffer(worldCopy);
+            for (int i = 0; i < 2; i++) {
+                trail[i] = texture(w, h, GL_RGBA16F, GL_FLOAT);
+                trailFbo[i] = framebuffer(trail[i]);
+            }
+            blurHasPrevious = false;
+        }
+    }
+
+    private static void swap(int[] pair) {
+        int first = pair[0];
+        pair[0] = pair[1];
+        pair[1] = first;
     }
 
     /** Called just after the swap (Low lag mode works here). */
@@ -152,10 +216,10 @@ public final class ModernDfr {
         }
         GlState saved = GlState.save();
         try {
-            prepare();
+            prepare(width, height);
             float[] shift = pendingCameraShift(mc);
             // After swapRoles() the frame just shown is the "older" picture.
-            draw(1, dfr.effectiveStrength(), shift[0], shift[1], olderTexture, olderTexture);
+            draw(0, 1, dfr.effectiveStrength(), shift[0], shift[1], olderTexture, olderTexture);
             GLFW.glfwSwapBuffers(GLFW.glfwGetCurrentContext());
             dfr.frameGenerated();
         } catch (RuntimeException e) {
@@ -223,7 +287,7 @@ public final class ModernDfr {
     // ------------------------------------------------------------------ OpenGL
 
     /** Plain drawing settings: no blending, depth, culling or clipping; all colours written. */
-    private static void prepare() {
+    private static void prepare(int w, int h) {
         glDisable(GL_BLEND);
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
@@ -231,19 +295,19 @@ public final class ModernDfr {
         glDisable(GL_STENCIL_TEST);
         glDisable(GL_COLOR_LOGIC_OP);
         glColorMask(true, true, true, true);
-        glViewport(0, 0, width, height);
+        glViewport(0, 0, w, h);
     }
 
     /** Copies a whole picture from one framebuffer to another (0 = the window's back buffer). */
-    private static void copy(int from, int to) {
+    private static void copy(int from, int to, int w, int h) {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, from);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, to);
-        glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
 
-    /** Runs the shader into the window's back buffer. */
-    private static void draw(int mode, float strength, float shiftX, float shiftY, int current, int previous) {
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    /** Runs the shader into a framebuffer (0 = the window's back buffer). */
+    private static void draw(int into, int mode, float strength, float shiftX, float shiftY, int current, int previous) {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, into);
         glUseProgram(program);
         glBindVertexArray(vao);
         glActiveTexture(GL_TEXTURE0);
@@ -271,6 +335,23 @@ public final class ModernDfr {
 
     /** Makes the shader and the two window-sized pictures (again if the window changed size). */
     private static boolean ensureTextures(int w, int h) {
+        ensureProgram();
+        if (newestTexture != 0 && w == width && h == height) {
+            return true;
+        }
+        deletePictures();
+        width = w;
+        height = h;
+        newestTexture = texture(w, h, GL_RGBA8, GL_UNSIGNED_BYTE);
+        newestFbo = framebuffer(newestTexture);
+        olderTexture = texture(w, h, GL_RGBA8, GL_UNSIGNED_BYTE);
+        olderFbo = framebuffer(olderTexture);
+        havePrevious = false;
+        return true;
+    }
+
+    /** Compiles the shader the first time it's needed. */
+    private static void ensureProgram() {
         if (program == 0) {
             program = link(compile(GL_VERTEX_SHADER, VERTEX), compile(GL_FRAGMENT_SHADER, FRAGMENT));
             glUseProgram(program);
@@ -281,29 +362,17 @@ public final class ModernDfr {
             uShift = glGetUniformLocation(program, "Shift");
             vao = glGenVertexArrays();
         }
-        if (newestTexture != 0 && w == width && h == height) {
-            return true;
-        }
-        deletePictures();
-        width = w;
-        height = h;
-        newestTexture = texture(w, h);
-        newestFbo = framebuffer(newestTexture);
-        olderTexture = texture(w, h);
-        olderFbo = framebuffer(olderTexture);
-        havePrevious = false;
-        blurHasPrevious = false;
-        return true;
     }
 
-    private static int texture(int w, int h) {
+    /** A picture on the graphics card: GL_RGBA8 (normal colour) or GL_RGBA16F (precise, for the blur trail). */
+    private static int texture(int w, int h, int format, int type) {
         int id = glGenTextures();
         glBindTexture(GL_TEXTURE_2D, id);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, (ByteBuffer) null);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, GL_RGBA, type, (ByteBuffer) null);
         return id;
     }
 
