@@ -24,8 +24,8 @@ import static org.lwjgl.opengl.GL33C.*;
  *             since (camera prediction)
  * The in-between frame is drawn by a tiny OpenGL program (the shaders are the strings below).
  *
- * The same blending gives Motion Blur on versions where Minecraft's own effect system can't
- * (VersionHooks.MOTION_BLUR_SUPPORTED = false): each frame shown is mixed with the one shown before.
+ * The same blending gives Motion Blur on every 1.20–1.21 version: each frame shown is mixed with the
+ * one shown before (MotionBlur.keepThisFrame keeps the trail the same length at any FPS).
  *
  * Minecraft remembers which OpenGL settings it last used, so everything changed here is put back
  * exactly as it was (GlState) – otherwise Minecraft's next frame would draw wrongly.
@@ -96,7 +96,7 @@ public final class ModernDfr {
         Dfr dfr = core.get(Dfr.class);
         Mods.MotionBlur blur = core.get(Mods.MotionBlur.class);
         boolean dfrOn = shouldRun(dfr, mc);
-        boolean blurOn = !dfrOn && !VersionHooks.MOTION_BLUR_SUPPORTED && blur.isActive() && mc.level != null;
+        boolean blurOn = !dfrOn && blur.isActive() && mc.level != null;
         if (!dfrOn) {
             havePrevious = false;
         }
@@ -126,8 +126,8 @@ public final class ModernDfr {
                 swapRoles();
                 havePrevious = true;
             } else if (blurHasPrevious) {
-                // strength 10–90 % = how much of the last picture stays.
-                draw(2, (float) (blur.strength.get() / 100.0), 0, 0, newestTexture, olderTexture);
+                // How much of the last picture stays (the setting, adjusted for the frame rate).
+                draw(2, blur.keepThisFrame(), 0, 0, newestTexture, olderTexture);
                 copy(0, olderFbo); // what's shown is what the next frame mixes with
             } else {
                 copy(newestFbo, olderFbo);

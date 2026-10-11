@@ -51,7 +51,13 @@ public final class HudMods {
             // With DFR on: "72 FPS + 72 DFR" (real frames + generated frames).
             com.nexusclient.core.dfr.Dfr dfr = com.nexusclient.core.NexusCore.get().get(com.nexusclient.core.dfr.Dfr.class);
             if (dfr.isActive() && dfr.showInFps.isOn()) {
-                return one((preview ? 72 : game.fps()) + " FPS + " + (preview ? 72 : dfr.generatedFps()) + " DFR");
+                int generated = preview ? 72 : dfr.generatedFps();
+                if (generated == 0) {
+                    // DFR rests when the game is already fast enough for the screen (extra frames
+                    // couldn't be shown) – say so, instead of a confusing "+ 0 DFR".
+                    return one(game.fps() + " FPS  (DFR resting – already smooth)");
+                }
+                return one((preview ? 72 : game.fps()) + " FPS + " + generated + " DFR");
             }
             return one((preview ? 144 : game.fps()) + " FPS");
         }

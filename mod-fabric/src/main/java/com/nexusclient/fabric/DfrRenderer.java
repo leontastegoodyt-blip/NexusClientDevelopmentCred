@@ -110,8 +110,8 @@ public final class DfrRenderer {
             blurHasPrevious = true;
             return current;
         }
-        // strength 10–90 % = how much of the last picture stays.
-        drawGenerated(current, 2, (float) (blur.strength.get() / 100.0), 0, 0);
+        // How much of the last picture stays (the setting, adjusted for the frame rate).
+        drawGenerated(current, 2, blur.keepThisFrame(), 0, 0);
         if (failed) {
             return current;
         }

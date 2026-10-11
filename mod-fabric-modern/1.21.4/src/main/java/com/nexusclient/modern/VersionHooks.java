@@ -115,12 +115,6 @@ public final class VersionHooks {
         Minecraft.getInstance().getTextureManager().release(ResourceLocation.fromNamespaceAndPath("minecraft", path));
     }
 
-    /** Motion Blur isn't built for this version yet (its effect system is different) – shown as "Soon". */
-    public static final boolean MOTION_BLUR_SUPPORTED = false;
-
-    public static void setMotionBlur(int strength) {
-    }
-
     private static final java.util.Map<String, ResourceLocation> CAPES = new java.util.HashMap<>();
 
     /**

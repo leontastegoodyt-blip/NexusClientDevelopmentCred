@@ -83,8 +83,8 @@ public final class LegacyDfr {
                 havePrevious = true;
             } else {
                 if (blurHasPrevious) {
-                    // strength 10–90 % = how much of the last picture stays.
-                    draw(older, 0, 0, (float) (blur.strength.get() / 100.0));
+                    // How much of the last picture stays (the setting, adjusted for the frame rate).
+                    draw(older, 0, 0, blur.keepThisFrame());
                 }
                 grab(older); // what's shown is what the next frame mixes with
                 blurHasPrevious = true;

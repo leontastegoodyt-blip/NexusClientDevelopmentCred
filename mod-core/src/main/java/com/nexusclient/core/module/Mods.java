@@ -204,8 +204,24 @@ public final class Mods {
     public static class MotionBlur extends Module {
         public final NumberSetting strength = add(new NumberSetting("strength", "Strength", 50, 10, 90, 5, "%"));
 
+        private long lastFrame;
+
         public MotionBlur() {
             super("motionBlur", "Motion Blur", "Adds a smooth blur when you move the camera.", Category.VISUAL, false, false);
+        }
+
+        /**
+         * How much of the last picture stays in this frame (0–1). Called once per frame.
+         *
+         * "Strength" is what stays at 60 FPS. At higher FPS each frame keeps more, so the trail lasts
+         * just as long in time: otherwise at 300 FPS the blur would fade in a few milliseconds and
+         * be invisible.
+         */
+        public float keepThisFrame() {
+            long now = System.nanoTime();
+            double seconds = lastFrame == 0 ? 1 / 60.0 : Math.min(0.1, (now - lastFrame) / 1e9);
+            lastFrame = now;
+            return (float) Math.pow(strength.get() / 100.0, seconds * 60);
         }
     }
 

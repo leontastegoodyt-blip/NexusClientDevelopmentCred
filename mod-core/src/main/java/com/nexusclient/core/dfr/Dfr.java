@@ -35,7 +35,7 @@ public class Dfr extends Module {
 
     public Dfr() {
         super("dfr", "DFR (Dual Frame Reset)",
-                "Adds a generated frame between real frames for smoother motion.", Category.VISUAL, false, false);
+                "Adds generated frames when your FPS is low. Rests when the game is already smooth.", Category.VISUAL, false, false);
     }
 
     /** True if the extra frame should be a camera prediction (Low lag) rather than a blend (Smooth). */

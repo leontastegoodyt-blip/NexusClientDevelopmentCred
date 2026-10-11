@@ -139,7 +139,6 @@ public class NexusModern implements ClientModInitializer {
         HitColour.tick(mc);
         BadgeText.tick(mc); // asks the Nexus server which nearby players get a badge (every 20 s)
         GlintTint.tick();   // Enchant Glint Colour
-        MotionBlurControl.tick(mc);
 
         if (mc.player == null) {
             return;
