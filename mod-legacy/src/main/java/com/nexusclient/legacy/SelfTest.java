@@ -1,6 +1,7 @@
 package com.nexusclient.legacy;
 
 import com.nexusclient.core.NexusCore;
+import com.nexusclient.core.dfr.Dfr;
 import com.nexusclient.core.ui.HudEditor;
 import com.nexusclient.core.ui.ModMenu;
 import com.nexusclient.core.util.SelfTestMods;
@@ -127,6 +128,25 @@ public final class SelfTest {
         } else if (worldTicks == 100) {
             screenshot(mc, "selftest-ingame-menu.png");
         } else if (worldTicks == 120) {
+            // DFR: Smooth first, then Low lag, always generating (the test PC may be faster than
+            // half the refresh rate, where DFR would normally rest).
+            mc.setScreen(null);
+            System.setProperty("nexus.dfr.force", "true");
+            Dfr dfr = NexusCore.get().get(Dfr.class);
+            dfr.mode.set("Creative");
+            dfr.setEnabled(true);
+        } else if (worldTicks == 180 || worldTicks == 240) {
+            Dfr dfr = NexusCore.get().get(Dfr.class);
+            log("DFR (" + (dfr.lowLag() ? "Low lag" : "Smooth") + "): real FPS " + MinecraftClient.getCurrentFps()
+                    + ", generated FPS " + dfr.generatedFps() + (dfr.isEnabled() ? "" : " – SWITCHED OFF"));
+            if (worldTicks == 180) {
+                screenshot(mc, "selftest-dfr.png");
+                dfr.mode.set("PvP");
+                dfr.pvpStyle.set("Low lag");
+            } else {
+                dfr.setEnabled(false);
+            }
+        } else if (worldTicks == 250) {
             log("finished");
             mc.scheduleStop();
         }

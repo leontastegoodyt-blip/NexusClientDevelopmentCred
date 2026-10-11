@@ -41,9 +41,7 @@ public class NexusLegacy implements ClientModInitializer {
     public void onInitializeClient() {
         NexusCore core = NexusCore.get();
         core.init(new LegacyGameInfo(), new LegacyPlatform(), FabricLoader.getInstance().getGameDir().toFile());
-
-        // Mods the 1.8.9 version doesn't do yet – the menu shows them as "Coming soon".
-        core.markUnsupported("motionBlur", "dfr");
+        // (DFR and Motion Blur are drawn by LegacyDfr.)
     }
 
     /** Runs 20 times a second, at the end of Minecraft's own tick. */
