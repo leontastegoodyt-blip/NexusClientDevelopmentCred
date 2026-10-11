@@ -44,7 +44,7 @@ public class NexusLegacy implements ClientModInitializer {
 
         // Mods the 1.8.9 version doesn't do yet – the menu shows them as "Coming soon".
         core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur",
-                "screenshotUploader", "dfr");
+                "dfr");
     }
 
     /** Runs 20 times a second, at the end of Minecraft's own tick. */

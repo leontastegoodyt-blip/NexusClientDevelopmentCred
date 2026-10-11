@@ -60,7 +60,7 @@ public class NexusModern implements ClientModInitializer {
 
         // Mods these versions don't do yet – the menu shows them as "Coming soon".
         core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur",
-                "screenshotUploader", "dfr");
+                "dfr");
 
         // Keys (players can change them in Minecraft's Controls menu, under "Nexus Client").
         menuKey = GameHooks.registerKey("key.nexusclient.open_menu", InputConstants.KEY_RSHIFT);

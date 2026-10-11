@@ -68,6 +68,8 @@ public final class NexusCore {
         }
     });
     private final java.util.Queue<String> pendingNotices = new java.util.concurrent.ConcurrentLinkedQueue<String>();
+    private final java.util.Queue<Runnable> pendingTasks = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
+    private File gameDir;
 
     private NexusCore() {
         for (HudModule module : HudMods.all()) {
@@ -106,6 +108,7 @@ public final class NexusCore {
     public void init(GameInfo game, Platform platform, File gameDir) {
         this.game = game;
         this.platform = platform;
+        this.gameDir = gameDir;
         this.configFile = new File(new File(gameDir, "config/nexus"), "nexus.json");
         // The launcher says where its tools folder is (FFmpeg for clips); otherwise use the game folder.
         String tools = System.getProperty("nexus.toolsDir");
@@ -161,6 +164,16 @@ public final class NexusCore {
     /** Shows the player a notice on the game thread (safe to call from any thread). */
     public void noticeLater(String message) {
         pendingNotices.add(message);
+    }
+
+    /** Runs something on the game thread at the next tick (safe to call from any thread). */
+    public void runLater(Runnable task) {
+        pendingTasks.add(task);
+    }
+
+    /** The instance's game folder (where screenshots/, config/ … are). */
+    public File gameDir() {
+        return gameDir;
     }
 
     /** The player pressed the "save clip" key. */
@@ -228,6 +241,10 @@ public final class NexusCore {
         String notice;
         while ((notice = pendingNotices.poll()) != null) {
             platform.showNotice(notice);
+        }
+        Runnable task;
+        while ((task = pendingTasks.poll()) != null) {
+            task.run();
         }
         if (clipRecorder != null) {
             clipRecorder.tick(get(Mods.ClipRecorder.class), game);

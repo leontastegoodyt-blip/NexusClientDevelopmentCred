@@ -98,6 +98,27 @@ class PostgresFlowTest {
         assertEquals(2, json(call("GET", "/api/admin/overview", dev, null)).get("players").getAsLong());
         assertEquals(200, call("POST", "/api/admin/players/" + aliceUuid + "/ban", dev, "{\"hours\":1,\"reason\":\"test\"}").statusCode());
         assertEquals(401, call("GET", "/api/me", alice, null).statusCode());
+        screenshotRoundTrip(dev);
+    }
+
+    /** Uploads a tiny PNG as this player, then fetches it by its link (no sign-in needed to view). */
+    void screenshotRoundTrip(String token) throws Exception {
+        java.awt.image.BufferedImage picture = new java.awt.image.BufferedImage(4, 4, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.io.ByteArrayOutputStream png = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(picture, "png", png);
+        HttpResponse<String> uploaded = http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/screenshots"))
+                .header("Authorization", "Bearer " + token).header("Content-Type", "image/png")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(png.toByteArray())).build(), HttpResponse.BodyHandlers.ofString());
+        String url = json(uploaded).get("url").getAsString();
+        HttpResponse<byte[]> viewed = http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + url)).build(),
+                HttpResponse.BodyHandlers.ofByteArray());
+        assertEquals(200, viewed.statusCode());
+        assertEquals(png.size(), viewed.body().length);
+        // Not a PNG → refused.
+        HttpResponse<String> junk = http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/screenshots"))
+                .header("Authorization", "Bearer " + token).header("Content-Type", "image/png")
+                .POST(HttpRequest.BodyPublishers.ofString("hello")).build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, junk.statusCode());
     }
 
     String signIn(String name) throws Exception {

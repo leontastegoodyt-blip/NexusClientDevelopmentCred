@@ -62,8 +62,7 @@ public class NexusFabric implements ClientModInitializer {
         core.init(new FabricGameInfo(), new FabricPlatform(), FabricLoader.getInstance().getGameDir().toFile());
 
         // Mods this version doesn't do yet – the menu shows them as "Coming soon".
-        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur",
-                "screenshotUploader");
+        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur");
 
         // Keys (players can change them in Minecraft's Controls menu, under "Nexus Client").
         KeyMapping.Category category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("nexusclient", "main"));

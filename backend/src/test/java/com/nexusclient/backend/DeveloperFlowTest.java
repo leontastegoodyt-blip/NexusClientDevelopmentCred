@@ -89,10 +89,31 @@ class DeveloperFlowTest {
         assertEquals("developer", badges.get(devUuid).getAsString());
         assertEquals("nexus", badges.get(adminUuid).getAsString());
         assertFalse(badges.has(playerUuid)); // not in-game with Nexus right now
+        screenshotRoundTrip(dev);
     }
 
     String uuidOf(String token) throws Exception {
         return json(call("GET", "/api/me", token, null)).getAsJsonObject("card").get("uuid").getAsString();
+    }
+
+    /** Uploads a tiny PNG as this player, then fetches it by its link (no sign-in needed to view). */
+    void screenshotRoundTrip(String token) throws Exception {
+        java.awt.image.BufferedImage picture = new java.awt.image.BufferedImage(4, 4, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.io.ByteArrayOutputStream png = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(picture, "png", png);
+        HttpResponse<String> uploaded = http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/screenshots"))
+                .header("Authorization", "Bearer " + token).header("Content-Type", "image/png")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(png.toByteArray())).build(), HttpResponse.BodyHandlers.ofString());
+        String url = json(uploaded).get("url").getAsString();
+        HttpResponse<byte[]> viewed = http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + url)).build(),
+                HttpResponse.BodyHandlers.ofByteArray());
+        assertEquals(200, viewed.statusCode());
+        assertEquals(png.size(), viewed.body().length);
+        // Not a PNG → refused.
+        HttpResponse<String> junk = http.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/screenshots"))
+                .header("Authorization", "Bearer " + token).header("Content-Type", "image/png")
+                .POST(HttpRequest.BodyPublishers.ofString("hello")).build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, junk.statusCode());
     }
 
     String signIn(String name) throws Exception {

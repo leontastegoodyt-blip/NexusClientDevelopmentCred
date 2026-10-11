@@ -38,7 +38,7 @@ public final class Mods {
                 new ChatTimestamps(), new CopyChat(), new ChatStacking(), new LongerChat(),
                 new MentionHighlight(), new ChatFilter(),
                 // Utility
-                new ScreenshotUploader(), new NickHider(), new AutoGG(), new StreamerMode(), new ClipRecorder()));
+                new com.nexusclient.core.online.ScreenshotUploader(), new NickHider(), new AutoGG(), new StreamerMode(), new ClipRecorder()));
     }
 
     // ================================================================== PvP
@@ -352,12 +352,6 @@ public final class Mods {
         public ClipRecorder() {
             super("clipRecorder", "Clip Recorder",
                     "Press F8 to save the last 30 seconds as a video (in the clips folder).", Category.UTILITY, false, false);
-        }
-    }
-
-    public static class ScreenshotUploader extends Module {
-        public ScreenshotUploader() {
-            super("screenshotUploader", "Screenshot Uploader", "Upload a screenshot and copy its link (needs the Nexus servers, build step 13).", Category.UTILITY, false, false);
         }
     }
 
