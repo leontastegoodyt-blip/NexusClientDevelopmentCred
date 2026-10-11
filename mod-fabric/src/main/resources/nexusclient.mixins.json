@@ -4,6 +4,7 @@
   "package": "com.nexusclient.fabric.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "ChatSendMixin",
     "BlockOutlineMixin",
     "CameraMixin",
     "ChatComponentAccessor",

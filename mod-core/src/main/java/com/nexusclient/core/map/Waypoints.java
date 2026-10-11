@@ -53,6 +53,54 @@ public class Waypoints extends Module implements Overlay {
         return store.list(game.worldKey(), game.dimension());
     }
 
+    /** A party ping: a marker that disappears by itself (not saved). */
+    private static final class Ping {
+        final WaypointStore.Waypoint waypoint;
+        final String dimension;
+        final long until;
+
+        Ping(WaypointStore.Waypoint waypoint, String dimension, long until) {
+            this.waypoint = waypoint;
+            this.dimension = dimension;
+            this.until = until;
+        }
+    }
+
+    private final List<Ping> pings = new java.util.ArrayList<Ping>();
+
+    /**
+     * Adds a party ping (online/Social): shown for {@code millis} even when Waypoints is switched off,
+     * unless the server blocks waypoints. A new ping from the same player replaces their old one.
+     */
+    public void addPing(String from, int colour, double x, double y, double z, String dimension, long millis) {
+        WaypointStore.Waypoint waypoint = new WaypointStore.Waypoint(from, (int) Math.floor(x), (int) Math.floor(y),
+                (int) Math.floor(z), colour);
+        for (int i = pings.size() - 1; i >= 0; i--) {
+            if (pings.get(i).waypoint.name.equals(from)) {
+                pings.remove(i);
+            }
+        }
+        pings.add(new Ping(waypoint, dimension, System.currentTimeMillis() + millis));
+    }
+
+    /** The party pings in the dimension the player is in now (old ones are dropped). */
+    public List<WaypointStore.Waypoint> pings(GameInfo game) {
+        List<WaypointStore.Waypoint> here = new java.util.ArrayList<WaypointStore.Waypoint>();
+        if (isBlockedByServer()) {
+            return here;
+        }
+        long now = System.currentTimeMillis();
+        for (int i = pings.size() - 1; i >= 0; i--) {
+            Ping ping = pings.get(i);
+            if (ping.until < now) {
+                pings.remove(i);
+            } else if (ping.dimension.equals(game.dimension())) {
+                here.add(ping.waypoint);
+            }
+        }
+        return here;
+    }
+
     /** The "Add waypoint" key: a waypoint where you stand. */
     public void addHere(GameInfo game) {
         if (!game.inWorld() || !isActive()) {
@@ -88,6 +136,11 @@ public class Waypoints extends Module implements Overlay {
 
     @Override
     public void drawOverlay(Renderer r, GameInfo game) {
+        drawMarkers(r, game, current(game), maxDistance.get());
+    }
+
+    /** Draws markers for a list of waypoints (also used for party pings, see online/Social). */
+    public void drawMarkers(Renderer r, GameInfo game, List<WaypointStore.Waypoint> list, double maxDistance) {
         if (!game.inWorld() || game.menuOpen()) {
             return;
         }
@@ -108,7 +161,7 @@ public class Waypoints extends Module implements Overlay {
         double uz = rx * fy;
         double focal = (r.height() / 2.0) / Math.tan(Math.toRadians(game.fov()) / 2);
 
-        for (WaypointStore.Waypoint waypoint : current(game)) {
+        for (WaypointStore.Waypoint waypoint : list) {
             if (!waypoint.visible) {
                 continue;
             }
@@ -116,7 +169,7 @@ public class Waypoints extends Module implements Overlay {
             double dy = waypoint.y + 1.0 - eyeY;
             double dz = waypoint.z + 0.5 - eyeZ;
             double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (distance > maxDistance.get()) {
+            if (distance > maxDistance) {
                 continue;
             }
             double depth = dx * fx + dy * fy + dz * fz;

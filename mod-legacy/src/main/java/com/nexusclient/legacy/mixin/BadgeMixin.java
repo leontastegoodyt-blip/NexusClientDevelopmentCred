@@ -33,11 +33,17 @@ public class BadgeMixin {
 
     @ModifyVariable(method = "renderLabelIfPresent", at = @At("HEAD"), argsOnly = true)
     private String nexus$makeRoom(String text, @Local(argsOnly = true) Entity entity) {
-        Badges.Badge badge = badgeFor(entity, text);
-        if (badge == null) {
-            return text;
+        if (!(entity instanceof PlayerEntity) || !text.equals(entity.getName().asFormattedString())) {
+            return text; // not a player's own name (e.g. the score line under it)
         }
-        return BEFORE + text + (badge == Badges.Badge.DEVELOPER ? AFTER : "");
+        // The clan tag after the name, e.g. "Steve [APPLE]" (Nexus Social), in aqua (§b).
+        String clan = Badges.clanTag(entity.getUuid());
+        String named = clan == null ? text : text + " §b[" + clan + "]§r";
+        Badges.Badge badge = Badges.of(entity.getUuid());
+        if (badge == null) {
+            return named;
+        }
+        return BEFORE + named + (badge == Badges.Badge.DEVELOPER ? AFTER : "");
     }
 
     @Inject(method = "renderLabelIfPresent",
@@ -58,14 +64,6 @@ public class BadgeMixin {
             draw(BadgeArt.devTag(), half - 16, 0);
         }
         GlStateManager.enableTexture();
-    }
-
-    /** Which badge this name tag gets (null = none, or it's not a player's own name, e.g. their score). */
-    private static Badges.Badge badgeFor(Entity entity, String text) {
-        if (!(entity instanceof PlayerEntity) || !text.equals(entity.getName().asFormattedString())) {
-            return null;
-        }
-        return Badges.of(entity.getUuid());
     }
 
     /** Draws pixel art at half size (16 art pixels = 8 name-tag pixels), one small square per pixel. */

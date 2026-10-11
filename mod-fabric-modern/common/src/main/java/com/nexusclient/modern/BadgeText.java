@@ -31,17 +31,25 @@ public final class BadgeText {
             return name;
         }
         Badges.Badge badge = Badges.of(player.getUUID());
-        if (badge == null) {
+        String clan = Badges.clanTag(player.getUUID());
+        if (badge == null && clan == null) {
             return name;
         }
         MutableComponent out = Component.empty();
-        out.append(Component.literal(badge == Badges.Badge.PREMIUM ? Badges.PREMIUM_GLYPH : Badges.NEXUS_GLYPH)
-                .withStyle(VersionHooks.badgeStyle()));
-        out.append(" ");
+        if (badge != null) {
+            out.append(Component.literal(badge == Badges.Badge.PREMIUM ? Badges.PREMIUM_GLYPH : Badges.NEXUS_GLYPH)
+                    .withStyle(VersionHooks.badgeStyle()));
+            out.append(" ");
+        }
         out.append(name);
         if (badge == Badges.Badge.DEVELOPER) {
             out.append(" ");
             out.append(Component.literal(Badges.DEV_TAG_GLYPH).withStyle(VersionHooks.badgeStyle()));
+        }
+        if (clan != null) {
+            // The clan tag after the name, e.g. "Steve [APPLE]" (Nexus Social).
+            out.append(Component.literal(" [" + clan + "]").withStyle(net.minecraft.network.chat.Style.EMPTY
+                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(0x5FD3FF))));
         }
         return out;
     }

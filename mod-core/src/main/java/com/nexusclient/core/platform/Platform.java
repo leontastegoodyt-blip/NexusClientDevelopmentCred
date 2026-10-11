@@ -23,4 +23,14 @@ public interface Platform {
 
     /** Shows a short Nexus message to the player only (in chat), e.g. which mods a server blocked. */
     void showNotice(String message);
+
+    /**
+     * Shows a chat line only on this player's screen with a coloured tag, e.g. "[Party] Steve: hi"
+     * (Nexus party/clan chat – never sent to the Minecraft server).
+     *
+     * @param tagRgb the tag's colour (RGB)
+     */
+    default void showChatLine(String tag, int tagRgb, String text) {
+        showNotice(tag + text);
+    }
 }

@@ -30,7 +30,7 @@ public class SignedInCheck implements HandlerInterceptor, WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(this).addPathPatterns("/api/**")
                 .excludePathPatterns("/api/auth/challenge", "/api/auth/verify", "/api/auth/dev", "/api/auth/logout",
-                        "/api/partners", "/api/cosmetics/worn", "/api/badges", "/api/crash-reports"); // public: the mod reads these without signing in
+                        "/api/partners", "/api/cosmetics/worn", "/api/badges", "/api/clans/tags", "/api/crash-reports"); // public: the mod reads these without signing in
     }
 
     @Override

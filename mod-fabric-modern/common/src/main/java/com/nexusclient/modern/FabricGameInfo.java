@@ -267,4 +267,19 @@ public class FabricGameInfo implements GameInfo {
         }
         return out.toString().trim();
     }
+
+    @Override
+    public int[] lookedAtBlock() {
+        if (!inWorld()) {
+            return null;
+        }
+        // Up to 128 blocks away (further than you can reach), for party pings.
+        net.minecraft.world.phys.HitResult hit = mc.player.pick(128, 1.0f, false);
+        if (hit instanceof net.minecraft.world.phys.BlockHitResult block
+                && hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+            net.minecraft.core.BlockPos pos = block.getBlockPos();
+            return new int[] {pos.getX(), pos.getY(), pos.getZ()};
+        }
+        return null;
+    }
 }

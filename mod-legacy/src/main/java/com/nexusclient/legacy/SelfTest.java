@@ -152,7 +152,8 @@ public final class SelfTest {
             if (worldTicks == 261) {
                 screenshot(mc, "selftest-motionblur.png");
             }
-        } else if (worldTicks == 266) {
+        } else if (worldTicks >= 266 && (!com.nexusclient.core.util.SocialSelfTest.wanted()
+                || com.nexusclient.core.util.SocialSelfTest.step(worldTicks - 266))) {
             log("finished");
             mc.scheduleStop();
         }

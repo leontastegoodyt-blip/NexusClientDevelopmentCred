@@ -148,4 +148,9 @@ public interface GameInfo {
     default int surfaceY(int x, int z) {
         return 0;
     }
+
+    /** The block the crosshair points at ({x, y, z}), or null if none (used by party pings). */
+    default int[] lookedAtBlock() {
+        return null;
+    }
 }

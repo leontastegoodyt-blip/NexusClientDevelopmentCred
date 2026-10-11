@@ -87,6 +87,7 @@ public final class NexusCore {
         for (Module module : DevTools.modules()) {
             register(module);
         }
+        register(new com.nexusclient.core.online.Social());
         register(new NexusSettings());
         serverRules = new ServerRules(modules);
     }
@@ -255,11 +256,26 @@ public final class NexusCore {
                 module.onTick(game);
             }
         }
+        // Nexus Social connects/disconnects itself as it's switched on/off, so it's told every tick.
+        get(com.nexusclient.core.online.Social.class).update(game);
     }
 
     /** The "Add waypoint" key was pressed (each loader module calls this). */
     public void addWaypointKey() {
         get(com.nexusclient.core.map.Waypoints.class).addHere(game);
+    }
+
+    /** The "Party ping" key was pressed (each loader module calls this). */
+    public void partyPingKey() {
+        get(com.nexusclient.core.online.Social.class).ping(game);
+    }
+
+    /**
+     * The player sent a chat message. Returns true if Nexus handled it (party/clan chat: "@p …",
+     * "@c …") – then it must not be sent to the Minecraft server.
+     */
+    public boolean chatInput(String message) {
+        return get(com.nexusclient.core.online.Social.class).handleChatInput(message);
     }
 
     /** Draws every switched-on HUD mod, then the full-screen overlays. */
@@ -276,6 +292,8 @@ public final class NexusCore {
                 ((com.nexusclient.core.hud.Overlay) module).drawOverlay(renderer, game);
             }
         }
+        // Pop-ups (friend online, invites…) on top of everything.
+        com.nexusclient.core.ui.Toasts.draw(renderer);
     }
 
     /**
@@ -295,6 +313,7 @@ public final class NexusCore {
             }
         }
         currentServer = next;
+        get(com.nexusclient.core.online.Social.class).serverChanged(next); // friends see where we play
         save();
         tellPlayerBlocked(serverRules.enterServer(next));
     }

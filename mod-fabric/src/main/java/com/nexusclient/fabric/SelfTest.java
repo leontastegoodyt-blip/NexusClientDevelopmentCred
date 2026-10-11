@@ -153,7 +153,8 @@ public final class SelfTest {
             if (worldTicks == 135) {
                 Screenshot.grab(mc, false);
             }
-        } else if (worldTicks == 140) {
+        } else if (worldTicks >= 140 && (!com.nexusclient.core.util.SocialSelfTest.wanted()
+                || com.nexusclient.core.util.SocialSelfTest.step(worldTicks - 140))) {
             System.out.println("[Nexus] self-test finished");
             mc.stop();
         }

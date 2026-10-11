@@ -4,6 +4,7 @@
   "package": "com.nexusclient.modern.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
+    "ChatSendMixin",
     "BadgeMixin",
     "BlockOutlineMixin",
     "ChatComponentAccessor",

@@ -136,8 +136,44 @@ public final class Badges {
             }
             badges.clear();
             badges.putAll(fresh);
+            refreshClanTags(uuidList);
         } catch (Exception e) {
             // The Nexus server is unreachable – keep the old badges and try again later.
+        }
+    }
+
+    private static final Map<UUID, String> clanTags = new ConcurrentHashMap<UUID, String>();
+
+    /**
+     * The clan tag of this player (e.g. "APPLE"), or null – shown after their name on name tags
+     * (switch off in Nexus Social's settings).
+     */
+    public static String clanTag(UUID player) {
+        String test = System.getProperty("nexus.clanTagTest");
+        if (test != null) {
+            return test; // developer self-test: everyone is in this clan
+        }
+        if (player == null || !com.nexusclient.core.NexusCore.get().get(Social.class).clanTags.isOn()) {
+            return null;
+        }
+        return clanTags.get(player);
+    }
+
+    /** Asks which clans the nearby players are in (public, like the badges). */
+    private static void refreshClanTags(String uuidList) {
+        try {
+            JsonObject answer = NexusHttp.get("/api/clans/tags?uuids=" + uuidList).getAsJsonObject();
+            Map<UUID, String> fresh = new ConcurrentHashMap<UUID, String>();
+            for (Map.Entry<String, JsonElement> entry : answer.entrySet()) {
+                String tag = entry.getValue().getAsString();
+                if (tag.matches("[A-Z0-9]{2,5}")) {
+                    fresh.put(UUID.fromString(entry.getKey()), tag);
+                }
+            }
+            clanTags.clear();
+            clanTags.putAll(fresh);
+        } catch (Exception e) {
+            // The Nexus server is unreachable – keep the old tags.
         }
     }
 

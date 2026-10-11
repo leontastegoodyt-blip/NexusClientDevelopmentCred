@@ -260,4 +260,17 @@ public class LegacyGameInfo implements GameInfo {
         // getTopPosition gives the free space ABOVE the top block, so the block is one lower.
         return mc.world.getTopPosition(new BlockPos(x, 0, z)).getY() - 1;
     }
+
+    @Override
+    public int[] lookedAtBlock() {
+        if (mc.player == null) {
+            return null;
+        }
+        // Up to 128 blocks away (further than you can reach), for party pings.
+        net.minecraft.util.hit.BlockHitResult hit = mc.player.rayTrace(128, 1.0f);
+        if (hit != null && hit.type == net.minecraft.util.hit.BlockHitResult.Type.BLOCK && hit.getBlockPos() != null) {
+            return new int[] {hit.getBlockPos().getX(), hit.getBlockPos().getY(), hit.getBlockPos().getZ()};
+        }
+        return null;
+    }
 }

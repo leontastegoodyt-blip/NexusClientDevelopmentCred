@@ -99,6 +99,7 @@ public final class SelfTest {
             // Face the player (F5) with the developer badge forced on, so the screenshot shows the
             // name tag with its Nexus badge and DEV tag.
             System.setProperty("nexus.badgeTest", "DEVELOPER");
+            System.setProperty("nexus.clanTagTest", "TEST"); // and a clan tag after the name
             mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK); // from behind: cape + name tag
         } else if (worldTicks == 66) {
             mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
@@ -146,7 +147,45 @@ public final class SelfTest {
             if (worldTicks == 261) {
                 screenshot(mc, "motion blur");
             }
-        } else if (worldTicks == 266) {
+        } else if (worldTicks == 266 && System.getenv("NEXUS_TOKEN") == null) {
+            log("finished"); // no Nexus sign-in: skip the Nexus Social part
+            mc.stop();
+        } else if (worldTicks >= 266) {
+            socialTest(mc);
+        }
+    }
+
+    /**
+     * Nexus Social (only when started with a Nexus sign-in, e.g. against a test server): invites the
+     * first online friend to a party, sends a party message, presses the party ping key, and
+     * screenshots the Social tab and the world (chat lines, ping marker, pop-ups).
+     */
+    private static void socialTest(Minecraft mc) {
+        com.nexusclient.core.online.Social social = NexusCore.get().get(com.nexusclient.core.online.Social.class);
+        if (worldTicks == 266) {
+            log("social: " + social.status() + ", friends " + social.friends().size());
+            for (com.nexusclient.core.online.Social.Person friend : social.friends()) {
+                if (friend.online) {
+                    log("social: inviting " + friend.name);
+                    social.inviteToParty(friend);
+                    break;
+                }
+            }
+        } else if (worldTicks == 330) {
+            log("social: party of " + social.partyMembers().size() + ", " + social.partyChat().size() + " party messages");
+            log("social: chat typed @p → handled = " + NexusCore.get().chatInput("@p hi from the game"));
+        } else if (worldTicks == 340) {
+            NexusCore.get().partyPingKey();
+        } else if (worldTicks == 374) {
+            com.nexusclient.core.ui.Toasts.show("PartyPal is online", "Playing on mc.hypixel.net", "F", 0x5BE49B);
+            com.nexusclient.core.ui.Toasts.show("Party invite", "PartyPal · accept in Right Shift → Social", "P", 0xB98CFF);
+        } else if (worldTicks == 380) {
+            screenshot(mc, "social world");
+            NexusCore.get().platform().openScreen(ModMenu.social());
+        } else if (worldTicks == 400) {
+            screenshot(mc, "social tab");
+        } else if (worldTicks == 410) {
+            log("social: party messages " + social.partyChat().size() + ", clan " + social.clanTag());
             log("finished");
             mc.stop();
         }

@@ -45,6 +45,7 @@ public class NexusFabric implements ClientModInitializer {
     private static KeyMapping clipKey;
     private static KeyMapping freelookKey;
     private static KeyMapping waypointKey;
+    private static KeyMapping pingKey;
 
     private boolean wasZooming;
     private int lastHurtTime;
@@ -71,6 +72,7 @@ public class NexusFabric implements ClientModInitializer {
         clipKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.save_clip", InputConstants.KEY_F8, category));
         freelookKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.freelook", InputConstants.KEY_LALT, category));
         waypointKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.add_waypoint", InputConstants.KEY_B, category));
+        pingKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.party_ping", InputConstants.KEY_G, category));
 
         // HUD: draw every switched-on HUD mod on top of the normal game HUD.
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("nexusclient", "hud"), (graphics, delta) -> {
@@ -132,6 +134,9 @@ public class NexusFabric implements ClientModInitializer {
         }
         while (waypointKey.consumeClick()) {
             core.addWaypointKey();
+        }
+        while (pingKey.consumeClick()) {
+            core.partyPingKey();
         }
 
         // Zoom: each new press starts at the zoom level from the settings.

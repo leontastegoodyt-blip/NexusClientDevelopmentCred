@@ -46,4 +46,11 @@ public class FabricPlatform implements Platform {
                 .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x3AA8FF)))
                 .append(Component.literal(message).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xC8C8D8)))));
     }
+
+    @Override
+    public void showChatLine(String tag, int tagRgb, String text) {
+        mc.gui.getChat().addMessage(Component.literal(tag)
+                .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(tagRgb)))
+                .append(Component.literal(text).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xE4E4EE)))));
+    }
 }

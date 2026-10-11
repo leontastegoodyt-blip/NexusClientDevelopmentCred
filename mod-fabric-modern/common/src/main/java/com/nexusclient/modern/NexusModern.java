@@ -42,6 +42,7 @@ public class NexusModern implements ClientModInitializer {
     private static KeyMapping clipKey;
     private static KeyMapping freelookKey;
     private static KeyMapping waypointKey;
+    private static KeyMapping pingKey;
 
     private boolean wasZooming;
     private int lastHurtTime;
@@ -68,6 +69,7 @@ public class NexusModern implements ClientModInitializer {
         clipKey = GameHooks.registerKey("key.nexusclient.save_clip", InputConstants.KEY_F8);
         freelookKey = GameHooks.registerKey("key.nexusclient.freelook", InputConstants.KEY_LALT);
         waypointKey = GameHooks.registerKey("key.nexusclient.add_waypoint", InputConstants.KEY_B);
+        pingKey = GameHooks.registerKey("key.nexusclient.party_ping", InputConstants.KEY_G);
 
         // HUD: draw the custom crosshair and every switched-on HUD mod on top of the normal game HUD.
         GameHooks.registerHud(graphics -> renderHud(mc, graphics));
@@ -125,6 +127,9 @@ public class NexusModern implements ClientModInitializer {
         }
         while (waypointKey.consumeClick()) {
             core.addWaypointKey();
+        }
+        while (pingKey.consumeClick()) {
+            core.partyPingKey();
         }
 
         // Zoom: each new press starts at the zoom level from the settings.

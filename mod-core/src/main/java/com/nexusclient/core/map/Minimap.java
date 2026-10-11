@@ -329,10 +329,16 @@ public class Minimap extends HudModule {
 
     private void drawWaypoints(Renderer r, GameInfo game, int mapSize, double scale) {
         Waypoints waypoints = NexusCore.get().get(Waypoints.class);
-        if (!showWaypoints.isOn() || waypoints == null || !waypoints.isActive()) {
+        if (!showWaypoints.isOn() || waypoints == null) {
             return;
         }
-        for (WaypointStore.Waypoint waypoint : waypoints.current(game)) {
+        // Your waypoints (if Waypoints is on) and your party's pings (always).
+        java.util.List<WaypointStore.Waypoint> list = new java.util.ArrayList<WaypointStore.Waypoint>();
+        if (waypoints.isActive()) {
+            list.addAll(waypoints.current(game));
+        }
+        list.addAll(waypoints.pings(game));
+        for (WaypointStore.Waypoint waypoint : list) {
             if (!waypoint.visible) {
                 continue;
             }

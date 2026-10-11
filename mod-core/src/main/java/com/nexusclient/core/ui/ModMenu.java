@@ -7,6 +7,7 @@ import com.nexusclient.core.module.Category;
 import com.nexusclient.core.module.Module;
 import com.nexusclient.core.module.NexusSettings;
 import com.nexusclient.core.online.DeveloperMode;
+import com.nexusclient.core.online.Social;
 import com.nexusclient.core.platform.Renderer;
 import com.nexusclient.core.settings.BooleanSetting;
 import com.nexusclient.core.settings.ChoiceSetting;
@@ -44,7 +45,7 @@ import java.util.Locale;
  */
 public class ModMenu implements NexusScreen {
 
-    private enum View { GRID, SETTINGS, SHARE }
+    private enum View { GRID, SETTINGS, SHARE, SOCIAL }
 
     private static final String ALL = "All";
     private static final String FAVOURITES = "Favourites"; // shown with a drawn star in front
@@ -74,6 +75,9 @@ public class ModMenu implements NexusScreen {
     private String shareInput = "";
     private boolean shareFocused;
     private String shareMessage = "";
+    private String socialInput = "";
+    private boolean socialFocused;
+    private String socialChannel = "Party";
     private String footer = "";
     private final long openedAt = System.currentTimeMillis();
 
@@ -104,6 +108,13 @@ public class ModMenu implements NexusScreen {
     private final List<Hit> hits = new ArrayList<Hit>();
 
     public ModMenu() {}
+
+    /** Opens the menu on the Social tab (friends, party, clan chat). */
+    public static ModMenu social() {
+        ModMenu menu = new ModMenu();
+        menu.view = View.SOCIAL;
+        return menu;
+    }
 
     /** Opens the menu straight on a module's settings page (used by the HUD editor's right-click). */
     public static ModMenu forModule(Module module) {
@@ -162,6 +173,8 @@ public class ModMenu implements NexusScreen {
             drawGrid(r, mouseX, mouseY);
         } else if (view == View.SETTINGS) {
             drawSettings(r, mouseX, mouseY);
+        } else if (view == View.SOCIAL) {
+            drawSocial(r, mouseX, mouseY);
         } else {
             drawShare(r, mouseX, mouseY);
         }
@@ -179,11 +192,12 @@ public class ModMenu implements NexusScreen {
         int x = px + 33 + r.textWidth("NEXUS") + 16;
 
         // Tabs.
-        String[] tabs = {"Mods", "Edit HUD", "Share", "Settings"};
+        String[] tabs = {"Mods", "Edit HUD", "Share", "Social", "Settings"};
         for (String tab : tabs) {
             int w = r.textWidth(tab) + 14;
             boolean active = (tab.equals("Mods") && view == View.GRID)
                     || (tab.equals("Share") && view == View.SHARE)
+                    || (tab.equals("Social") && view == View.SOCIAL)
                     || (tab.equals("Settings") && view == View.SETTINGS && settingsFromTab);
             boolean hover = UiKit.inside(mouseX, mouseY, x, py + 6, x + w, py + 24);
             if (active) {
@@ -234,6 +248,8 @@ public class ModMenu implements NexusScreen {
             NexusCore.get().platform().openScreen(new HudEditor());
         } else if (tab.equals("Share")) {
             view = View.SHARE;
+        } else if (tab.equals("Social")) {
+            view = View.SOCIAL;
         } else {
             selected = NexusCore.get().settings();
             view = View.SETTINGS;
@@ -728,6 +744,209 @@ public class ModMenu implements NexusScreen {
         contentHit(x1, y, x2, y + 46, copy);
     }
 
+    // ------------------------------------------------------------------ Social tab
+
+    /**
+     * Nexus Social (online/Social): on the left your status, invites, party and friends; on the right
+     * the party or clan chat with a box to type in. The left side scrolls; the chat stays put.
+     */
+    private void drawSocial(Renderer r, int mouseX, int mouseY) {
+        final Social social = NexusCore.get().get(Social.class);
+        int split = contentX + Math.max(180, contentW * 46 / 100);
+        int x = contentX;
+        int right = split - 8;
+        int y = contentY - (int) scroll;
+
+        // --- Status ---
+        boolean online = social.online();
+        int dot = online ? 0xFF5BE49B : social.isActive() ? 0xFFFFB547 : 0xFF6A6A80;
+        UiKit.round(r, x, y + 4, x + 6, y + 10, 3, dot);
+        String me = NexusCore.get().game().playerName();
+        r.text(online ? me : social.status(), x + 10, y + 3, online ? 0xFFFFFFFF : UiKit.TEXT_DIM, false);
+        if (social.inClan()) {
+            String clan = "[" + social.clanTag() + "] " + social.clanName();
+            r.text(UiKit.fit(r, clan, right - x - 80), right - r.textWidth(UiKit.fit(r, clan, right - x - 80)), y + 3,
+                    0xFF5FD3FF, false);
+        }
+        y += 18;
+        if (!social.isActive()) {
+            notice(r, x, y, right, "Nexus Social is switched off.", UiKit.TEXT_DIM);
+            y += 22;
+            button(r, "Switch on", x, y, x + 70, y + 16, mouseX, mouseY, true, (mx, my, b) -> {
+                social.setEnabled(true);
+                NexusCore.get().save();
+            });
+            y += 24;
+        }
+
+        // --- Invites and friend requests ---
+        List<Social.Invite> invites = social.invites();
+        List<Social.Person> requests = social.requests();
+        if (!invites.isEmpty() || !requests.isEmpty()) {
+            y = sectionTitle(r, "Invites", invites.size() + requests.size(), x, y, right);
+            for (final Social.Invite invite : invites) {
+                y = socialRow(r, x, y, right, 0xFFB98CFF, invite.fromName, "Party invite", mouseX, mouseY,
+                        "Join", (mx, my, b) -> social.acceptInvite(invite),
+                        "x", (mx, my, b) -> social.declineInvite(invite));
+            }
+            for (final Social.Person request : requests) {
+                y = socialRow(r, x, y, right, 0xFF5BE49B, request.name, "Friend request", mouseX, mouseY,
+                        "Accept", (mx, my, b) -> social.acceptFriend(request),
+                        "x", (mx, my, b) -> social.declineFriend(request));
+            }
+            y += 4;
+        }
+
+        // --- Party ---
+        List<Social.Person> party = social.partyMembers();
+        y = sectionTitle(r, "Party", party.size(), x, y, right);
+        if (party.isEmpty()) {
+            r.text("Not in a party. Invite an online friend below.", x + 2, y + 2, UiKit.TEXT_FAINT, false);
+            y += 16;
+        } else {
+            for (Social.Person member : party) {
+                boolean leader = member.uuid.equals(social.partyLeader());
+                String where = member.online ? (member.server.isEmpty() ? "Online" : member.server) : "Offline";
+                y = socialRow(r, x, y, right, member.online ? 0xFF5BE49B : 0xFF4A4A60,
+                        member.name + (leader ? "  (leader)" : ""), where, mouseX, mouseY,
+                        null, null, null, null);
+            }
+            button(r, "Leave party", x, y + 2, x + 72, y + 16, mouseX, mouseY, false, (mx, my, b) -> social.leaveParty());
+            y += 22;
+        }
+
+        // --- Friends ---
+        List<Social.Person> friends = social.friends();
+        int onlineCount = 0;
+        for (Social.Person friend : friends) {
+            if (friend.online) {
+                onlineCount++;
+            }
+        }
+        y = sectionTitle(r, "Friends", onlineCount, x, y, right);
+        if (friends.isEmpty()) {
+            r.text(online ? "No friends yet - add them in the launcher." : "Friends show up once you're online.",
+                    x + 2, y + 2, UiKit.TEXT_FAINT, false);
+            y += 16;
+        }
+        java.util.Set<java.util.UUID> inParty = new java.util.HashSet<java.util.UUID>();
+        for (Social.Person member : party) {
+            inParty.add(member.uuid);
+        }
+        for (final Social.Person friend : friends) {
+            String where = friend.online ? (friend.server.isEmpty() ? "Online" : friend.server) : "Offline";
+            y = socialRow(r, x, y, right, friend.online ? 0xFF5BE49B : 0xFF4A4A60, friend.name, where, mouseX, mouseY,
+                    friend.online && !inParty.contains(friend.uuid) ? "Invite" : null,
+                    (mx, my, b) -> social.inviteToParty(friend), null, null);
+        }
+        maxScroll = Math.max(0, y + (int) scroll - contentY - contentH + 8);
+
+        drawSocialChat(r, social, split, mouseX, mouseY);
+    }
+
+    /** "PARTY · 3" with a thin line. Returns the y below it. */
+    private static int sectionTitle(Renderer r, String title, int count, int x, int y, int right) {
+        String text = title.toUpperCase(Locale.ROOT);
+        r.text(text, x, y, UiKit.TEXT_DIM, false);
+        int after = x + r.textWidth(text) + 6;
+        if (count > 0) {
+            String n = String.valueOf(count);
+            UiKit.round(r, after, y - 1, after + r.textWidth(n) + 8, y + 9, 3, UiKit.accent(0x30));
+            r.text(n, after + 4, y, UiKit.accent() | 0xFF000000, false);
+            after += r.textWidth(n) + 12;
+        }
+        r.rect(after, y + 4, right, y + 5, 0xFF1C1C2C);
+        return y + 13;
+    }
+
+    /** One person: a status dot, name, a dim second line, and up to two small buttons. */
+    private int socialRow(Renderer r, int x, int y, int right, int dotColour, String name, String detail,
+                          int mouseX, int mouseY, String action, Click onAction, String second, Click onSecond) {
+        boolean hover = UiKit.inside(mouseX, mouseY, x, y, right, y + 22);
+        UiKit.round(r, x, y, right, y + 22, 4, hover ? 0xFF15151F : 0xFF101018);
+        UiKit.round(r, x + 6, y + 8, x + 12, y + 14, 3, dotColour);
+        int buttons = (action != null ? r.textWidth(action) + 14 : 0) + (second != null ? 18 : 0);
+        r.text(UiKit.fit(r, name, right - x - 26 - buttons), x + 17, y + 3, UiKit.TEXT, false);
+        if (detail != null && !detail.isEmpty()) {
+            r.text(UiKit.fit(r, detail, right - x - 26 - buttons), x + 17, y + 12, UiKit.TEXT_FAINT, false);
+        }
+        int bx = right - 3;
+        if (second != null) {
+            button(r, second, bx - 14, y + 4, bx, y + 18, mouseX, mouseY, false, onSecond);
+            bx -= 18;
+        }
+        if (action != null) {
+            int w = r.textWidth(action) + 10;
+            button(r, action, bx - w, y + 4, bx, y + 18, mouseX, mouseY, true, onAction);
+        }
+        return y + 25;
+    }
+
+    /** The chat panel on the right: Party/Clan switch, the latest messages and a box to type in. */
+    private void drawSocialChat(Renderer r, final Social social, int x1, int mouseX, int mouseY) {
+        int x2 = contentX + contentW;
+        int y1 = contentY;
+        int y2 = contentY + contentH;
+        UiKit.roundBox(r, x1, y1, x2, y2, 6, 0xFF0C0C14, 0xFF1F1F33);
+
+        // Party | Clan switch.
+        int tx = x1 + 6;
+        for (final String channel : new String[] {"Party", "Clan"}) {
+            boolean active = socialChannel.equals(channel);
+            int w = r.textWidth(channel) + 14;
+            UiKit.round(r, tx, y1 + 5, tx + w, y1 + 19, 4, active ? UiKit.accent(0x30) : 0x10FFFFFF);
+            r.text(channel, tx + 7, y1 + 8, active ? UiKit.accent() | 0xFF000000 : UiKit.TEXT_DIM, false);
+            hit(tx, y1 + 5, tx + w, y1 + 19, (mx, my, b) -> socialChannel = channel);
+            tx += w + 4;
+        }
+        String hint = socialChannel.equals("Party") ? "or type @p in chat" : "or type @c in chat";
+        r.text(hint, x2 - 6 - r.textWidth(hint), y1 + 8, UiKit.TEXT_FAINT, false);
+        r.rect(x1 + 1, y1 + 24, x2 - 1, y1 + 25, 0xFF1C1C2C);
+
+        // Messages: newest at the bottom, as many as fit.
+        List<Social.ChatLine> lines = socialChannel.equals("Party") ? social.partyChat() : social.clanChat();
+        int boxTop = y2 - 26;
+        int ly = boxTop - 12;
+        int width = x2 - x1 - 14;
+        if (lines.isEmpty()) {
+            String empty = socialChannel.equals("Party")
+                    ? (social.inParty() ? "No party messages yet." : "Join a party to chat with it.")
+                    : (social.inClan() ? "No clan messages yet." : "Join a clan in the launcher to chat with it.");
+            UiKit.centered(r, empty, (x1 + x2) / 2, (y1 + 25 + boxTop) / 2 - 4, UiKit.TEXT_FAINT, false);
+        }
+        for (int i = lines.size() - 1; i >= 0 && ly > y1 + 28; i--) {
+            Social.ChatLine line = lines.get(i);
+            String name = line.from + ": ";
+            r.text(name, x1 + 7, ly, socialChannel.equals("Party") ? 0xFFB98CFF : 0xFF5FD3FF, false);
+            r.text(UiKit.fit(r, line.text, width - r.textWidth(name)), x1 + 7 + r.textWidth(name), ly, UiKit.TEXT, false);
+            ly -= 11;
+        }
+
+        // Typing box + Send.
+        UiKit.textField(r, socialInput, "Message your " + socialChannel.toLowerCase(Locale.ROOT) + "…",
+                x1 + 5, boxTop, x2 - 50, boxTop + 18, socialFocused);
+        hit(x1 + 5, boxTop, x2 - 50, boxTop + 18, (mx, my, b) -> socialFocused = true);
+        boolean hover = UiKit.inside(mouseX, mouseY, x2 - 45, boxTop + 1, x2 - 5, boxTop + 17);
+        UiKit.round(r, x2 - 45, boxTop + 1, x2 - 5, boxTop + 17, 4, hover
+                ? 0xFF000000 | UiKit.mix(UiKit.accent() & 0xFFFFFF, 0xFFFFFF, 0.2) : UiKit.accent() | 0xFF000000);
+        UiKit.centered(r, "Send", x2 - 25, boxTop + 5, 0xFF06060A, false);
+        hit(x2 - 45, boxTop + 1, x2 - 5, boxTop + 17, (mx, my, b) -> sendSocial());
+    }
+
+    private void sendSocial() {
+        String text = socialInput.trim();
+        if (text.isEmpty()) {
+            return;
+        }
+        Social social = NexusCore.get().get(Social.class);
+        if (socialChannel.equals("Party")) {
+            social.sendPartyChat(text);
+        } else {
+            social.sendClanChat(text);
+        }
+        socialInput = "";
+    }
+
     // ------------------------------------------------------------------ scrollbar and footer
 
     private void drawScrollbar(Renderer r) {
@@ -767,6 +986,7 @@ public class ModMenu implements NexusScreen {
         searchFocused = false;
         focusedText = null;
         shareFocused = false;
+        socialFocused = false;
         boolean inContent = UiKit.inside(mx, my, contentX, contentY, contentX + contentW, contentY + contentH);
         // The newest hits are on top (e.g. the ★ on a card), so check those first.
         for (int i = hits.size() - 1; i >= 0; i--) {
@@ -813,12 +1033,18 @@ public class ModMenu implements NexusScreen {
                 search = search.substring(0, search.length() - 1);
             } else if (shareFocused && !shareInput.isEmpty()) {
                 shareInput = shareInput.substring(0, shareInput.length() - 1);
+            } else if (socialFocused && !socialInput.isEmpty()) {
+                socialInput = socialInput.substring(0, socialInput.length() - 1);
             } else if (focusedText != null && !focusedText.get().isEmpty()) {
                 focusedText.set(focusedText.get().substring(0, focusedText.get().length() - 1));
             }
             return true;
         }
         if (key == Keys.ENTER) {
+            if (socialFocused) {
+                sendSocial(); // Enter sends the message (and keeps the box ready for the next)
+                return true;
+            }
             searchFocused = false;
             shareFocused = false;
             if (focusedText != null) {
@@ -828,9 +1054,10 @@ public class ModMenu implements NexusScreen {
             return true;
         }
         if (key == Keys.ESCAPE) {
-            if (searchFocused || shareFocused || focusedText != null) {
+            if (searchFocused || shareFocused || socialFocused || focusedText != null) {
                 searchFocused = false;
                 shareFocused = false;
+                socialFocused = false;
                 focusedText = null;
                 return true;
             }
@@ -843,7 +1070,7 @@ public class ModMenu implements NexusScreen {
             NexusCore.get().platform().closeScreen();
             return true;
         }
-        if (key == Keys.RIGHT_SHIFT && !searchFocused && !shareFocused && focusedText == null) {
+        if (key == Keys.RIGHT_SHIFT && !searchFocused && !shareFocused && !socialFocused && focusedText == null) {
             NexusCore.get().platform().closeScreen();
             return true;
         }
@@ -862,6 +1089,12 @@ public class ModMenu implements NexusScreen {
         }
         if (shareFocused) {
             shareInput += c;
+            return true;
+        }
+        if (socialFocused) {
+            if (socialInput.length() < 256) {
+                socialInput += c;
+            }
             return true;
         }
         if (focusedText != null) {
