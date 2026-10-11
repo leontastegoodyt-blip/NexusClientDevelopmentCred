@@ -43,8 +43,7 @@ public class NexusLegacy implements ClientModInitializer {
         core.init(new LegacyGameInfo(), new LegacyPlatform(), FabricLoader.getInstance().getGameDir().toFile());
 
         // Mods the 1.8.9 version doesn't do yet – the menu shows them as "Coming soon".
-        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur",
-                "dfr");
+        core.markUnsupported("motionBlur", "dfr");
     }
 
     /** Runs 20 times a second, at the end of Minecraft's own tick. */
@@ -76,6 +75,14 @@ public class NexusLegacy implements ClientModInitializer {
         }
         while (LegacyKeys.waypoint.wasPressed()) {
             core.addWaypointKey();
+        }
+        // 1.7 Animations: clicking while blocking/eating swings the arm, like 1.7 (only on your
+        // screen – this just starts the swing animation, nothing is sent to the server).
+        if (mc.player != null && mc.player.isUsingItem() && mc.options.attackKey.isPressed()
+                && core.get(com.nexusclient.core.module.Mods.OldAnimations.class).isActive()
+                && (!mc.player.handSwinging || mc.player.handSwingTicks >= 3 || mc.player.handSwingTicks < 0)) {
+            mc.player.handSwingTicks = -1;
+            mc.player.handSwinging = true;
         }
 
         // Zoom: each new press starts at the zoom level from the settings.

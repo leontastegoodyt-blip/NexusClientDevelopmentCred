@@ -4,6 +4,7 @@
   "package": "com.nexusclient.legacy.mixin",
   "compatibilityLevel": "JAVA_8",
   "client": [
+    "ArmorGlintColourMixin",
     "BadgeMixin",
     "ChatHudAccessor",
     "ChatHudMixin",
@@ -14,12 +15,15 @@
     "EntityRenderDispatcherMixin",
     "GameOptionsMixin",
     "GameRendererMixin",
+    "GlintColourMixin",
     "HeldItemRendererMixin",
     "InGameHudMixin",
+    "ItemPhysicsMixin",
     "KeyBindingAccessor",
     "KeyBindingMixin",
     "LivingEntityRendererMixin",
     "MinecraftClientMixin",
+    "OldAnimationsMixin",
     "ParticleManagerMixin",
     "WorldMixin",
     "WorldRendererMixin"

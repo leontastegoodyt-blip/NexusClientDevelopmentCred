@@ -90,6 +90,21 @@ public final class SelfTest {
         worldTicks++;
         if (worldTicks == 40) {
             SelfTestMods.switchOn(); // midnight sky + small items, so their hooks run before the screenshot
+            // An enchanted sword in hand (glint colour) and some diamonds on the ground (item physics),
+            // using 1.8.9's command syntax, run by the world's built-in server.
+            final net.minecraft.server.MinecraftServer server = mc.getServer();
+            if (server != null) {
+                server.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (String command : new String[] {
+                                "give @p minecraft:diamond_sword 1 0 {ench:[{id:16s,lvl:1s}]}",
+                                "execute @p ~ ~ ~ summon Item ~ ~1 ~3 {Item:{id:\"minecraft:diamond\",Count:3b}}"}) {
+                            server.getCommandManager().execute(server, command);
+                        }
+                    }
+                });
+            }
             // Face the player (F5) with the developer badge forced on, so the screenshot shows the
             // name tag with its Nexus badge and DEV tag.
             System.setProperty("nexus.badgeTest", "DEVELOPER");
