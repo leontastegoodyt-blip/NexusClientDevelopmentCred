@@ -120,6 +120,7 @@ public final class NexusCore {
                     }
                 });
         load();
+        com.nexusclient.core.online.SettingsSync.start(); // newer settings on the player's account? (the project brief: sync)
         loadPartnerRules();
         com.nexusclient.core.online.DeveloperMode.check(); // are we the Nexus developer? (asks the server)
         get(com.nexusclient.core.map.Waypoints.class).load(configFile.getParentFile());
@@ -378,6 +379,35 @@ public final class NexusCore {
         if (configFile == null) {
             return;
         }
+        JsonObject root = toJson();
+        long savedAt = System.currentTimeMillis();
+        root.addProperty("savedAt", savedAt);
+        writeFile(root);
+        localSavedAt = savedAt;
+        // …and to the player's Nexus account a few seconds later (several quick saves = one upload).
+        com.nexusclient.core.online.SettingsSync.uploadLater(root, savedAt);
+    }
+
+    /** When the settings file was last saved (ms), for settings sync. 0 = never. */
+    private long localSavedAt;
+
+    public long localSavedAt() {
+        return localSavedAt;
+    }
+
+    /**
+     * Settings from the player's Nexus account (saved on another PC): applied now and written to the
+     * settings file with the account's save time, so they aren't uploaded straight back.
+     */
+    public void applySyncedSettings(JsonObject root, long savedAt) {
+        applyJson(root);
+        root.addProperty("savedAt", savedAt);
+        writeFile(root);
+        localSavedAt = savedAt;
+    }
+
+    /** All the settings as JSON (what goes in nexus.json). */
+    private JsonObject toJson() {
         JsonObject root = new JsonObject();
         JsonObject moduleData = new JsonObject();
         for (Module module : modules) {
@@ -400,6 +430,10 @@ public final class NexusCore {
             serverLayouts.add(key(currentServer), layout());
         }
         root.add("serverLayouts", serverLayouts);
+        return root;
+    }
+
+    private void writeFile(JsonObject root) {
         try {
             configFile.getParentFile().mkdirs();
             Writer writer = new OutputStreamWriter(new FileOutputStream(configFile), "UTF-8");
@@ -425,6 +459,16 @@ public final class NexusCore {
             } finally {
                 reader.close();
             }
+            applyJson(root);
+            localSavedAt = root.has("savedAt") ? root.get("savedAt").getAsLong() : configFile.lastModified();
+        } catch (Exception e) {
+            System.err.println("[Nexus] Couldn't read settings (starting with defaults): " + e);
+        }
+    }
+
+    /** Applies settings (the contents of nexus.json) to every module. */
+    private void applyJson(JsonObject root) {
+        {
             JsonObject moduleData = root.has("modules") ? root.getAsJsonObject("modules") : new JsonObject();
             for (Module module : modules) {
                 if (!moduleData.has(module.id())) {
@@ -458,8 +502,6 @@ public final class NexusCore {
             if (root.has("serverLayouts")) {
                 serverLayouts = root.getAsJsonObject("serverLayouts");
             }
-        } catch (Exception e) {
-            System.err.println("[Nexus] Couldn't read settings (starting with defaults): " + e);
         }
     }
 }

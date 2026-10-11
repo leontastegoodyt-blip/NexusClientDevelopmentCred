@@ -19,6 +19,9 @@ public class NexusSettings extends Module {
     /** Snap HUD elements to edges and each other in the HUD editor. */
     public final BooleanSetting snapping = add(new BooleanSetting("snapping", "Snap HUD elements when moving", true));
 
+    /** the project brief: settings follow the player between PCs (online/SettingsSync). */
+    public final BooleanSetting syncSettings = add(new BooleanSetting("syncSettings", "Sync settings with my Nexus account", true));
+
     public NexusSettings() {
         super("nexusSettings", "Nexus Settings", "Settings for the Nexus menus and HUD.", Category.UTILITY, true, false);
     }
