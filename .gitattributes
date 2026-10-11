@@ -10,3 +10,7 @@ gradlew text eol=lf
 
 # Binary files: never touch them
 *.jar binary
+# Files used on the Linux server must keep Linux line endings (bash breaks on Windows ones).
+*.sh text eol=lf
+deploy/oracle/Caddyfile text eol=lf
+deploy/oracle/*.yml text eol=lf

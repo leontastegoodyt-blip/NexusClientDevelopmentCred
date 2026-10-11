@@ -1,0 +1,63 @@
+# The Nexus online server, as three "containers" (small, separate boxes) that Docker runs and
+# restarts automatically – also after the Oracle machine reboots:
+#
+#   db     – PostgreSQL, the database (players, friends, clans, honor…). Its files live in the
+#            "postgres-data" volume, so they survive restarts and updates.
+#   nexus  – the Nexus server itself (backend/…/backend-0.1.0.jar, copied here as nexus-server.jar)
+#   caddy  – the front door: gets a free HTTPS certificate for your address (Let's Encrypt) and
+#            passes requests on to "nexus". Only Caddy is reachable from the internet.
+#
+# Settings come from the ".env" file next to this one (made by setup.sh – never put it on GitHub).
+# Start / update:  docker compose up -d        Logs:  docker compose logs -f nexus
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nexus
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:                      # "is the database ready yet?" – nexus waits for this
+      test: ["CMD-SHELL", "pg_isready -U nexus -d nexus"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  nexus:
+    image: eclipse-temurin:21-jre     # Java 21 (works on Oracle's ARM machines too)
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - ./nexus-server.jar:/app/nexus-server.jar:ro
+    environment:
+      NEXUS_DB_URL: jdbc:postgresql://db:5432/nexus
+      NEXUS_DB_USER: nexus
+      NEXUS_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JAVA_TOOL_OPTIONS: ${JAVA_OPTIONS:--Xmx1g}
+    command: ["java", "-jar", "/app/nexus-server.jar", "--spring.profiles.active=prod"]
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - nexus
+    ports:
+      - "80:80"                       # needed once to prove you own the address (for HTTPS)
+      - "443:443"                     # HTTPS – what the launcher and the game connect to
+    environment:
+      NEXUS_DOMAIN: ${NEXUS_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data              # the HTTPS certificates
+      - caddy-config:/config
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

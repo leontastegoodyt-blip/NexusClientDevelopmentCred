@@ -36,3 +36,7 @@ mod-fabric-modern/*/run/
 # Memory dumps Java writes if it runs out of memory
 *.hprof
 
+
+# The Oracle server details on your PC (IP, address, key path) – private
+deploy/oracle/server.local.json
+*.key

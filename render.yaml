@@ -1,0 +1,19 @@
+# render.yaml – a "Blueprint": tells Render (render.com) how to run the Nexus online server.
+# In Render: New → Blueprint → pick this GitHub repository. Render reads this file, builds
+# deploy/render/Dockerfile and starts the server on the free plan.
+# The database lives at Neon (neon.tech): Render asks you to paste Neon's connection string as
+# DATABASE_URL the first time (it's secret, so it's never written in this file).
+# Full guide: docs/online-server.md
+services:
+  - type: web
+    name: nexus-server
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./deploy/render/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/partners
+    autoDeploy: true            # every push to GitHub updates the server by itself
+    envVars:
+      - key: DATABASE_URL
+        sync: false             # "ask me for this value in the dashboard"

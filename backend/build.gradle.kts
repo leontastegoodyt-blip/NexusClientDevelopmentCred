@@ -33,6 +33,8 @@ dependencies {
     runtimeOnly("com.h2database:h2")                           // the development database (a file)
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    // A real PostgreSQL started inside the tests (PostgresFlowTest), to check the online server's database.
+    testImplementation("io.zonky.test:embedded-postgres:2.1.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

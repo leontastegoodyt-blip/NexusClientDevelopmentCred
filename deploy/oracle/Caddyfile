@@ -1,0 +1,8 @@
+# Caddy – the HTTPS front door of the Nexus server.
+# {$NEXUS_DOMAIN} is your address from the .env file (e.g. nexusclient.duckdns.org). Caddy gets and
+# renews the HTTPS certificate for it by itself, and passes everything (web API and the live
+# WebSocket connection) on to the Nexus server container.
+{$NEXUS_DOMAIN} {
+	encode gzip
+	reverse_proxy nexus:8080
+}
