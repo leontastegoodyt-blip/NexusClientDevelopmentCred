@@ -10,6 +10,8 @@ import com.nexusclient.core.online.Social;
  */
 public final class SocialSelfTest {
 
+    private static String shortCode;
+
     private SocialSelfTest() {}
 
     /** True if this self-test should run (the game was given a Nexus sign-in). */
@@ -29,6 +31,25 @@ public final class SocialSelfTest {
                     break;
                 }
             }
+        } else if (tick == 20) {
+            // Short share codes: make one for the crosshair through the Nexus server…
+            com.nexusclient.core.ShareCodes.copy("CROSSHAIR",
+                    com.nexusclient.core.ShareCodes.crosshairCode(NexusCore.get().module("crosshair")),
+                    new com.nexusclient.core.ShareCodes.Done() {
+                        public void message(String text) {
+                            log("share code: " + text);
+                            if (text.startsWith("Copied NX-")) {
+                                shortCode = text.substring(7, text.length() - 1);
+                            }
+                        }
+                    });
+        } else if (tick == 50 && shortCode != null) {
+            // …and use it again (looked up on the server).
+            com.nexusclient.core.ShareCodes.use(shortCode, new com.nexusclient.core.ShareCodes.Done() {
+                public void message(String text) {
+                    log("using " + shortCode + ": " + text);
+                }
+            });
         } else if (tick == 64) {
             log("party of " + social.partyMembers().size() + ", " + social.partyChat().size() + " party messages");
             log("chat typed @p → handled = " + NexusCore.get().chatInput("@p hi from the game"));

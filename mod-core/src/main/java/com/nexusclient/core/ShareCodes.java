@@ -82,10 +82,88 @@ public final class ShareCodes {
                 NexusCore.get().save();
                 return "HUD layout imported!";
             }
-            return "That isn't a Nexus code (they start with NXC- or NXH-).";
+            return "That isn't a Nexus code (they start with NX-, NXC- or NXH-).";
         } catch (Exception e) {
             return "That code is damaged or incomplete – check you copied all of it.";
         }
+    }
+
+    // ------------------------------------------------------------------ short codes (Nexus server)
+
+    /** Gets the message for the player once a code was copied or used (on the game thread). */
+    public interface Done {
+        void message(String text);
+    }
+
+    /**
+     * Copies a code to the clipboard. When signed in to Nexus it's a short code from the Nexus server
+     * ("NX-7K3P-9QWD", kept there for friends to look up); otherwise (or if the server can't be
+     * reached) the long code itself, which works without any server.
+     *
+     * @param kind "CROSSHAIR" or "HUD"
+     */
+    public static void copy(final String kind, final String longCode, final Done done) {
+        if (!com.nexusclient.core.online.NexusHttp.signedIn()) {
+            NexusCore.get().platform().copyToClipboard(longCode);
+            done.message("Code copied!");
+            return;
+        }
+        done.message("Making a short code…");
+        com.nexusclient.core.online.NexusHttp.async(new Runnable() {
+            public void run() {
+                String code = longCode;
+                try {
+                    com.google.gson.JsonObject body = new com.google.gson.JsonObject();
+                    body.addProperty("kind", kind);
+                    body.addProperty("data", longCode);
+                    code = com.nexusclient.core.online.NexusHttp.post("/api/share", body).getAsJsonObject()
+                            .get("code").getAsString();
+                } catch (Exception e) {
+                    // offline – the long code works too
+                }
+                final String copied = code;
+                NexusCore.get().runLater(new Runnable() {
+                    public void run() {
+                        NexusCore.get().platform().copyToClipboard(copied);
+                        done.message(copied.length() < 20 ? "Copied " + copied + "!" : "Code copied!");
+                    }
+                });
+            }
+        });
+    }
+
+    /** Uses a pasted code: a short "NX-…" one is looked up on the Nexus server first. */
+    public static void use(String code, final Done done) {
+        final String trimmed = code.trim().toUpperCase(java.util.Locale.ROOT);
+        if (!trimmed.matches("NX-[A-Z0-9]{4}-[A-Z0-9]{4}")) {
+            done.message(apply(code));
+            return;
+        }
+        if (!com.nexusclient.core.online.NexusHttp.signedIn()) {
+            done.message("Short codes need the Nexus launcher (signed in). Ask for the long code instead.");
+            return;
+        }
+        done.message("Looking up " + trimmed + "…");
+        com.nexusclient.core.online.NexusHttp.async(new Runnable() {
+            public void run() {
+                String message;
+                String data = null;
+                try {
+                    data = com.nexusclient.core.online.NexusHttp.get("/api/share/" + trimmed).getAsJsonObject()
+                            .get("data").getAsString();
+                    message = null;
+                } catch (Exception e) {
+                    message = e.getMessage();
+                }
+                final String found = data;
+                final String error = message;
+                NexusCore.get().runLater(new Runnable() {
+                    public void run() {
+                        done.message(found != null ? apply(found) : error);
+                    }
+                });
+            }
+        });
     }
 
     // ------------------------------------------------------------------ packing

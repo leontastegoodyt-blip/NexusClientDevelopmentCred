@@ -103,12 +103,37 @@ public class InstanceActions {
         }, "Couldn't install that modpack");
     }
 
-    /** Copies the instance's setup code, ready to paste to a friend. */
+    /**
+     * Copies the instance's setup code, ready to paste to a friend. When signed in to Nexus it's a
+     * short code from the Nexus server ("NX-7K3P-9QWD"); otherwise the long "NX1-…" code.
+     */
     public void copySetupCode(Instance instance) {
+        String longCode = InstanceStore.setupCode(instance);
+        com.nexusclient.launcher.online.NexusOnline online = com.nexusclient.launcher.online.NexusOnline.get();
+        if (!online.signedIn()) {
+            copy(longCode);
+            return;
+        }
+        runInBackground("share-code", () -> {
+            try {
+                return online.post("/api/share", java.util.Map.of("kind", "SETUP", "data", longCode))
+                        .getAsJsonObject().get("code").getAsString();
+            } catch (Exception e) {
+                return longCode; // the Nexus server can't be reached – the long code works anyway
+            }
+        }, this::copy, "Couldn't copy the setup code");
+    }
+
+    private void copy(String code) {
         ClipboardContent content = new ClipboardContent();
-        content.putString(InstanceStore.setupCode(instance));
+        content.putString(code);
         Clipboard.getSystemClipboard().setContent(content);
-        Toast.info("Setup code copied! Send it to a friend – they add it with + → Paste setup code.");
+        Toast.info("Setup code " + (code.length() < 20 ? code + " " : "") + "copied! Your friend adds it with + → Paste setup code.");
+    }
+
+    /** A short Nexus share code, e.g. "NX-7K3P-9QWD". */
+    private static boolean isShortCode(String text) {
+        return text != null && text.trim().toUpperCase(java.util.Locale.ROOT).matches("NX-[A-Z0-9]{4}-[A-Z0-9]{4}");
     }
 
     /** Shows a small pop-up where a setup code can be pasted. */
@@ -119,22 +144,24 @@ public class InstanceActions {
         text.getStyleClass().add("torcher-text");
         text.setWrapText(true);
         TextField field = new TextField();
-        field.setPromptText("NX1-…");
+        field.setPromptText("NX-XXXX-XXXX or NX1-…");
         Clipboard clipboard = Clipboard.getSystemClipboard();
-        if (clipboard.hasString() && clipboard.getString().trim().startsWith("NX1-")) {
+        if (clipboard.hasString() && (clipboard.getString().trim().startsWith("NX1-") || isShortCode(clipboard.getString()))) {
             field.setText(clipboard.getString().trim()); // save the player a step
         }
         Button add = new Button("Add instance");
         add.getStyleClass().add("primary-button");
         add.setOnAction(event -> {
-            try {
-                Instance imported = store.importCode(field.getText());
+            String code = field.getText().trim();
+            // A short code is looked up on the Nexus server first (that's where its setup is kept).
+            runInBackground("setup-code", () -> store.importCode(isShortCode(code)
+                    ? com.nexusclient.launcher.online.NexusOnline.get().get("/api/share/" + code.toUpperCase(java.util.Locale.ROOT))
+                            .getAsJsonObject().get("data").getAsString()
+                    : code), imported -> {
                 Modal.close();
                 panel.select(imported);
                 Toast.info("Added \"" + imported.name() + "\" from the setup code.");
-            } catch (IOException e) {
-                Toast.error(e.getMessage());
-            }
+            }, "Couldn't use that setup code");
         });
         Button cancel = new Button("Cancel");
         cancel.getStyleClass().add("secondary-button");

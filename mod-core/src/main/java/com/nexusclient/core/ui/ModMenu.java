@@ -709,25 +709,24 @@ public class ModMenu implements NexusScreen {
 
         int half = (contentW - 6) / 2;
         shareCard(r, x, y, x + half, "Crosshair", "Your crosshair's shape and colour", mouseX, mouseY, (mx, my, b) -> {
-            NexusCore.get().platform().copyToClipboard(ShareCodes.crosshairCode(NexusCore.get().module("crosshair")));
-            shareMessage = "Crosshair code copied!";
+            ShareCodes.copy("CROSSHAIR", ShareCodes.crosshairCode(NexusCore.get().module("crosshair")),
+                    message -> shareMessage = message);
         });
         shareCard(r, x + half + 6, y, right, "HUD layout", "Where all your HUD mods sit", mouseX, mouseY, (mx, my, b) -> {
-            NexusCore.get().platform().copyToClipboard(ShareCodes.hudCode());
-            shareMessage = "HUD layout code copied!";
+            ShareCodes.copy("HUD", ShareCodes.hudCode(), message -> shareMessage = message);
         });
         y += 54;
 
         r.text("Got a code from a friend?", x, y, UiKit.TEXT, false);
         y += 12;
-        UiKit.textField(r, shareInput, "NXC-… or NXH-…", x, y, right - 116, y + 18, shareFocused);
+        UiKit.textField(r, shareInput, "NX-XXXX-XXXX, NXC-… or NXH-…", x, y, right - 116, y + 18, shareFocused);
         contentHit(x, y, right - 116, y + 18, (mx, my, b) -> shareFocused = true);
         button(r, "Paste", right - 110, y + 1, right - 62, y + 17, mouseX, mouseY, false, (mx, my, b) -> {
             String pasted = NexusCore.get().platform().clipboard();
             shareInput = pasted == null ? "" : pasted.trim();
         });
         button(r, "Use code", right - 56, y + 1, right, y + 17, mouseX, mouseY, true,
-                (mx, my, b) -> shareMessage = ShareCodes.apply(shareInput));
+                (mx, my, b) -> ShareCodes.use(shareInput, message -> shareMessage = message));
         y += 24;
         if (!shareMessage.isEmpty()) {
             notice(r, x, y, right, shareMessage, UiKit.accent());
