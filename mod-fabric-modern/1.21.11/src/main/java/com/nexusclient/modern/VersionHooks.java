@@ -82,4 +82,36 @@ public final class VersionHooks {
     public static String dimensionName(net.minecraft.world.level.Level level) {
         return level.dimension().identifier().getPath();
     }
+
+    /**
+     * Recolours one of Minecraft's own textures in place (used for the enchantment glint): every pixel
+     * keeps its brightness and see-through-ness but takes the given colour (0xRRGGBB).
+     * Returns false if this version hasn't got that texture.
+     */
+    public static boolean tintTexture(String path, int rgb) {
+        Minecraft mc = Minecraft.getInstance();
+        Identifier location = Identifier.fromNamespaceAndPath("minecraft", path);
+        java.util.Optional<net.minecraft.server.packs.resources.Resource> resource = mc.getResourceManager().getResource(location);
+        if (resource.isEmpty()) {
+            return false;
+        }
+        try (java.io.InputStream in = resource.get().open()) {
+            NativeImage image = NativeImage.read(in);
+            for (int y = 0; y < image.getHeight(); y++) {
+                for (int x = 0; x < image.getWidth(); x++) {
+                    int argb = image.getPixel(x, y);
+                    paintPixel(image, x, y, com.nexusclient.modern.GlintTint.tint(argb, rgb));
+                }
+            }
+            mc.getTextureManager().register(location, new net.minecraft.client.renderer.texture.DynamicTexture(() -> "Nexus " + path, image));
+            return true;
+        } catch (java.io.IOException e) {
+            return false;
+        }
+    }
+
+    /** Puts Minecraft's own texture back (it's loaded again the next time it's drawn). */
+    public static void resetTexture(String path) {
+        Minecraft.getInstance().getTextureManager().release(Identifier.fromNamespaceAndPath("minecraft", path));
+    }
 }

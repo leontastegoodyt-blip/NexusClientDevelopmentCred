@@ -26,6 +26,8 @@ public final class SelfTestMods {
         core.get(Mods.Hitboxes.class).setEnabled(true);
         core.get(Mods.Particles.class).setEnabled(true);
         core.get(Mods.Nametags.class).setEnabled(true);
+        core.get(Mods.ItemPhysics.class).setEnabled(true);
+        core.get(Mods.EnchantGlint.class).setEnabled(true);
         // The developer tools (normally only for the Nexus developer's account).
         System.setProperty("nexus.devTools", "true");
         core.get(com.nexusclient.core.module.DevTools.DebugHud.class).setEnabled(true);

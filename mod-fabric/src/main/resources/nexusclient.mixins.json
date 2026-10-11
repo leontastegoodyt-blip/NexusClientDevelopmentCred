@@ -11,6 +11,8 @@
     "ClockMixin",
     "DfrMixin",
     "FirstPersonItemMixin",
+    "ItemPhysicsMixin",
+    "ItemSpinMixin",
     "FreelookMixin",
     "HitboxMixin",
     "ChatComponentMixin",

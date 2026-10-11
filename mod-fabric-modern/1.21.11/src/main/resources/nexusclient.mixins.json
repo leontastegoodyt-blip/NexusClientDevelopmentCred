@@ -17,6 +17,8 @@
     "GuiMixin",
     "HitboxMixin",
     "ItemInHandRendererMixin",
+    "ItemPhysicsMixin",
+    "ItemSpinMixin",
     "LevelMixin",
     "LightTextureMixin",
     "MouseClickMixin",

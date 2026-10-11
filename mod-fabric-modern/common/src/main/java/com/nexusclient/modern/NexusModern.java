@@ -59,7 +59,7 @@ public class NexusModern implements ClientModInitializer {
         core.init(new FabricGameInfo(), new FabricPlatform(), FabricLoader.getInstance().getGameDir().toFile());
 
         // Mods these versions don't do yet – the menu shows them as "Coming soon".
-        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur",
+        core.markUnsupported("oldAnimations", "motionBlur",
                 "dfr");
 
         // Keys (players can change them in Minecraft's Controls menu, under "Nexus Client").
@@ -138,6 +138,7 @@ public class NexusModern implements ClientModInitializer {
         freelook(mc, core);
         HitColour.tick(mc);
         BadgeText.tick(mc); // asks the Nexus server which nearby players get a badge (every 20 s)
+        GlintTint.tick();   // Enchant Glint Colour
 
         if (mc.player == null) {
             return;

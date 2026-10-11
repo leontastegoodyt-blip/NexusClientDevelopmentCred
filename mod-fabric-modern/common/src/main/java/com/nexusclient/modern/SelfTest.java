@@ -84,6 +84,18 @@ public final class SelfTest {
         worldTicks++;
         if (worldTicks == 40) {
             SelfTestMods.switchOn(); // midnight sky + small items, so their hooks run before the screenshot
+            // An enchanted sword in hand (glint colour) and some diamonds on the ground (item physics).
+            // Both ways of writing the item are sent: older versions use "Count:3b", newer "count:3".
+            net.minecraft.server.MinecraftServer server = mc.getSingleplayerServer();
+            if (server != null) {
+                server.execute(() -> {
+                    for (String command : new String[] {"give @p minecraft:diamond_sword", "enchant @p minecraft:sharpness 1",
+                            "execute at @p rotated as @p run summon item ^ ^1 ^3 {Item:{id:\"minecraft:diamond\",count:3}}",
+                            "execute at @p rotated as @p run summon item ^ ^1 ^3 {Item:{id:\"minecraft:diamond\",Count:3b}}"}) {
+                        server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command);
+                    }
+                });
+            }
             // Face the player (F5) with the developer badge forced on, so the screenshot shows the
             // name tag with its Nexus badge and DEV tag.
             System.setProperty("nexus.badgeTest", "DEVELOPER");

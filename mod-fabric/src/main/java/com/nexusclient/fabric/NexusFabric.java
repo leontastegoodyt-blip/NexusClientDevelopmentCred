@@ -62,7 +62,7 @@ public class NexusFabric implements ClientModInitializer {
         core.init(new FabricGameInfo(), new FabricPlatform(), FabricLoader.getInstance().getGameDir().toFile());
 
         // Mods this version doesn't do yet – the menu shows them as "Coming soon".
-        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur");
+        core.markUnsupported("oldAnimations", "motionBlur");
 
         // Keys (players can change them in Minecraft's Controls menu, under "Nexus Client").
         KeyMapping.Category category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("nexusclient", "main"));
@@ -120,6 +120,7 @@ public class NexusFabric implements ClientModInitializer {
         }
         Cosmetics.tick(mc); // Nexus capes on Nexus players
         BadgeText.tick(mc); // Nexus badges in front of names
+        GlintTint.tick();   // Enchant Glint Colour
         while (menuKey.consumeClick()) {
             if (mc.gui.screen() == null) {
                 core.platform().openScreen(new ModMenu());
