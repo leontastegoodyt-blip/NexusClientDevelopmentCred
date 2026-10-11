@@ -78,13 +78,22 @@ public final class ModManager {
 
     /**
      * Modrinth's loader name for this instance's mods: "fabric", or "legacy-fabric" for old versions
-     * (like 1.8.9) that use Legacy Fabric. Null if the instance has no mod loader (Vanilla).
+     * (like 1.8.9) that use Legacy Fabric. "forge" for Forge instances. Null if the
+     * instance has no mod loader (Vanilla).
      */
     public String modLoader() {
-        if (!Instance.FABRIC.equals(instance.loaderOrVanilla())) {
+        if (Instance.FORGE.equals(instance.loaderOrVanilla())) {
+            return "forge";
+        }
+        if (!isFabric()) {
             return null;
         }
         return isOldVersion() ? "legacy-fabric" : "fabric";
+    }
+
+    /** True if the instance runs Fabric (Nexus's own extras – performance mods, the Nexus mod, Iris – are Fabric only). */
+    private boolean isFabric() {
+        return Instance.FABRIC.equals(instance.loaderOrVanilla());
     }
 
     /** True for versions before 1.14 (they use Legacy Fabric, and have no Iris shaders). */
@@ -103,8 +112,8 @@ public final class ModManager {
     public String whyNot(ContentType type) {
         return switch (type) {
             case MOD -> modLoader() == null
-                    ? "Mods need a mod loader. Switch \"" + instance.name() + "\" to Fabric in its settings." : null;
-            case SHADER -> modLoader() == null || isOldVersion()
+                    ? "Mods need a mod loader. Switch \"" + instance.name() + "\" to Fabric (or Forge) in its settings." : null;
+            case SHADER -> !isFabric() || isOldVersion()
                     ? "Shaders need Fabric on Minecraft 1.16 or newer (they run through the Iris mod)." : null;
             default -> null;
         };
@@ -235,7 +244,7 @@ public final class ModManager {
      * still starts without them.
      */
     public void ensurePerformanceMods(ProgressListener progress) throws InterruptedException {
-        if (modLoader() == null || isOldVersion()) {
+        if (!isFabric() || isOldVersion()) {
             return; // no Fabric, or 1.8.9 (these mods don't exist for it)
         }
         Index index = readIndex();
@@ -302,7 +311,7 @@ public final class ModManager {
      * every launch if the launcher has a newer copy. Problems are printed – the game still starts.
      */
     public void ensureNexusMod(ProgressListener progress) throws InterruptedException {
-        if (modLoader() == null || !hasNexusMod(gameVersion)) {
+        if (!isFabric() || !hasNexusMod(gameVersion)) {
             return;
         }
         try {

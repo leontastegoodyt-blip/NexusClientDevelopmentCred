@@ -77,8 +77,11 @@ public final class GameInstaller {
         if (Instance.FABRIC.equals(loader)) {
             version = ModLoaders.merge(version, ModLoaders.fabricProfile(id, loaderVersion, downloader, progress));
         } else if (Instance.FORGE.equals(loader)) {
-            throw new IOException("Forge support is coming soon. Switch this instance to Vanilla or Fabric "
-                    + "in its settings (the gear button next to LAUNCH).");
+            // Forge's installer runs on the same Java the game needs.
+            VersionJson.JavaVersion javaVersion = version.javaVersion();
+            Path java = JavaRuntimes.ensure(javaVersion != null ? javaVersion.component() : "jre-legacy",
+                    javaVersion != null ? javaVersion.majorVersion() : 8, downloader, progress);
+            version = ModLoaders.merge(version, ModLoaders.forgeProfile(id, loaderVersion, java, downloader, progress));
         }
 
         // --- 2. The game and its libraries (and 3. collect the natives files) ---
@@ -144,7 +147,11 @@ public final class GameInstaller {
         VersionJson.Artifact client = version.downloads().get("client");
         Path clientJar = versionDir.resolve(id + ".jar");
         jobs.add(new Downloader.Job(client.url(), clientJar, client.sha1(), client.size()));
-        classpath.add(clientJar);
+        // Forge skips the plain game file only if it's named after the Forge version (its
+        // "-DignoreList=…,${version_name}.jar"), so Forge gets a copy with that name (made below).
+        Path forgeJar = Instance.FORGE.equals(loader)
+                ? NexusPaths.versions().resolve(version.id()).resolve(version.id() + ".jar") : null;
+        classpath.add(forgeJar != null ? forgeJar : clientJar);
 
         // --- 4. Logging settings ---
         Path logConfig = null;
@@ -155,6 +162,10 @@ public final class GameInstaller {
         }
 
         downloader.downloadAll(jobs, "Downloading Minecraft " + id, progress);
+        if (forgeJar != null && (!Files.exists(forgeJar) || Files.size(forgeJar) != Files.size(clientJar))) {
+            Files.createDirectories(forgeJar.getParent());
+            Files.copy(clientJar, forgeJar, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
 
         // --- 3. Unpack the natives ---
         // Each setup gets its own folder (e.g. "1.8.9" or "fabric-loader-0.19.3-1.8.9"), because a mod

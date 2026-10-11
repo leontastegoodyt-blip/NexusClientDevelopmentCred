@@ -84,12 +84,11 @@ public class InstanceSettingsPane extends VBox {
             protected void updateItem(String loader, boolean empty) {
                 super.updateItem(loader, empty);
                 setText(empty || loader == null ? null : loaderName(loader));
-                setDisable(Instance.FORGE.equals(loader)); // not available yet
             }
         });
         loaderBox.getStyleClass().add("form-combo");
         loaderBox.setMaxWidth(Double.MAX_VALUE);
-        Label loaderNote = new Label("Fabric runs mods from the Mods tab. Forge: coming soon.");
+        Label loaderNote = new Label("Fabric gets the Nexus mod (Right Shift menu, HUD). Forge runs Forge mods, without it.");
         loaderNote.getStyleClass().add("preview-note");
         loaderNote.setWrapText(true);
 
@@ -181,7 +180,7 @@ public class InstanceSettingsPane extends VBox {
     private static String loaderName(String loader) {
         return switch (loader) {
             case Instance.FABRIC -> "Fabric";
-            case Instance.FORGE -> "Forge (coming soon)";
+            case Instance.FORGE -> "Forge";
             default -> "Vanilla (no mods)";
         };
     }

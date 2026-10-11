@@ -23,7 +23,7 @@ import java.util.stream.Stream;
  * We download it and combine it with the normal Minecraft version JSON (see merge()).
  *
  * Minecraft 1.8.9 isn't supported by normal Fabric, so it uses "Legacy Fabric", a community version
- * with the same kind of server. (Forge needs its own installer program to run and is coming later.)
+ * with the same kind of server. Forge needs its own installer program to run – see forgeProfile().
  */
 public final class ModLoaders {
 
@@ -59,6 +59,131 @@ public final class ModLoaders {
             }
             throw new IOException("Couldn't download the Fabric mod loader. Check your internet connection.", e);
         }
+    }
+
+    // ================================================================== Forge
+
+    private static final String FORGE_PROMOTIONS = "https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json";
+    private static final String FORGE_MAVEN = "https://maven.minecraftforge.net/net/minecraftforge/forge/";
+
+    /**
+     * Gets the Forge profile for a Minecraft version, installing Forge the first time.
+     *
+     * Unlike Fabric, Forge has to change ("patch") Minecraft's own game file, which only Forge's
+     * installer program can do. So the first time, Nexus downloads Forge's official installer and runs
+     * it quietly ("--installClient") into the Nexus folder, which is laid out like Minecraft's own
+     * (versions/, libraries/). The installer writes versions/<id>/<id>.json – a profile just like
+     * Fabric's – and the patched game files. After that, Forge starts like any other version.
+     *
+     * @param loaderVersion a specific Forge version (e.g. "47.4.10"), or null for the recommended one
+     * @param javaExe       the Java to run the installer with (the game's own)
+     */
+    public static VersionJson forgeProfile(String gameVersion, String loaderVersion, Path javaExe, Downloader downloader,
+                                           ProgressListener progress) throws IOException, InterruptedException {
+        if (usesLegacyFabric(gameVersion)) {
+            throw new IOException("Nexus runs Forge on Minecraft 1.20 and newer. For " + gameVersion
+                    + ", switch this instance to Fabric in its settings.");
+        }
+        progress.update("Getting the Forge mod loader…", -1);
+        String forge;
+        try {
+            forge = loaderVersion != null ? loaderVersion : recommendedForge(gameVersion, downloader);
+        } catch (IOException e) {
+            VersionJson cached = cachedForge(gameVersion, null);
+            if (cached != null) {
+                return cached; // offline: use the Forge installed last time
+            }
+            throw new IOException("Couldn't reach Forge's website. Check your internet connection.", e);
+        }
+        VersionJson installed = cachedForge(gameVersion, forge);
+        if (installed != null) {
+            return installed;
+        }
+
+        // Download Forge's installer…
+        String full = gameVersion + "-" + forge;
+        Path installer = NexusPaths.root().resolve("installers").resolve("forge-" + full + "-installer.jar");
+        downloader.download(new Downloader.Job(FORGE_MAVEN + full + "/forge-" + full + "-installer.jar", installer, null, 0));
+        // …which only installs into a folder that looks like the official launcher's.
+        Path profiles = NexusPaths.root().resolve("launcher_profiles.json");
+        if (!Files.exists(profiles)) {
+            Files.writeString(profiles, "{\"profiles\":{}}");
+        }
+
+        progress.update("Installing Forge " + forge + " (first time only, about a minute)…", -1);
+        Path log = NexusPaths.root().resolve("logs").resolve("forge-install.log");
+        Files.createDirectories(log.getParent());
+        Process process = new ProcessBuilder(javaExe.toString(), "-jar", installer.toString(),
+                "--installClient", NexusPaths.root().toAbsolutePath().toString())
+                .directory(installer.getParent().toFile())
+                .redirectErrorStream(true)
+                .redirectOutput(log.toFile())
+                .start();
+        if (!process.waitFor(15, java.util.concurrent.TimeUnit.MINUTES)) {
+            process.destroyForcibly();
+            throw new IOException("Installing Forge took too long. Try again – the log is in " + log);
+        }
+        installed = cachedForge(gameVersion, forge);
+        if (process.exitValue() != 0 || installed == null) {
+            throw new IOException("Forge's installer didn't finish (" + lastLine(log) + "). The full log is in " + log);
+        }
+        return installed;
+    }
+
+    /** Forge's recommended version for this Minecraft version (or its newest, if none is recommended yet). */
+    private static String recommendedForge(String gameVersion, Downloader downloader) throws IOException, InterruptedException {
+        JsonObject promos = JsonParser.parseString(downloader.fetchString(FORGE_PROMOTIONS))
+                .getAsJsonObject().getAsJsonObject("promos");
+        for (String kind : new String[] {"-recommended", "-latest"}) {
+            if (promos.has(gameVersion + kind)) {
+                return promos.get(gameVersion + kind).getAsString();
+            }
+        }
+        throw new IOException("Forge isn't available for Minecraft " + gameVersion + " yet.");
+    }
+
+    /**
+     * The installed Forge profile for this Minecraft version (a specific Forge version, or the newest
+     * one installed if forge is null), or null. Installed means the profile and Forge's patched game
+     * file are both there.
+     */
+    private static VersionJson cachedForge(String gameVersion, String forge) throws IOException {
+        if (!Files.isDirectory(NexusPaths.versions())) {
+            return null;
+        }
+        String prefix = gameVersion + "-forge-";
+        try (Stream<Path> dirs = Files.list(NexusPaths.versions())) {
+            List<Path> matches = dirs.filter(dir -> forge != null
+                            ? dir.getFileName().toString().equals(prefix + forge)
+                            : dir.getFileName().toString().startsWith(prefix))
+                    .sorted()
+                    .toList();
+            for (int i = matches.size() - 1; i >= 0; i--) {
+                Path dir = matches.get(i);
+                Path json = dir.resolve(dir.getFileName() + ".json");
+                String version = dir.getFileName().toString().substring(prefix.length());
+                String full = gameVersion + "-" + version;
+                Path patched = NexusPaths.libraries().resolve("net/minecraftforge/forge/" + full + "/forge-" + full + "-client.jar");
+                if (Files.exists(json) && Files.exists(patched)) {
+                    return GSON.fromJson(Files.readString(json), VersionJson.class);
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String lastLine(Path log) {
+        try {
+            List<String> lines = Files.readAllLines(log);
+            for (int i = lines.size() - 1; i >= 0; i--) {
+                if (!lines.get(i).isBlank()) {
+                    return lines.get(i).trim();
+                }
+            }
+        } catch (IOException e) {
+            // no log
+        }
+        return "no details";
     }
 
     /** Legacy Fabric covers old versions (before 1.14) that normal Fabric doesn't support. */
