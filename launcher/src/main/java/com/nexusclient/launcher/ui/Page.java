@@ -44,7 +44,7 @@ public enum Page {
     // Only shown to the Nexus developer (the owner's account) – see NavRail.showDeveloperTab.
     DEVELOPER("Developer", "Dev", Icons.CODE,
             "Owner-only tools: players, kicks and bans, reports, honor events and partners.", 0,
-            List.of("Overview", "Players", "Reports", "Events", "Partners", "Crashes")),
+            List.of("Overview", "Players", "Clans", "Reports", "Events", "Partners", "Crashes")),
     SETTINGS("Settings", "Settings", Icons.SETTINGS,
             "Theme, language, accessibility, Discord status and launcher behaviour.", 7,
             List.of("General", "Appearance", "Game", "TorcherRig", "Accessibility", "Language", "Premium", "About"));

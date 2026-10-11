@@ -39,7 +39,7 @@ import java.util.UUID;
  *   POST /api/activity {moveBlocks, turnDegrees, keyPresses, clicks, chatMessages, menuSeconds}
  *   GET  /api/events                           running and upcoming honor events
  *   Admin: POST /api/admin/events {name, multiplier, startsAt, endsAt}, DELETE /api/admin/events/{id},
- *          POST /api/admin/clans/{id}/mvp {mvp}
+ *          POST /api/admin/clans/{id}/mvp {mvp}, developer only: POST /api/admin/clans/{id}/honor {amount}
  */
 @RestController
 public class ClanController {
@@ -235,6 +235,21 @@ public class ClanController {
         requireAdmin(me);
         clans.setMvp(id, body.mvp());
         return OK;
+    }
+
+    public record HonorRequest(long amount) {}
+
+    /** Developer only: give a clan honor (a minus amount takes it away). {"honor": new total} */
+    @PostMapping("/api/admin/clans/{id}/honor")
+    public Map<String, Long> giveHonor(@RequestAttribute(SignedInCheck.ME_PLAYER) Player me, @PathVariable long id,
+                                       @RequestBody HonorRequest body) {
+        if (!me.isDeveloper()) {
+            throw NexusException.forbidden("Only the Nexus developer can change honor");
+        }
+        if (Math.abs(body.amount()) > 10_000_000) {
+            throw NexusException.badRequest("That's too much honor at once");
+        }
+        return Map.of("honor", clans.giveHonor(id, body.amount()));
     }
 
     private static void requireAdmin(Player me) {

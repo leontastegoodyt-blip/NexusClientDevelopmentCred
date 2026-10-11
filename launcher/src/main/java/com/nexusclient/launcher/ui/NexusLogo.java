@@ -103,6 +103,23 @@ public class NexusLogo extends Pane {
     }
 
     /** The owner's logo picture, for the window and taskbar icon (null if it's missing). */
+    public static java.util.List<Image> appIcons() {
+        // Several sizes, so Windows can pick a sharp one for the taskbar, title and Alt+Tab
+        // instead of shrinking the big picture itself.
+        java.util.List<Image> icons = new java.util.ArrayList<>();
+        for (int size : new int[] {16, 24, 32, 48, 64, 128, 256}) {
+            try (InputStream in = NexusLogo.class.getResourceAsStream("/com/nexusclient/launcher/logo.png")) {
+                if (in != null) {
+                    icons.add(new Image(in, size, size, true, true));
+                }
+            } catch (Exception e) {
+                // no icon of this size then
+            }
+        }
+        return icons;
+    }
+
+    /** The full-size logo picture (null if it's missing). */
     public static Image appIcon() {
         try (InputStream in = NexusLogo.class.getResourceAsStream("/com/nexusclient/launcher/logo.png")) {
             return in == null ? null : new Image(in);

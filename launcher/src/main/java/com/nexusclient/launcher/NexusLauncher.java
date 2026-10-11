@@ -41,7 +41,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -200,10 +199,7 @@ public class NexusLauncher extends Application {
         WindowBehaviour.install(stage);
 
         stage.setTitle("Nexus Client"); // still shown in the taskbar
-        Image appIcon = NexusLogo.appIcon();
-        if (appIcon != null) {
-            stage.getIcons().add(appIcon); // the Nexus logo in the taskbar and Alt+Tab
-        }
+        stage.getIcons().addAll(NexusLogo.appIcons()); // the Nexus logo in the taskbar and Alt+Tab
         stage.setMinWidth(MIN_WIDTH);
         stage.setMinHeight(MIN_HEIGHT);
         stage.setScene(scene);

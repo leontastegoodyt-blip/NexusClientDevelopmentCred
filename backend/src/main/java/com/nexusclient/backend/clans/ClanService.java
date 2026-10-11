@@ -403,6 +403,15 @@ public class ClanService {
         clans.save(clan);
     }
 
+    /** Developer tool: add (or with a minus amount, remove) honor. Returns the clan's new total. */
+    @Transactional
+    public long giveHonor(long clanId, long amount) {
+        Clan clan = clans.findById(clanId).orElseThrow(() -> NexusException.notFound("No such clan"));
+        clan.addHonor(amount); // never goes below 0
+        clans.save(clan);
+        return clan.getHonor();
+    }
+
     // ------------------------------------------------------------------ helpers
 
     ClanMember membership(UUID player, long clanId) {

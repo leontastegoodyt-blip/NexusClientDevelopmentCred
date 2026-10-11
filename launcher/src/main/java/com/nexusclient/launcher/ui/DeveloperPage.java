@@ -77,6 +77,7 @@ public class DeveloperPage extends VBox {
             case "Players" -> showPlayers();
             case "Reports" -> call(() -> online.get("/api/admin/reports"), r -> showReports(r.getAsJsonArray()));
             case "Events" -> call(() -> online.get("/api/events"), r -> showEvents(r.getAsJsonArray()));
+            case "Clans" -> call(() -> online.get("/api/clans/leaderboard"), r -> showClans(r.getAsJsonArray()));
             case "Partners" -> call(() -> online.get("/api/partners"), r -> showPartners(r.getAsJsonArray()));
             case "Crashes" -> call(() -> online.get("/api/admin/crash-reports"), r -> showCrashes(r.getAsJsonArray()));
             default -> { }
@@ -326,6 +327,68 @@ public class DeveloperPage extends VBox {
             body.getChildren().add(row);
         }
         Animations.flipInCards(body);
+    }
+
+    // ------------------------------------------------------------------ Clans
+
+    /** Every clan with its honor: give or take honor, and set the Nexus MVP clan. */
+    private void showClans(JsonArray clans) {
+        body.getChildren().clear();
+        if (clans.isEmpty()) {
+            body.getChildren().add(People.empty(Icons.CLANS, "No clans yet", null));
+        }
+        for (JsonElement e : clans) {
+            JsonObject c = e.getAsJsonObject();
+            long id = c.get("id").getAsLong();
+            String name = c.get("name").getAsString();
+            boolean mvp = c.get("mvp").getAsBoolean();
+            int place = c.get("place").getAsInt();
+            Label honor = new Label(c.get("honor").getAsLong() + " honor");
+            honor.getStyleClass().add("leader-honor");
+            Map<String, Runnable> more = new LinkedHashMap<>();
+            more.put("Give custom amount…", () -> honorDialog(id, name));
+            more.put("Take 1,000 honor", () -> giveHonor(id, name, -1_000));
+            more.put(mvp ? "Remove Nexus MVP" : "Make Nexus MVP", () -> call(() -> online.post(
+                    "/api/admin/clans/" + id + "/mvp", Map.of("mvp", !mvp)), r -> show()));
+            HBox row = People.row(null, "[" + c.get("tag").getAsString() + "] " + name,
+                    (mvp ? "★ Nexus MVP" : place > 0 ? "#" + place : "Unranked") + "  ·  "
+                            + c.get("members").getAsLong() + " members",
+                    null, mvp ? "MVP" : null,
+                    List.of(honor, button("+1k", "secondary-button", () -> giveHonor(id, name, 1_000)),
+                            button("+10k", "primary-button", () -> giveHonor(id, name, 10_000)),
+                            People.moreMenu(more)));
+            body.getChildren().add(row);
+        }
+        Animations.flipInCards(body);
+    }
+
+    private void giveHonor(long clanId, String name, long amount) {
+        call(() -> online.post("/api/admin/clans/" + clanId + "/honor", Map.of("amount", amount)), r -> {
+            Toast.info(name + " now has " + r.getAsJsonObject().get("honor").getAsLong() + " honor");
+            show();
+        });
+    }
+
+    /** Type any amount (a minus number takes honor away). */
+    private void honorDialog(long clanId, String name) {
+        Label title = new Label("Honor for " + name);
+        title.getStyleClass().add("section-title");
+        TextField amount = new TextField();
+        amount.setPromptText("e.g. 50000 (or -500 to take away)");
+        Runnable give = () -> {
+            try {
+                long value = Long.parseLong(amount.getText().trim().replace(",", ""));
+                Modal.close();
+                giveHonor(clanId, name, value);
+            } catch (NumberFormatException e) {
+                Toast.error("Type a whole number");
+            }
+        };
+        amount.setOnAction(e -> give.run());
+        VBox box = new VBox(12, title, amount, new HBox(8, button("Give", "primary-button", give),
+                button("Cancel", "secondary-button", Modal::close)));
+        box.getStyleClass().add("modal-card");
+        Modal.show(box, 420);
     }
 
     // ------------------------------------------------------------------ Partners

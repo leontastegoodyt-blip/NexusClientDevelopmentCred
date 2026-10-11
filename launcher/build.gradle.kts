@@ -117,6 +117,8 @@ runtime {
             else -> "deb"
         }
         if (os.contains("win")) {
+            // The Nexus logo for the .exe, the Start menu and the taskbar (made from logo.png).
+            imageOptions = listOf("--icon", file("src/packaging/nexus.ico").absolutePath)
             installerOptions = listOf("--win-menu", "--win-shortcut", "--win-dir-chooser",
                     "--win-menu-group", "Nexus Client", "--vendor", "Nexus Client")
         }
