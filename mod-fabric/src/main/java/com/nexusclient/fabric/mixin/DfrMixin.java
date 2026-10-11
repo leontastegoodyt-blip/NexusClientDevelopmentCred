@@ -26,8 +26,10 @@ public class DfrMixin {
             target = "Lcom/mojang/renderpearl/api/device/GpuSurface;blitFromTexture(Lcom/mojang/renderpearl/api/commands/CommandEncoder;Lcom/mojang/renderpearl/api/textures/GpuTextureView;)V"))
     private void nexus$beforeShow(GpuSurface surface, CommandEncoder encoder, GpuTextureView frame, Operation<Void> original) {
         DfrRenderer.beforeShow(surface, frame);
-        nexus$shownFrame = frame;
-        original.call(surface, encoder, frame);
+        // Motion Blur may hand back a blurred copy of the frame to show instead.
+        GpuTextureView shown = DfrRenderer.motionBlur(frame);
+        nexus$shownFrame = shown;
+        original.call(surface, encoder, shown);
     }
 
     @WrapOperation(method = "renderFrame", at = @At(value = "INVOKE",

@@ -6,7 +6,7 @@
 // CurrentSampler  = the newest real frame
 // PreviousSampler = the real frame before it
 // ParamsSampler   = a tiny 2x1 picture carrying the settings (so no extra buffers are needed):
-//   pixel (0,0): red = mode (0 = Smooth blend, 1 = Low lag shift), green = strength (0-1)
+//   pixel (0,0): red = mode (0 = Smooth blend, 0.5 = Motion Blur, 1 = Low lag shift), green = strength (0-1)
 //   pixel (1,0): red+green = sideways shift, blue+alpha = up/down shift (16-bit each, 0.5 = none)
 
 uniform sampler2D CurrentSampler;
@@ -25,11 +25,14 @@ void main() {
     vec4 shift = texelFetch(ParamsSampler, ivec2(1, 0), 0);
     float strength = settings.g;
 
-    if (settings.r < 0.5) {
+    if (settings.r < 0.25) {
         // Smooth: halfway between the two real frames (at full strength).
         vec4 current = texture(CurrentSampler, texCoord);
         vec4 previous = texture(PreviousSampler, texCoord);
         fragColor = mix(current, previous, 0.5 * strength);
+    } else if (settings.r < 0.75) {
+        // Motion Blur: keep "strength" of the last picture shown, so movement leaves a soft trail.
+        fragColor = mix(texture(CurrentSampler, texCoord), texture(PreviousSampler, texCoord), strength);
     } else {
         // Low lag: the newest frame, moved the way the camera is already turning.
         vec2 offset = vec2(decode16(shift.r, shift.g), decode16(shift.b, shift.a)) - 0.5;

@@ -87,6 +87,39 @@ public final class DfrRenderer {
         havePrevious = true;
     }
 
+    private static boolean blurHasPrevious;
+
+    /**
+     * Motion Blur (uses the same GPU blending as DFR): each frame shown is the new frame mixed with
+     * the picture shown last time, so fast camera turns leave a soft trail. Returns the picture to show
+     * (the blurred one, or the original frame when Motion Blur is off or DFR is running).
+     */
+    public static GpuTextureView motionBlur(GpuTextureView current) {
+        com.nexusclient.core.module.Mods.MotionBlur blur = NexusCore.get().get(com.nexusclient.core.module.Mods.MotionBlur.class);
+        if (failed || !blur.isActive() || NexusCore.get().get(Dfr.class).isActive() || Minecraft.getInstance().level == null) {
+            blurHasPrevious = false;
+            return current;
+        }
+        GpuTexture texture = current.texture();
+        if (!ensureTextures(texture.getWidth(0), texture.getHeight(0))) {
+            return current;
+        }
+        CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
+        if (!blurHasPrevious) {
+            encoder.copyTextureToTexture(texture, previous, 0, 0, 0, 0, 0, texture.getWidth(0), texture.getHeight(0));
+            blurHasPrevious = true;
+            return current;
+        }
+        // strength 10–90 % = how much of the last picture stays.
+        drawGenerated(current, 2, (float) (blur.strength.get() / 100.0), 0, 0);
+        if (failed) {
+            return current;
+        }
+        // The blurred picture is both what's shown and what the next frame mixes with.
+        encoder.copyTextureToTexture(generated, previous, 0, 0, 0, 0, 0, texture.getWidth(0), texture.getHeight(0));
+        return generatedView;
+    }
+
     /** Called just after Minecraft presented frame `current` (Low lag mode works here). */
     public static void afterShow(GpuSurface surface, GpuTextureView current) {
         Dfr dfr = NexusCore.get().get(Dfr.class);
@@ -175,7 +208,8 @@ public final class DfrRenderer {
         try {
             CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
             try (NativeImage image = new NativeImage(2, 1, false)) {
-                image.setPixel(0, 0, argb(255, mode * 255, Math.round(strength * 255), 0));
+                // mode: 0 = Smooth (red 0), 2 = Motion Blur (red 128), 1 = Low lag (red 255)
+                image.setPixel(0, 0, argb(255, mode == 0 ? 0 : mode == 2 ? 128 : 255, Math.round(strength * 255), 0));
                 int x = encode16(shiftX + 0.5f);
                 int y = encode16(shiftY + 0.5f);
                 image.setPixel(1, 0, argb(y & 0xFF, x >> 8, x & 0xFF, y >> 8));

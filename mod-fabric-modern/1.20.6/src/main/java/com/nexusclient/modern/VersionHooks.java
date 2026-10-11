@@ -115,4 +115,18 @@ public final class VersionHooks {
     public static void resetTexture(String path) {
         Minecraft.getInstance().getTextureManager().release(new ResourceLocation("minecraft", path));
     }
+
+    /** Motion Blur works on this version (a Nexus post-effect shader, see MotionBlurControl). */
+    public static final boolean MOTION_BLUR_SUPPORTED = true;
+
+    /** Switches the Motion Blur effect on at a strength (10–90), or off (-1). */
+    public static void setMotionBlur(int strength) {
+        Minecraft mc = Minecraft.getInstance();
+        if (strength < 0) {
+            mc.gameRenderer.shutdownEffect();
+        } else {
+            ((com.nexusclient.modern.mixin.GameRendererInvoker) mc.gameRenderer)
+                    .nexus$loadEffect(new ResourceLocation("shaders/post/nexus_motion_blur_" + strength + ".json"));
+        }
+    }
 }
