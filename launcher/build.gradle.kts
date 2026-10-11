@@ -90,6 +90,8 @@ tasks.named<JavaExec>("run") {
     providers.gradleProperty("nexusTourDelay").orNull?.let { systemProperty("nexus.tourDelay", it) }
     //   gradlew :launcher:run -PnexusHome=C:\folder   → uses that folder instead of the real Nexus folder
     providers.gradleProperty("nexusHome").orNull?.let { systemProperty("nexus.home", it) }
+    //   …add -PnexusBackend=http://127.0.0.1:18080 to use a different Nexus server (e.g. a test one)
+    providers.gradleProperty("nexusBackend").orNull?.let { systemProperty("nexus.backend", it) }
     //   …add -PnexusCollectText=<file> to write every piece of launcher text seen into a translation
     //   template (strings_template.json – see i18n/Translator.java)
     providers.gradleProperty("nexusCollectText").orNull?.let { systemProperty("nexus.collectText", it) }

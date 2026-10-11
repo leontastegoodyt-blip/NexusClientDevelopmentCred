@@ -233,6 +233,13 @@ public class NexusLauncher extends Application {
         NexusOnline online = NexusOnline.get();
         online.addStateListener(state -> navRail.showDeveloperTab(
                 state == NexusOnline.State.ONLINE && online.isDeveloper()));
+        // Mod Rerender: keep the shared workspace up to date (or removed) once signed in to Nexus.
+        com.nexusclient.launcher.rerender.WorkspaceSharing.init(store);
+        online.addStateListener(state -> {
+            if (state == NexusOnline.State.ONLINE) {
+                com.nexusclient.launcher.rerender.WorkspaceSharing.syncLater();
+            }
+        });
         // If a developer kicks or bans this player, tell them why.
         online.addListener(event -> {
             String type = event.get("type").getAsString();
@@ -281,6 +288,7 @@ public class NexusLauncher extends Application {
                 homePage.joinServer(server);
             });
             case CLANS -> new ClansPage(accounts);
+            case MOD_RERENDER -> new com.nexusclient.launcher.ui.ModRerenderPage(store, instances);
             case DEVELOPER -> new DeveloperPage();
             case FRIENDS -> new FriendsPage(accounts, server -> {
                 showPage(Page.HOME);
@@ -383,6 +391,17 @@ public class NexusLauncher extends Application {
             }
         }, 2500));
         stops.add(new DevTour.Stop("close-clip-player", com.nexusclient.launcher.ui.Modal::close, 300));
+        stops.add(new DevTour.Stop("mod-rerender", () -> {
+            showPage(Page.MOD_RERENDER);
+            if (pages.get(Page.MOD_RERENDER) instanceof com.nexusclient.launcher.ui.ModRerenderPage rerender) {
+                rerender.lookUp(System.getProperty("nexus.tourRerender", "NexusTester"));
+            }
+        }, 3500));
+        stops.add(new DevTour.Stop("mod-rerender-mine", () -> {
+            if (pages.get(Page.MOD_RERENDER) instanceof com.nexusclient.launcher.ui.ModRerenderPage rerender) {
+                rerender.showTab("My Workspace");
+            }
+        }, 800));
         stops.add(new DevTour.Stop("skins", () -> showPage(Page.SKINS), 1200));
         stops.add(new DevTour.Stop("home", () -> showPage(Page.HOME), 4000));
         stops.add(new DevTour.Stop("instance-settings",

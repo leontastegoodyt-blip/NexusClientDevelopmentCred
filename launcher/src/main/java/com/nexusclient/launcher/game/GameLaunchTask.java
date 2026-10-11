@@ -225,6 +225,8 @@ public class GameLaunchTask extends Task<Integer> {
         // After playing: add up the playtime, and back up the worlds that were played.
         long ended = System.currentTimeMillis();
         Playtime.record(instance.id(), instance.name(), version.id(), started, ended);
+        // Mods and settings may have changed while playing: refresh the shared workspace (Mod Rerender).
+        com.nexusclient.launcher.rerender.WorkspaceSharing.syncLater();
         long minutes = (ended - started) / 60_000;
         if (online.signedIn() && minutes > 0) {
             try {

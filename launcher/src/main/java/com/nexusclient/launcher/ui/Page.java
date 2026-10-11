@@ -41,6 +41,9 @@ public enum Page {
     TOOLS("Tools", "Tools", Icons.TOOLS,
             "Screenshots, clips, world backups, safe mode, playtime stats and the storage cleaner.", 8,
             List.of("Screenshots", "Clips", "World Backups", "Safe Mode", "Playtime", "Storage")),
+    MOD_RERENDER("Mod Rerender", "Rerender", Icons.RERENDER,
+            "Look up a player and copy their mods, settings and HUD – if they share their workspace.", 0,
+            List.of("Search", "My Workspace")),
     // Only shown to the Nexus developer (the owner's account) – see NavRail.showDeveloperTab.
     DEVELOPER("Developer", "Dev", Icons.CODE,
             "Owner-only tools: players, kicks and bans, reports, honor events and partners.", 0,

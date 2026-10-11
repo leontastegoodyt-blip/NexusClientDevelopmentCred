@@ -102,4 +102,12 @@ public class Settings {
 
     /** The launcher's language, e.g. "en". */
     public String language = "en";
+
+    // ---------------- Mod Rerender
+
+    /** Let other players see and copy my setup (mods, packs, shaders, configs) – off unless switched on. */
+    public boolean shareWorkspace = false;
+
+    /** Which instance is shared (its id); null = the most recently played one. */
+    public String sharedInstanceId = null;
 }

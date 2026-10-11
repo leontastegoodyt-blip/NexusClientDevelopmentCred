@@ -185,7 +185,10 @@ public class SettingsPage extends VBox {
                 heading("Updates"), updates, checkNow,
                 hint("You're on Nexus " + Updater.CURRENT_VERSION + "."),
                 heading("Crash reports"), crashReports,
-                hint("PC details, mod list and the log ending. Never passwords."));
+                hint("PC details, mod list and the log ending. Never passwords."),
+                heading("Mod Rerender"), ModRerenderPage.sharingControls(store),
+                hint("Lets players who search your name copy your mods, mod settings and HUD (never worlds, "
+                        + "servers, waypoints or passwords)."));
     }
 
     /**

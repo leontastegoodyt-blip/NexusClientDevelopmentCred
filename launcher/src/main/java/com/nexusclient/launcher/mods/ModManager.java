@@ -183,6 +183,25 @@ public final class ModManager {
         return project.title();
     }
 
+    /**
+     * Mod Rerender: installs one EXACT Modrinth version (someone else's setup – their list already
+     * includes the dependencies). Replaces an older copy of the same project; switched off if theirs was.
+     */
+    public void installVersion(String versionId, ContentType type, String title, boolean enabled)
+            throws IOException, InterruptedException {
+        Index index = readIndex();
+        ModrinthApi.Version version = ModrinthApi.version(versionId);
+        downloadVersion(version, title, type, index);
+        writeIndex(index);
+        if (!enabled && type == ContentType.MOD && version.primaryFile() != null) {
+            Path file = dir.resolve(type.folder()).resolve(Path.of(version.primaryFile().filename()).getFileName().toString());
+            if (Files.exists(file)) {
+                Files.move(file, file.resolveSibling(file.getFileName() + ".disabled"),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+    }
+
     /** Prefers the newest full release; falls back to the newest beta/alpha if there's no release. */
     private static ModrinthApi.Version pickVersion(List<ModrinthApi.Version> versions) {
         for (ModrinthApi.Version version : versions) {
