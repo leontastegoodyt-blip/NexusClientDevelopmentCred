@@ -122,6 +122,25 @@ public final class SelfTest {
         } else if (worldTicks == 114) {
             screenshot(mc, "settings page");
         } else if (worldTicks == 120) {
+            // DFR: Smooth first, then Low lag, always generating (the test PC may be faster than
+            // half the refresh rate, where DFR would normally rest).
+            mc.setScreen(null);
+            System.setProperty("nexus.dfr.force", "true");
+            com.nexusclient.core.dfr.Dfr dfr = NexusCore.get().get(com.nexusclient.core.dfr.Dfr.class);
+            dfr.mode.set("Creative");
+            dfr.setEnabled(true);
+        } else if (worldTicks == 180 || worldTicks == 240) {
+            com.nexusclient.core.dfr.Dfr dfr = NexusCore.get().get(com.nexusclient.core.dfr.Dfr.class);
+            log("DFR (" + (dfr.lowLag() ? "Low lag" : "Smooth") + "): real FPS " + mc.getFps()
+                    + ", generated FPS " + dfr.generatedFps() + (dfr.isEnabled() ? "" : " – SWITCHED OFF"));
+            if (worldTicks == 180) {
+                screenshot(mc, "DFR smooth");
+                dfr.mode.set("PvP");
+                dfr.pvpStyle.set("Low lag");
+            } else {
+                dfr.setEnabled(false);
+            }
+        } else if (worldTicks == 250) {
             log("finished");
             mc.stop();
         }

@@ -10,7 +10,8 @@ import net.minecraft.client.Minecraft;
  * On 1.20.x the blur is a shader shipped with Nexus (assets/minecraft/shaders/post/
  * nexus_motion_blur_<strength>.json): each frame is mixed with the picture shown before. There's one
  * effect file per 10 % of strength, and this picks the closest one when the setting changes.
- * Versions without it (VersionHooks.MOTION_BLUR_SUPPORTED = false) show Motion Blur as "Soon".
+ * Versions without it (VersionHooks.MOTION_BLUR_SUPPORTED = false, 1.21.x) blur in ModernDfr instead,
+ * by mixing the whole picture just before it's shown.
  */
 public final class MotionBlurControl {
 
