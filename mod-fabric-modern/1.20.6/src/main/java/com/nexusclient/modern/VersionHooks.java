@@ -78,4 +78,9 @@ public final class VersionHooks {
     public static net.minecraft.network.chat.Style badgeStyle() {
         return net.minecraft.network.chat.Style.EMPTY.withFont(new ResourceLocation("nexusclient", "badges"));
     }
+
+    /** The dimension's short name: "overworld", "the_nether", "the_end"… (for waypoints). */
+    public static String dimensionName(net.minecraft.world.level.Level level) {
+        return level.dimension().location().getPath();
+    }
 }

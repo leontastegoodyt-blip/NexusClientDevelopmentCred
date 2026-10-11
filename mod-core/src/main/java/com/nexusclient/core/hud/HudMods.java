@@ -35,7 +35,7 @@ public final class HudMods {
                 new Fps(), new Cps(), new Ping(), new Keystrokes(), new Coordinates(), new Direction(),
                 new Biome(), new ArmorHud(), new HeldItems(), new PotionEffects(), new ItemCounter(),
                 new Clock(), new Memory(), new ServerAddress(), new Combo(), new SpeedrunTimer(),
-                new PackDisplay(), new PvpStats(), new FrameTimeGraph()));
+                new PackDisplay(), new PvpStats(), new FrameTimeGraph(), new com.nexusclient.core.map.Minimap()));
     }
 
     // ================================================================== simple text

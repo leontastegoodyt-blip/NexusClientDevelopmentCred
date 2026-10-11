@@ -43,7 +43,7 @@ public class NexusLegacy implements ClientModInitializer {
         core.init(new LegacyGameInfo(), new LegacyPlatform(), FabricLoader.getInstance().getGameDir().toFile());
 
         // Mods the 1.8.9 version doesn't do yet – the menu shows them as "Coming soon".
-        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur", "waypoints", "minimap",
+        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur",
                 "screenshotUploader", "dfr");
     }
 
@@ -73,6 +73,9 @@ public class NexusLegacy implements ClientModInitializer {
         }
         while (LegacyKeys.clip.wasPressed()) {
             core.saveClip();
+        }
+        while (LegacyKeys.waypoint.wasPressed()) {
+            core.addWaypointKey();
         }
 
         // Zoom: each new press starts at the zoom level from the settings.

@@ -102,4 +102,50 @@ public interface GameInfo {
 
     /** True while a menu or other screen is open (inventory, chat, pause menu…). */
     boolean menuOpen();
+
+    // ------------------------------------------------------------------ for waypoints and the minimap
+    // (These have safe defaults, so a version that doesn't answer them yet still works.)
+
+    /** How far up/down the player looks, in degrees: -90 = straight up, 90 = straight down. */
+    default float pitch() {
+        return 0;
+    }
+
+    /** The height of the player's eyes (where the camera is in first person). */
+    default double eyeY() {
+        return y() + 1.62;
+    }
+
+    /** The camera's field of view in degrees (top to bottom of the screen). */
+    default float fov() {
+        return 70;
+    }
+
+    /** Which world this is, for saving waypoints: the server address, or "world:<name>" in singleplayer. */
+    default String worldKey() {
+        return serverAddress();
+    }
+
+    /** "overworld", "the_nether" or "the_end" (other names for modded dimensions). */
+    default String dimension() {
+        return "overworld";
+    }
+
+    /** The player's health (20 = 10 full hearts, 0 = dead). */
+    default float health() {
+        return 20;
+    }
+
+    /**
+     * The map colour of the highest block at (x, z), as 0xRRGGBB – the colours Minecraft uses on
+     * paper maps. 0 = nothing there or not loaded yet.
+     */
+    default int mapColour(int x, int z) {
+        return 0;
+    }
+
+    /** The height of the highest block at (x, z) (for shading hills on the minimap). */
+    default int surfaceY(int x, int z) {
+        return 0;
+    }
 }

@@ -509,6 +509,11 @@ public class ModMenu implements NexusScreen {
             y += ROW_H + 3;
         }
 
+        // Waypoints also list this world's waypoints: show/hide or delete each one.
+        if (module instanceof com.nexusclient.core.map.Waypoints) {
+            y = drawWaypointList(r, (com.nexusclient.core.map.Waypoints) module, x, y, right, mouseX, mouseY);
+        }
+
         // Buttons at the end.
         y += 4;
         int bx = x;
@@ -532,6 +537,51 @@ public class ModMenu implements NexusScreen {
         });
         y += 22;
         maxScroll = Math.max(0, y + (int) scroll - contentY - contentH);
+    }
+
+    /** The waypoints of the world you're in, each with a show/hide switch and a delete button. */
+    private int drawWaypointList(Renderer r, final com.nexusclient.core.map.Waypoints waypoints, int x, int y, int right,
+                                 int mouseX, int mouseY) {
+        com.nexusclient.core.platform.GameInfo game = NexusCore.get().game();
+        y += 6;
+        r.text("Waypoints here", x, y, 0xFFFFFFFF, true);
+        r.text("Press B in game to add one", x + r.textWidth("Waypoints here") + 8, y, UiKit.TEXT_FAINT, false);
+        y += 14;
+        if (!game.inWorld()) {
+            r.text("Join a world to see its waypoints.", x, y, UiKit.TEXT_DIM, false);
+            return y + 14;
+        }
+        final java.util.List<com.nexusclient.core.map.WaypointStore.Waypoint> list = waypoints.current(game);
+        if (list.isEmpty()) {
+            r.text("None yet.", x, y, UiKit.TEXT_DIM, false);
+            return y + 14;
+        }
+        for (final com.nexusclient.core.map.WaypointStore.Waypoint waypoint : list) {
+            boolean rowHover = UiKit.inside(mouseX, mouseY, x, y, right, y + ROW_H);
+            UiKit.roundBox(r, x, y, right, y + ROW_H, 4, rowHover ? 0xFF151522 : 0xFF10101A, rowHover ? 0xFF2A2A44 : 0xFF1A1A2C);
+            UiKit.round(r, x + 7, y + 7, x + 15, y + 15, 2, 0xFF000000 | waypoint.colour);
+            r.text(UiKit.fit(r, waypoint.name, 110), x + 22, y + 7, UiKit.TEXT, false);
+            double dx = waypoint.x - game.x();
+            double dz = waypoint.z - game.z();
+            String where = waypoint.x + " " + waypoint.y + " " + waypoint.z + "   " + Math.round(Math.sqrt(dx * dx + dz * dz)) + "m";
+            r.text(where, x + 140, y + 7, UiKit.TEXT_DIM, false);
+            final int end = right - 8;
+            // Delete (×) and show/hide switch.
+            boolean deleteHover = UiKit.inside(mouseX, mouseY, end - 12, y + 5, end, y + 17);
+            UiKit.roundBox(r, end - 12, y + 5, end, y + 17, 3, deleteHover ? 0x40FF6B5E : 0xFF181826, deleteHover ? UiKit.DANGER : 0xFF2A2A40);
+            r.text("x", end - 8, y + 7, deleteHover ? UiKit.DANGER : UiKit.TEXT_DIM, false);
+            UiKit.pillToggle(r, end - 40, y + 5, waypoint.visible, rowHover);
+            contentHit(end - 12, y + 5, end, y + 17, (mx, my, b) -> {
+                list.remove(waypoint);
+                waypoints.store().save();
+            });
+            contentHit(end - 42, y + 3, end - 16, y + 19, (mx, my, b) -> {
+                waypoint.visible = !waypoint.visible;
+                waypoints.store().save();
+            });
+            y += ROW_H + 3;
+        }
+        return y;
     }
 
     private static void notice(Renderer r, int x, int y, int right, String text, int colour) {

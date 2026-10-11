@@ -33,7 +33,7 @@ public final class Mods {
                 new NoHurtCam(), new Particles(), new EnchantGlint(),
                 // Visual
                 new Zoom(), new MotionBlur(), new Freelook(), new Fullbright(), new TimeChanger(),
-                new WeatherChanger(), new Nametags(), new Waypoints(), new Minimap(), new com.nexusclient.core.dfr.Dfr(),
+                new WeatherChanger(), new Nametags(), new com.nexusclient.core.map.Waypoints(), new com.nexusclient.core.dfr.Dfr(),
                 // Chat
                 new ChatTimestamps(), new CopyChat(), new ChatStacking(), new LongerChat(),
                 new MentionHighlight(), new ChatFilter(),
@@ -291,19 +291,6 @@ public final class Mods {
         }
     }
 
-    public static class Waypoints extends Module {
-        public Waypoints() {
-            super("waypoints", "Waypoints", "Mark places and see them through walls with their distance.", Category.VISUAL, false, true);
-        }
-    }
-
-    public static class Minimap extends Module {
-        public final NumberSetting size = add(new NumberSetting("size", "Size", 96, 64, 192, 8, ""));
-
-        public Minimap() {
-            super("minimap", "Minimap", "A small map of the area around you.", Category.VISUAL, false, true);
-        }
-    }
 
     // ================================================================== Chat
 

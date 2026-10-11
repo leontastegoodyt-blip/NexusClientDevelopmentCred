@@ -20,6 +20,7 @@ public final class LegacyKeys {
     public static KeyBinding zoom;
     public static KeyBinding clip;
     public static KeyBinding freelook;
+    public static KeyBinding waypoint;
 
     private LegacyKeys() {}
 
@@ -30,7 +31,8 @@ public final class LegacyKeys {
             zoom = new KeyBinding("Zoom (hold)", Keyboard.KEY_C, CATEGORY);
             clip = new KeyBinding("Save clip", Keyboard.KEY_F8, CATEGORY);
             freelook = new KeyBinding("Freelook (hold)", Keyboard.KEY_LMENU, CATEGORY); // Left Alt
+            waypoint = new KeyBinding("Add waypoint here", Keyboard.KEY_B, CATEGORY);
         }
-        return new KeyBinding[] {menu, zoom, clip, freelook};
+        return new KeyBinding[] {menu, zoom, clip, freelook, waypoint};
     }
 }

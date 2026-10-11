@@ -118,6 +118,7 @@ public final class NexusCore {
         load();
         loadPartnerRules();
         com.nexusclient.core.online.DeveloperMode.check(); // are we the Nexus developer? (asks the server)
+        get(com.nexusclient.core.map.Waypoints.class).load(configFile.getParentFile());
     }
 
     /**
@@ -239,12 +240,23 @@ public final class NexusCore {
         }
     }
 
-    /** Draws every switched-on HUD mod. */
+    /** The "Add waypoint" key was pressed (each loader module calls this). */
+    public void addWaypointKey() {
+        get(com.nexusclient.core.map.Waypoints.class).addHere(game);
+    }
+
+    /** Draws every switched-on HUD mod, then the full-screen overlays. */
     public void renderHud(Renderer renderer) {
         FrameTimes.frame(); // for the frame-time graph
         for (HudModule module : hudModules) {
             if (module.isActive()) {
                 module.render(renderer, game, false);
+            }
+        }
+        // Full-screen overlays (e.g. waypoint markers), on top of the HUD boxes.
+        for (Module module : modules) {
+            if (module instanceof com.nexusclient.core.hud.Overlay && module.isActive()) {
+                ((com.nexusclient.core.hud.Overlay) module).drawOverlay(renderer, game);
             }
         }
     }

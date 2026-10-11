@@ -196,6 +196,67 @@ public class FabricGameInfo implements GameInfo {
         return mc.screen != null;
     }
 
+    // ------------------------------------------------------------------ waypoints and minimap
+
+    @Override
+    public float pitch() {
+        return inWorld() ? player().getXRot() : 0;
+    }
+
+    @Override
+    public double eyeY() {
+        return inWorld() ? player().getEyeY() : 0;
+    }
+
+    @Override
+    public float fov() {
+        // The FOV setting, narrowed while zooming (Zoom divides it by how far it zooms in).
+        double zoom = Math.max(1, com.nexusclient.core.NexusCore.get().get(com.nexusclient.core.module.Mods.Zoom.class).current);
+        return (float) (mc.options.fov().get() / zoom);
+    }
+
+    @Override
+    public String worldKey() {
+        ServerData server = mc.getCurrentServer();
+        if (server != null) {
+            return server.ip;
+        }
+        return mc.getSingleplayerServer() != null
+                ? "world:" + mc.getSingleplayerServer().getWorldData().getLevelName() : "world";
+    }
+
+    @Override
+    public String dimension() {
+        return inWorld() ? VersionHooks.dimensionName(mc.level) : "overworld";
+    }
+
+    @Override
+    public float health() {
+        return inWorld() ? player().getHealth() : 20;
+    }
+
+    @Override
+    public int mapColour(int x, int z) {
+        if (!inWorld()) {
+            return 0;
+        }
+        net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(x, surfaceY(x, z), z);
+        net.minecraft.world.level.block.state.BlockState state = mc.level.getBlockState(pos);
+        if (state.isAir()) {
+            return 0; // nothing there, or that part of the world isn't loaded yet
+        }
+        return state.getMapColor(mc.level, pos).col;
+    }
+
+    @Override
+    public int surfaceY(int x, int z) {
+        if (!inWorld()) {
+            return 0;
+        }
+        // The height map gives the first free space ABOVE the top block, so the block is one lower.
+        return mc.level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z) - 1;
+    }
+
     /** "dark_forest" → "Dark Forest" */
     private static String prettify(String id) {
         StringBuilder out = new StringBuilder();

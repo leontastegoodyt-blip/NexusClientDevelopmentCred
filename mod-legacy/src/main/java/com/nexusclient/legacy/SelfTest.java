@@ -96,6 +96,8 @@ public final class SelfTest {
             mc.options.perspective = 2;
         } else if (worldTicks == 66) {
             mc.options.perspective = 0;
+        } else if (worldTicks == 69) {
+            screenshot(mc, "selftest-firstperson.png"); // minimap + waypoint marker
         } else if (worldTicks == 60) {
             screenshot(mc, "selftest-hud.png");
         } else if (worldTicks == 70) {

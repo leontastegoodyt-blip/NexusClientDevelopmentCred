@@ -44,6 +44,7 @@ public class NexusFabric implements ClientModInitializer {
     public static KeyMapping menuKey;
     private static KeyMapping clipKey;
     private static KeyMapping freelookKey;
+    private static KeyMapping waypointKey;
 
     private boolean wasZooming;
     private int lastHurtTime;
@@ -61,7 +62,7 @@ public class NexusFabric implements ClientModInitializer {
         core.init(new FabricGameInfo(), new FabricPlatform(), FabricLoader.getInstance().getGameDir().toFile());
 
         // Mods this version doesn't do yet – the menu shows them as "Coming soon".
-        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur", "waypoints", "minimap",
+        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur",
                 "screenshotUploader");
 
         // Keys (players can change them in Minecraft's Controls menu, under "Nexus Client").
@@ -70,6 +71,7 @@ public class NexusFabric implements ClientModInitializer {
         zoomKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.hold_zoom", InputConstants.KEY_C, category));
         clipKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.save_clip", InputConstants.KEY_F8, category));
         freelookKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.freelook", InputConstants.KEY_LALT, category));
+        waypointKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.nexusclient.add_waypoint", InputConstants.KEY_B, category));
 
         // HUD: draw every switched-on HUD mod on top of the normal game HUD.
         HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("nexusclient", "hud"), (graphics, delta) -> {
@@ -127,6 +129,9 @@ public class NexusFabric implements ClientModInitializer {
 
         while (clipKey.consumeClick()) {
             core.saveClip();
+        }
+        while (waypointKey.consumeClick()) {
+            core.addWaypointKey();
         }
 
         // Zoom: each new press starts at the zoom level from the settings.

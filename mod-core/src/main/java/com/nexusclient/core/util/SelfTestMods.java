@@ -29,5 +29,14 @@ public final class SelfTestMods {
         // The developer tools (normally only for the Nexus developer's account).
         System.setProperty("nexus.devTools", "true");
         core.get(com.nexusclient.core.module.DevTools.DebugHud.class).setEnabled(true);
+        // Minimap + a test waypoint 10 blocks in front of the player (so both show in the screenshot).
+        core.get(com.nexusclient.core.map.Minimap.class).setEnabled(true);
+        com.nexusclient.core.map.Waypoints waypoints = core.get(com.nexusclient.core.map.Waypoints.class);
+        waypoints.setEnabled(true);
+        com.nexusclient.core.platform.GameInfo game = core.game();
+        double yaw = Math.toRadians(game.yaw());
+        waypoints.store().add(game.worldKey(), game.dimension(), "Test waypoint",
+                (int) Math.floor(game.x() - Math.sin(yaw) * 10), (int) Math.floor(game.y()),
+                (int) Math.floor(game.z() + Math.cos(yaw) * 10));
     }
 }

@@ -41,7 +41,7 @@ public final class DevTools {
 
         public DebugHud() {
             super("devDebugHud", "Debug HUD", "Frame times, memory, server, Nexus status, badges and rules.",
-                    Category.DEVELOPER, false, 0.70, 0.02);
+                    Category.DEVELOPER, false, 0.62, 0.40);
         }
 
         @Override

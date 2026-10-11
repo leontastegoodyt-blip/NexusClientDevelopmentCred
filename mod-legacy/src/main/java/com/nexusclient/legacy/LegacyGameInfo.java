@@ -194,4 +194,70 @@ public class LegacyGameInfo implements GameInfo {
     public boolean menuOpen() {
         return mc.currentScreen != null;
     }
+
+    // ------------------------------------------------------------------ waypoints and minimap
+
+    @Override
+    public float pitch() {
+        return mc.player != null ? mc.player.pitch : 0;
+    }
+
+    @Override
+    public double eyeY() {
+        return mc.player != null ? mc.player.y + mc.player.getEyeHeight() : 0;
+    }
+
+    @Override
+    public float fov() {
+        // The FOV setting, narrowed while zooming.
+        double zoom = Math.max(1, com.nexusclient.core.NexusCore.get().get(com.nexusclient.core.module.Mods.Zoom.class).current);
+        return (float) (mc.options.fov / zoom);
+    }
+
+    @Override
+    public String worldKey() {
+        ServerInfo server = mc.getCurrentServerEntry();
+        if (server != null) {
+            return server.address;
+        }
+        return mc.getServer() != null ? "world:" + mc.getServer().getLevelName() : "world";
+    }
+
+    @Override
+    public String dimension() {
+        if (mc.player == null) {
+            return "overworld";
+        }
+        // 1.8.9 numbers its dimensions: 0 = Overworld, -1 = Nether, 1 = End.
+        int dimension = mc.player.dimension;
+        return dimension == -1 ? "the_nether" : dimension == 1 ? "the_end" : dimension == 0 ? "overworld" : "dim" + dimension;
+    }
+
+    @Override
+    public float health() {
+        return mc.player != null ? mc.player.getHealth() : 20;
+    }
+
+    @Override
+    public int mapColour(int x, int z) {
+        if (mc.world == null) {
+            return 0;
+        }
+        BlockPos pos = new BlockPos(x, surfaceY(x, z), z);
+        net.minecraft.block.BlockState state = mc.world.getBlockState(pos);
+        net.minecraft.block.Block block = state.getBlock();
+        if (block.getMaterial() == net.minecraft.block.material.Material.AIR) {
+            return 0; // nothing there, or that part of the world isn't loaded yet
+        }
+        return block.getMaterialColor(state).color;
+    }
+
+    @Override
+    public int surfaceY(int x, int z) {
+        if (mc.world == null) {
+            return 0;
+        }
+        // getTopPosition gives the free space ABOVE the top block, so the block is one lower.
+        return mc.world.getTopPosition(new BlockPos(x, 0, z)).getY() - 1;
+    }
 }

@@ -115,6 +115,8 @@ public final class SelfTest {
             mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
         } else if (worldTicks == 66) {
             mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
+        } else if (worldTicks == 69) {
+            Screenshot.grab(mc, false); // first person: minimap + waypoint marker
         } else if (worldTicks == 60) {
             Screenshot.grab(mc, false);
         } else if (worldTicks == 70) {

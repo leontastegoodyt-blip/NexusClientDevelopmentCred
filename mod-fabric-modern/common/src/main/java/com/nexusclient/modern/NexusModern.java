@@ -41,6 +41,7 @@ public class NexusModern implements ClientModInitializer {
     public static KeyMapping menuKey;
     private static KeyMapping clipKey;
     private static KeyMapping freelookKey;
+    private static KeyMapping waypointKey;
 
     private boolean wasZooming;
     private int lastHurtTime;
@@ -58,7 +59,7 @@ public class NexusModern implements ClientModInitializer {
         core.init(new FabricGameInfo(), new FabricPlatform(), FabricLoader.getInstance().getGameDir().toFile());
 
         // Mods these versions don't do yet – the menu shows them as "Coming soon".
-        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur", "waypoints", "minimap",
+        core.markUnsupported("oldAnimations", "itemPhysics", "enchantGlint", "motionBlur",
                 "screenshotUploader", "dfr");
 
         // Keys (players can change them in Minecraft's Controls menu, under "Nexus Client").
@@ -66,6 +67,7 @@ public class NexusModern implements ClientModInitializer {
         zoomKey = GameHooks.registerKey("key.nexusclient.hold_zoom", InputConstants.KEY_C);
         clipKey = GameHooks.registerKey("key.nexusclient.save_clip", InputConstants.KEY_F8);
         freelookKey = GameHooks.registerKey("key.nexusclient.freelook", InputConstants.KEY_LALT);
+        waypointKey = GameHooks.registerKey("key.nexusclient.add_waypoint", InputConstants.KEY_B);
 
         // HUD: draw the custom crosshair and every switched-on HUD mod on top of the normal game HUD.
         GameHooks.registerHud(graphics -> renderHud(mc, graphics));
@@ -120,6 +122,9 @@ public class NexusModern implements ClientModInitializer {
         }
         while (clipKey.consumeClick()) {
             core.saveClip();
+        }
+        while (waypointKey.consumeClick()) {
+            core.addWaypointKey();
         }
 
         // Zoom: each new press starts at the zoom level from the settings.
