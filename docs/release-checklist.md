@@ -21,6 +21,12 @@ Legend: ✅ done · 🟡 partly done / needs a decision · ⛔ needs the owner (
 | Set the owner's UUID (backend `application.yml`) | ✅ `nexus.developers` = LeonTasteyy (developer role) |
 | Extend the chat filter word list (`backend/.../chat-filter.txt`) | ⛔ |
 | Test Microsoft sign-in end to end | ✅ works (owner tested, 2026-10-07) |
-| Translations: ✅ the whole launcher can be translated (`i18n/Translator`, `lang/strings_template.json`). Still to do: pick languages and get them translated; in-game mod menu text | 🟡 |
+| Translations: ✅ the whole launcher and the in-game Nexus text can be translated with one strings file per language (`lang/strings_template.json` + `mod-core/.../nexus/lang/mod_strings_template.json`). Still to do: pick languages and get them translated | 🟡 |
 | Mod versions: ✅ Fabric 1.20.x, 1.21.4, 1.21.11, 26.3 and Legacy Fabric 1.8.9 (Vanilla instances secretly use them too). DFR, capes and every mod on all of them. Forge instances launch (official installer, run by Nexus); the Nexus mod itself is Fabric-only | 🟡 |
 | Payments for Nexus Premium (price + provider) | ⛔ |
+
+## Online features that need the hosted backend to work for everyone
+These all work today against the backend on the owner's PC (`LocalServer`) and were tested end to end
+against a test server; they reach other players only once the backend is hosted:
+Nexus Social in-game (pop-ups, @p/@c chat, party pings, clan tags), settings sync, short share codes,
+Mod Rerender, screenshot links, badges and capes.
