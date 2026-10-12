@@ -34,4 +34,9 @@ public class NexusException extends RuntimeException {
     public static NexusException unauthorized(String message) {
         return new NexusException(HttpStatus.UNAUTHORIZED, message);
     }
+
+    /** 429: too many tries in a short time (see RateLimiter). */
+    public static NexusException tooManyRequests(String message) {
+        return new NexusException(HttpStatus.TOO_MANY_REQUESTS, message);
+    }
 }
