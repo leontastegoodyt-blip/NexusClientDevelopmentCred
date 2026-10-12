@@ -275,12 +275,14 @@ public class ModsPage extends VBox {
         if (type == ContentType.MODPACK) {
             Background.run("install-modpack", () -> {
                 // Modrinth doesn't always apply the loader filter to modpacks, so check each version ourselves.
-                ModrinthApi.Version fabricVersion = ModrinthApi.versions(hit.project_id(), List.of("fabric"), null)
-                        .stream()
+                // Fabric first (the Nexus mod runs there); Forge packs work too, without the Nexus mod.
+                List<ModrinthApi.Version> versions = ModrinthApi.versions(hit.project_id(), List.of("fabric", "forge"), null);
+                ModrinthApi.Version packVersion = versions.stream()
                         .filter(v -> v.loaders() != null && v.loaders().contains("fabric"))
                         .findFirst()
-                        .orElseThrow(() -> new java.io.IOException("This modpack has no Fabric version."));
-                ModrinthApi.VersionFile file = fabricVersion.primaryFile();
+                        .or(() -> versions.stream().filter(v -> v.loaders() != null && v.loaders().contains("forge")).findFirst())
+                        .orElseThrow(() -> new java.io.IOException("This modpack has no Fabric or Forge version."));
+                ModrinthApi.VersionFile file = packVersion.primaryFile();
                 Path temp = Files.createTempFile("nexus-modpack", ".mrpack");
                 try (Downloader downloader = new Downloader()) {
                     downloader.download(new Downloader.Job(file.url(), temp, file.hashes().get("sha1"), file.size()));

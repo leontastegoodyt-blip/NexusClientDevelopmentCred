@@ -60,15 +60,18 @@ public final class MrpackImporter {
             if (minecraft == null) {
                 throw new IOException("This modpack doesn't say which Minecraft version it's for.");
             }
-            for (String unsupported : List.of("forge", "neoforge", "quilt-loader")) {
+            for (String unsupported : List.of("neoforge", "quilt-loader")) {
                 if (needs.containsKey(unsupported)) {
                     throw new IOException("This modpack needs " + unsupported.replace("-loader", "")
-                            + ", which Nexus doesn't support yet. Look for a Fabric version of the pack.");
+                            + ", which Nexus doesn't support yet. Look for a Fabric or Forge version of the pack.");
                 }
             }
             Instance instance = Instance.create(pack.name() == null ? "Modpack" : pack.name()).withVersion(minecraft);
             if (needs.containsKey("fabric-loader")) {
                 instance = instance.withLoader(Instance.FABRIC).withLoaderVersion(needs.get("fabric-loader"));
+            } else if (needs.containsKey("forge")) {
+                // Forge packs: Nexus installs that exact Forge version on the first launch (ModLoaders.forgeProfile).
+                instance = instance.withLoader(Instance.FORGE).withLoaderVersion(needs.get("forge"));
             }
             Path dir = NexusPaths.instanceDir(instance);
 
