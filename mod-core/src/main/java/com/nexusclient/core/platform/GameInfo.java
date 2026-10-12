@@ -149,6 +149,19 @@ public interface GameInfo {
         return 0;
     }
 
+    /**
+     * The sidebar scoreboard (Custom Scoreboard): the first entry is the title, then one "name	score"
+     * line per row, top first. Text may use '00a7' colour codes. null = there's no sidebar.
+     */
+    default List<String> sidebar() {
+        return null;
+    }
+
+    /** Boss bars (Custom Boss Bar): "name	progress 0-1	colour" each (colour: PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE). */
+    default List<String> bossBars() {
+        return java.util.Collections.emptyList();
+    }
+
     /** The block the crosshair points at ({x, y, z}), or null if none (used by party pings). */
     default int[] lookedAtBlock() {
         return null;

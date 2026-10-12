@@ -116,7 +116,12 @@ public final class SelfTest {
                 server.execute(() -> {
                     for (String command : new String[] {"give @p minecraft:diamond_sword", "enchant @p minecraft:sharpness 1",
                             "execute at @p rotated as @p run summon item ^ ^1 ^3 {Item:{id:\"minecraft:diamond\",count:3}}",
-                            "execute at @p rotated as @p run summon item ^ ^1 ^3 {Item:{id:\"minecraft:diamond\",Count:3b}}"}) {
+                            "execute at @p rotated as @p run summon item ^ ^1 ^3 {Item:{id:\"minecraft:diamond\",Count:3b}}",
+                            // A sidebar scoreboard and a boss bar, for Custom Scoreboard / Custom Boss Bar.
+                            "scoreboard objectives add nexus dummy \"NEXUS TEST\"", "scoreboard objectives setdisplay sidebar nexus",
+                            "scoreboard players set Kills nexus 3", "scoreboard players set Coins nexus 250",
+                            "bossbar add nexus:test \"Event ends soon\"", "bossbar set nexus:test players @a",
+                            "bossbar set nexus:test value 60", "bossbar set nexus:test color purple"}) {
                         server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command);
                     }
                 });

@@ -273,4 +273,54 @@ public class LegacyGameInfo implements GameInfo {
         }
         return null;
     }
+
+    @Override
+    public List<String> sidebar() {
+        if (mc.world == null || mc.player == null) {
+            return null;
+        }
+        net.minecraft.scoreboard.Scoreboard board = mc.world.getScoreboard();
+        net.minecraft.scoreboard.ScoreboardObjective objective = null;
+        net.minecraft.scoreboard.Team team = board.getPlayerTeam(mc.player.getGameProfile().getName());
+        if (team != null && team.getFormatting() != null && team.getFormatting().getColorIndex() >= 0) {
+            objective = board.getObjectiveForSlot(3 + team.getFormatting().getColorIndex()); // a team's own sidebar
+        }
+        if (objective == null) {
+            objective = board.getObjectiveForSlot(1); // 1 = the sidebar
+        }
+        if (objective == null) {
+            return null;
+        }
+        List<String> lines = new java.util.ArrayList<String>();
+        lines.add(objective.getDisplayName());
+        List<net.minecraft.scoreboard.ScoreboardPlayerScore> scores =
+                new java.util.ArrayList<net.minecraft.scoreboard.ScoreboardPlayerScore>(board.getAllPlayerScores(objective));
+        for (int i = scores.size() - 1; i >= 0; i--) {
+            String name = scores.get(i).getPlayerName();
+            if (name == null || name.startsWith("#")) {
+                scores.remove(i);
+            }
+        }
+        java.util.Collections.sort(scores, new java.util.Comparator<net.minecraft.scoreboard.ScoreboardPlayerScore>() {
+            public int compare(net.minecraft.scoreboard.ScoreboardPlayerScore a, net.minecraft.scoreboard.ScoreboardPlayerScore b) {
+                return a.getScore() != b.getScore() ? (b.getScore() < a.getScore() ? -1 : 1)
+                        : a.getPlayerName().compareToIgnoreCase(b.getPlayerName());
+            }
+        });
+        for (net.minecraft.scoreboard.ScoreboardPlayerScore score : scores.subList(0, Math.min(15, scores.size()))) {
+            String name = score.getPlayerName();
+            lines.add(net.minecraft.scoreboard.Team.decorateName(board.getPlayerTeam(name), name) + "\t" + score.getScore());
+        }
+        return lines;
+    }
+
+    @Override
+    public List<String> bossBars() {
+        List<String> bars = new java.util.ArrayList<String>();
+        // 1.8.9 has just one boss bar, kept in static fields; framesToLive counts down while it's shown.
+        if (net.minecraft.entity.boss.BossBar.name != null && net.minecraft.entity.boss.BossBar.framesToLive > 0) {
+            bars.add(net.minecraft.entity.boss.BossBar.name + "\t" + net.minecraft.entity.boss.BossBar.percent + "\tPINK");
+        }
+        return bars;
+    }
 }

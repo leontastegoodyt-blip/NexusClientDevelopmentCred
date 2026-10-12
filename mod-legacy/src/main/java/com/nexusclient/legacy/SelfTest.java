@@ -100,7 +100,10 @@ public final class SelfTest {
                     public void run() {
                         for (String command : new String[] {
                                 "give @p minecraft:diamond_sword 1 0 {ench:[{id:16s,lvl:1s}]}",
-                                "execute @p ~ ~ ~ summon Item ~ ~1 ~3 {Item:{id:\"minecraft:diamond\",Count:3b}}"}) {
+                                "execute @p ~ ~ ~ summon Item ~ ~1 ~3 {Item:{id:\"minecraft:diamond\",Count:3b}}",
+                                // A sidebar scoreboard, for Custom Scoreboard (1.8.9 has no boss bar command).
+                                "scoreboard objectives add nexus dummy NEXUS TEST", "scoreboard objectives setdisplay sidebar nexus",
+                                "scoreboard players set Kills nexus 3", "scoreboard players set Coins nexus 250"}) {
                             server.getCommandManager().execute(server, command);
                         }
                     }

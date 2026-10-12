@@ -186,4 +186,32 @@ public final class VersionHooks {
         com.mojang.blaze3d.pipeline.RenderTarget target = Minecraft.getInstance().getMainRenderTarget();
         return new int[] {target.getColorTextureId(), target.width, target.height};
     }
+
+    /** The sidebar scoreboard for Custom Scoreboard: title, then "name\tscore" lines (1.20.1 names). */
+    public static java.util.List<String> sidebar(Minecraft mc) {
+        net.minecraft.world.scores.Scoreboard board = mc.level.getScoreboard();
+        net.minecraft.world.scores.Objective objective = null;
+        net.minecraft.world.scores.PlayerTeam team = board.getPlayersTeam(mc.player.getScoreboardName());
+        if (team != null && team.getColor().getId() >= 0) {
+            objective = board.getDisplayObjective(3 + team.getColor().getId()); // a team's own sidebar
+        }
+        if (objective == null) {
+            objective = board.getDisplayObjective(1); // 1 = the sidebar
+        }
+        if (objective == null) {
+            return null;
+        }
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        lines.add(TextCodes.legacy(objective.getDisplayName()));
+        java.util.List<net.minecraft.world.scores.Score> scores = new java.util.ArrayList<>(board.getPlayerScores(objective));
+        scores.removeIf(score -> score.getOwner() == null || score.getOwner().startsWith("#"));
+        scores.sort((a, b) -> a.getScore() != b.getScore() ? Integer.compare(b.getScore(), a.getScore())
+                : a.getOwner().compareToIgnoreCase(b.getOwner()));
+        for (net.minecraft.world.scores.Score score : scores.subList(0, Math.min(15, scores.size()))) {
+            net.minecraft.world.scores.PlayerTeam owner = board.getPlayersTeam(score.getOwner());
+            lines.add(TextCodes.legacy(net.minecraft.world.scores.PlayerTeam.formatNameForTeam(owner,
+                    net.minecraft.network.chat.Component.literal(score.getOwner()))) + "\t" + score.getScore());
+        }
+        return lines;
+    }
 }

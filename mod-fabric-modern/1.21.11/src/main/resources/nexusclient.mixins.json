@@ -4,6 +4,9 @@
   "package": "com.nexusclient.modern.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "BossBarMixin",
+    "BossHealthOverlayAccessor",
+    "VanillaHudHideMixin",
     "ChatSendMixin",
     "BadgeMixin",
     "BlockOutlineMixin",

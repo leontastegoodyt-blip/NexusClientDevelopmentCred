@@ -282,4 +282,22 @@ public class FabricGameInfo implements GameInfo {
         }
         return null;
     }
+
+    @Override
+    public java.util.List<String> sidebar() {
+        return inWorld() ? VersionHooks.sidebar(mc) : null;
+    }
+
+    @Override
+    public java.util.List<String> bossBars() {
+        java.util.List<String> bars = new java.util.ArrayList<>();
+        if (!inWorld()) {
+            return bars;
+        }
+        var events = ((com.nexusclient.modern.mixin.BossHealthOverlayAccessor) mc.gui.getBossOverlay()).nexus$events();
+        for (net.minecraft.client.gui.components.LerpingBossEvent event : events.values()) {
+            bars.add(TextCodes.legacy(event.getName()) + "\t" + event.getProgress() + "\t" + event.getColor().name());
+        }
+        return bars;
+    }
 }

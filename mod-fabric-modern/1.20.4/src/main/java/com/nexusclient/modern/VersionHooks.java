@@ -216,4 +216,36 @@ public final class VersionHooks {
         com.mojang.blaze3d.pipeline.RenderTarget target = Minecraft.getInstance().getMainRenderTarget();
         return new int[] {target.getColorTextureId(), target.width, target.height};
     }
+
+    /** The sidebar scoreboard for Custom Scoreboard: title, then "name\tscore" lines (1.20.3+ names). */
+    public static java.util.List<String> sidebar(Minecraft mc) {
+        net.minecraft.world.scores.Scoreboard board = mc.level.getScoreboard();
+        net.minecraft.world.scores.Objective objective = null;
+        net.minecraft.world.scores.PlayerTeam team = board.getPlayersTeam(mc.player.getScoreboardName());
+        if (team != null) {
+            net.minecraft.world.scores.DisplaySlot slot = net.minecraft.world.scores.DisplaySlot.teamColorToSlot(team.getColor());
+            if (slot != null) {
+                objective = board.getDisplayObjective(slot); // a team's own sidebar
+            }
+        }
+        if (objective == null) {
+            objective = board.getDisplayObjective(net.minecraft.world.scores.DisplaySlot.SIDEBAR);
+        }
+        if (objective == null) {
+            return null;
+        }
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        lines.add(TextCodes.legacy(objective.getDisplayName()));
+        java.util.List<net.minecraft.world.scores.PlayerScoreEntry> entries = new java.util.ArrayList<>(board.listPlayerScores(objective));
+        entries.removeIf(net.minecraft.world.scores.PlayerScoreEntry::isHidden);
+        entries.sort((a, b) -> a.value() != b.value() ? Integer.compare(b.value(), a.value()) : a.owner().compareToIgnoreCase(b.owner()));
+        net.minecraft.network.chat.numbers.NumberFormat format =
+                objective.numberFormatOrDefault(net.minecraft.network.chat.numbers.StyledFormat.SIDEBAR_DEFAULT);
+        for (net.minecraft.world.scores.PlayerScoreEntry entry : entries.subList(0, Math.min(15, entries.size()))) {
+            net.minecraft.world.scores.PlayerTeam owner = board.getPlayersTeam(entry.owner());
+            lines.add(TextCodes.legacy(net.minecraft.world.scores.PlayerTeam.formatNameForTeam(owner, entry.ownerName()))
+                    + "\t" + TextCodes.legacy(entry.formatValue(format)));
+        }
+        return lines;
+    }
 }

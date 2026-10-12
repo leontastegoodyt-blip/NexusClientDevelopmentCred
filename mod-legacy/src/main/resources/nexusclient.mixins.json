@@ -4,6 +4,7 @@
   "package": "com.nexusclient.legacy.mixin",
   "compatibilityLevel": "JAVA_8",
   "client": [
+    "VanillaHudHideMixin",
     "ChatSendMixin",
     "ArmorGlintColourMixin",
     "BadgeMixin",

@@ -36,7 +36,7 @@ public final class HudMods {
                 new Biome(), new ArmorHud(), new HeldItems(), new PotionEffects(), new ItemCounter(),
                 new Clock(), new Memory(), new ServerAddress(), new Combo(), new SpeedrunTimer(),
                 new PackDisplay(), new PvpStats(), new FrameTimeGraph(), new com.nexusclient.core.map.Minimap(),
-                new NowPlaying()));
+                new NowPlaying(), new CustomScoreboard(), new CustomBossBar()));
     }
 
     // ================================================================== simple text

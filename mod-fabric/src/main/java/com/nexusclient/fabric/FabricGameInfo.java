@@ -289,4 +289,56 @@ public class FabricGameInfo implements GameInfo {
         }
         return null;
     }
+
+    @Override
+    public java.util.List<String> sidebar() {
+        if (!inWorld()) {
+            return null;
+        }
+        net.minecraft.world.scores.Scoreboard board = mc.level.getScoreboard();
+        net.minecraft.world.scores.Objective objective = null;
+        net.minecraft.world.scores.PlayerTeam team = board.getPlayersTeam(mc.player.getScoreboardName());
+        if (team != null) {
+            if (team.getColor().isPresent()) { // a team's own sidebar ("sidebar.team.red" …)
+                String name = "sidebar.team." + team.getColor().get().getSerializedName();
+                for (net.minecraft.world.scores.DisplaySlot slot : net.minecraft.world.scores.DisplaySlot.values()) {
+                    if (slot.getSerializedName().equals(name)) {
+                        objective = board.getDisplayObjective(slot);
+                    }
+                }
+            }
+        }
+        if (objective == null) {
+            objective = board.getDisplayObjective(net.minecraft.world.scores.DisplaySlot.SIDEBAR);
+        }
+        if (objective == null) {
+            return null;
+        }
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        lines.add(TextCodes.legacy(objective.getDisplayName()));
+        java.util.List<net.minecraft.world.scores.PlayerScoreEntry> entries = new java.util.ArrayList<>(board.listPlayerScores(objective));
+        entries.removeIf(net.minecraft.world.scores.PlayerScoreEntry::isHidden);
+        entries.sort((a, b) -> a.value() != b.value() ? Integer.compare(b.value(), a.value()) : a.owner().compareToIgnoreCase(b.owner()));
+        net.minecraft.network.chat.numbers.NumberFormat format =
+                objective.numberFormatOrDefault(net.minecraft.network.chat.numbers.StyledFormat.SIDEBAR_DEFAULT);
+        for (net.minecraft.world.scores.PlayerScoreEntry entry : entries.subList(0, Math.min(15, entries.size()))) {
+            net.minecraft.world.scores.PlayerTeam owner = board.getPlayersTeam(entry.owner());
+            lines.add(TextCodes.legacy(net.minecraft.world.scores.PlayerTeam.formatNameForTeam(owner, entry.ownerName()))
+                    + "\t" + TextCodes.legacy(entry.formatValue(format)));
+        }
+        return lines;
+    }
+
+    @Override
+    public java.util.List<String> bossBars() {
+        java.util.List<String> bars = new java.util.ArrayList<>();
+        if (!inWorld()) {
+            return bars;
+        }
+        var events = ((com.nexusclient.fabric.mixin.BossHealthOverlayAccessor) mc.gui.hud.getBossOverlay()).nexus$events();
+        for (net.minecraft.client.gui.components.LerpingBossEvent event : events.values()) {
+            bars.add(TextCodes.legacy(event.getName()) + "\t" + event.getProgress() + "\t" + event.getColor().name());
+        }
+        return bars;
+    }
 }

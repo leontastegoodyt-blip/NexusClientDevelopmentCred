@@ -30,6 +30,8 @@ public final class SelfTestMods {
         core.get(Mods.EnchantGlint.class).setEnabled(true);
         core.get(Mods.MotionBlur.class).setEnabled(true);
         core.get(com.nexusclient.core.hud.NowPlaying.class).setEnabled(true);
+        core.get(com.nexusclient.core.hud.CustomScoreboard.class).setEnabled(true);
+        core.get(com.nexusclient.core.hud.CustomBossBar.class).setEnabled(true);
         // Everyone wears the Nexus test cape (the picture from the backend folder, when running from the project).
         for (java.io.File folder = new java.io.File(".").getAbsoluteFile(); folder != null; folder = folder.getParentFile()) {
             java.io.File cape = new java.io.File(folder, "backend/src/main/resources/static/cosmetics/nexus_cape.png");
@@ -47,6 +49,13 @@ public final class SelfTestMods {
         waypoints.setEnabled(true);
         com.nexusclient.core.platform.GameInfo game = core.game();
         double yaw = Math.toRadians(game.yaw());
+        // Only one test waypoint: remove the ones earlier test runs left in this world.
+        java.util.List<com.nexusclient.core.map.WaypointStore.Waypoint> old = waypoints.current(game);
+        for (int i = old.size() - 1; i >= 0; i--) {
+            if (old.get(i).name.equals("Test waypoint")) {
+                old.remove(i);
+            }
+        }
         waypoints.store().add(game.worldKey(), game.dimension(), "Test waypoint",
                 (int) Math.floor(game.x() - Math.sin(yaw) * 10), (int) Math.floor(game.y()),
                 (int) Math.floor(game.z() + Math.cos(yaw) * 10));
