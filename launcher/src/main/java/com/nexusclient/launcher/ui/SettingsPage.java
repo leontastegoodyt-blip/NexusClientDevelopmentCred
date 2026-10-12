@@ -179,7 +179,19 @@ public class SettingsPage extends VBox {
             SettingsStore.save();
         });
 
+        // --- Streamer mode ---
+        CheckBox streamer = new CheckBox("Streamer mode – hide names and server addresses");
+        streamer.setSelected(settings.streamerMode);
+        streamer.setOnAction(event -> {
+            settings.streamerMode = streamer.isSelected();
+            SettingsStore.save();
+            Theme.apply(); // takes effect straight away
+        });
+
         return new VBox(12,
+                heading("Streamer mode"), streamer,
+                hint("Covers friends' names, your name and server addresses here, and switches on the in-game "
+                        + "Streamer Mode (coordinates and addresses) when you play."),
                 heading("When the game starts"), behaviourChoices,
                 heading("Discord"), discord, discordNote,
                 heading("Updates"), updates, checkNow,

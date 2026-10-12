@@ -173,6 +173,10 @@ public class GameLaunchTask extends Task<Integer> {
             if (dfrAdvice != null) {
                 customJvmArgs += " -Dnexus.dfrRecommendation=" + dfrAdvice;
             }
+            // Streamer mode in the launcher switches on the in-game Streamer Mode too.
+            if (SettingsStore.get().streamerMode) {
+                customJvmArgs += " -Dnexus.streamerMode=true";
+            }
             // …and where the shared tools folder is (so FFmpeg for clips is downloaded only once).
             customJvmArgs += " \"-Dnexus.toolsDir=" + NexusPaths.tools() + "\"";
             // A secretly-Fabric Vanilla instance loads only the hidden Nexus mods folder, never its own.

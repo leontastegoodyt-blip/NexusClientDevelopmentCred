@@ -61,7 +61,7 @@ public class ServerCard extends HBox {
         Label name = new Label(server.name());
         name.getStyleClass().add("mod-title");
         Label address = new Label(server.address());
-        address.getStyleClass().add("mod-author");
+        address.getStyleClass().addAll("mod-author", "private"); // hidden in streamer mode
         HBox nameRow = new HBox(8, name, address);
         nameRow.setAlignment(Pos.BASELINE_LEFT);
         motd.getStyleClass().add("mod-description");

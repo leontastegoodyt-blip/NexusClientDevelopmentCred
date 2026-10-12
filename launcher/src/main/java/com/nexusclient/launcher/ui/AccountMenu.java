@@ -48,7 +48,7 @@ public class AccountMenu {
         this.accounts = accounts;
         this.openBrowser = openBrowser;
 
-        button.getStyleClass().add("account-button");
+        button.getStyleClass().addAll("account-button", "private"); // your name – hidden in streamer mode
         button.setOnAction(event -> openMenu());
         menu.getStyleClass().add("account-menu");
 
@@ -126,7 +126,7 @@ public class AccountMenu {
         boolean isActive = account.equals(accounts.getActive());
 
         Label name = new Label(account.username());
-        name.getStyleClass().add("menu-account-name");
+        name.getStyleClass().addAll("menu-account-name", "private");
         Label status = new Label(isActive ? "Active" : "Click to switch");
         status.getStyleClass().add(isActive ? "menu-account-active" : "menu-hint");
         VBox text = new VBox(1, name, status);

@@ -125,6 +125,10 @@ public final class NexusCore {
         com.nexusclient.core.online.DeveloperMode.check(); // are we the Nexus developer? (asks the server)
         get(com.nexusclient.core.map.Waypoints.class).load(configFile.getParentFile());
         applyDfrAdvice();
+        // Streamer mode switched on in the launcher: Streamer Mode is on in game too (for this session).
+        if (Boolean.getBoolean("nexus.streamerMode")) {
+            get(Mods.StreamerMode.class).setEnabled(true);
+        }
     }
 
     /**

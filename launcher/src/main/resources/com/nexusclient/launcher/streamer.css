@@ -1,0 +1,14 @@
+/*
+ * Streamer mode (Settings → General): anything marked with the "private" style class – friends' names,
+ * your own name, server addresses – is covered by a plain bar, so it can't be read on stream.
+ * Theme.java adds this file only while streamer mode is on.
+ */
+.label.private {
+    -fx-text-fill: transparent;
+    -fx-background-color: rgba(150, 150, 185, 0.22);
+    -fx-background-radius: 4;
+}
+
+.button.private {
+    -fx-text-fill: transparent;
+}

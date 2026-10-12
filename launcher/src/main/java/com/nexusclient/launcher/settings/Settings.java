@@ -100,6 +100,9 @@ public class Settings {
 
     // ---------------- Language (build step 7)
 
+    /** Streamer mode: hide names and server addresses in the launcher, and switch on the in-game Streamer Mode. */
+    public boolean streamerMode = false;
+
     /** The launcher's language, e.g. "en". */
     public String language = "en";
 

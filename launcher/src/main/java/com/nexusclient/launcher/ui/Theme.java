@@ -91,6 +91,9 @@ public final class Theme {
         } else if ("BLUE_YELLOW".equals(settings.colourblindMode)) {
             sheets.add(resource("colourblind-blue-yellow.css"));
         }
+        if (settings.streamerMode) {
+            sheets.add(resource("streamer.css")); // covers names and server addresses (style class "private")
+        }
 
         // --- Background picture ---
         if (backgroundLayer != null) {

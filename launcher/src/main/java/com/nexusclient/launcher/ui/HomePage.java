@@ -176,7 +176,7 @@ public class HomePage extends BorderPane {
         eyebrow.textProperty().bind(Bindings.createStringBinding(() -> (accounts.getActive() == null
                 ? "WELCOME TO NEXUS" : "WELCOME BACK") + "  ·  DEV BUILD 0.1.0", accounts.activeProperty()));
         Label title = new Label();
-        title.getStyleClass().add("banner-title");
+        title.getStyleClass().addAll("banner-title", "private"); // your name – hidden in streamer mode
         title.textProperty().bind(Bindings.createStringBinding(() -> {
             AccountManager.SavedAccount active = accounts.getActive();
             return active == null ? "Ready to play" : active.username();
@@ -438,9 +438,9 @@ public class HomePage extends BorderPane {
         StackPane.setAlignment(statusDot, Pos.BOTTOM_RIGHT);
         StackPane headWithDot = new StackPane(head, statusDot);
         Label nameLabel = new Label(name);
-        nameLabel.getStyleClass().add("person-name");
+        nameLabel.getStyleClass().addAll("person-name", "private"); // hidden in streamer mode
         Label detailLabel = new Label(detail);
-        detailLabel.getStyleClass().add(isOnline ? "person-detail-online" : "person-detail");
+        detailLabel.getStyleClass().addAll(isOnline ? "person-detail-online" : "person-detail", "private");
         HBox row = new HBox(10, headWithDot, new VBox(0, nameLabel, detailLabel));
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().addAll("person-row", "flip-in");

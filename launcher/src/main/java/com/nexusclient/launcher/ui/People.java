@@ -63,7 +63,7 @@ public final class People {
         }
 
         Label nameLabel = new Label(name);
-        nameLabel.getStyleClass().add("mod-title");
+        nameLabel.getStyleClass().addAll("mod-title", "private"); // "private" = hidden in streamer mode
         HBox nameLine = new HBox(8, nameLabel);
         nameLine.setAlignment(Pos.CENTER_LEFT);
         if (badge != null) {
@@ -72,7 +72,7 @@ public final class People {
             nameLine.getChildren().add(tag);
         }
         Label detailLabel = new Label(detail);
-        detailLabel.getStyleClass().add(Boolean.TRUE.equals(online) ? "person-detail-online" : "mod-meta");
+        detailLabel.getStyleClass().addAll(Boolean.TRUE.equals(online) ? "person-detail-online" : "mod-meta", "private");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
