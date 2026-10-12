@@ -168,6 +168,11 @@ public class GameLaunchTask extends Task<Integer> {
             if (tier != null) {
                 customJvmArgs += " -Dnexus.torcherTier=" + tier.charAt(0) + tier.substring(1).toLowerCase(Locale.ROOT);
             }
+            // …and TorcherRig's DFR advice, which the game applies once (step 16).
+            String dfrAdvice = SettingsStore.get().dfrRecommendation;
+            if (dfrAdvice != null) {
+                customJvmArgs += " -Dnexus.dfrRecommendation=" + dfrAdvice;
+            }
             // …and where the shared tools folder is (so FFmpeg for clips is downloaded only once).
             customJvmArgs += " \"-Dnexus.toolsDir=" + NexusPaths.tools() + "\"";
             // A secretly-Fabric Vanilla instance loads only the hidden Nexus mods folder, never its own.

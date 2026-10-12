@@ -124,6 +124,34 @@ public final class NexusCore {
         loadPartnerRules();
         com.nexusclient.core.online.DeveloperMode.check(); // are we the Nexus developer? (asks the server)
         get(com.nexusclient.core.map.Waypoints.class).load(configFile.getParentFile());
+        applyDfrAdvice();
+    }
+
+    /**
+     * TorcherRig's DFR advice (the launcher passes -Dnexus.dfrRecommendation = OFF, LOW, MEDIUM or HIGH):
+     * the first time it arrives, DFR is switched on at 50 / 75 / 100 % strength. It's applied only once
+     * (a marker file remembers it), so the player's own choice always wins afterwards.
+     */
+    private void applyDfrAdvice() {
+        String advice = System.getProperty("nexus.dfrRecommendation");
+        File marker = new File(configFile.getParentFile(), "dfr-advice-applied");
+        if (advice == null || marker.exists()) {
+            return;
+        }
+        int strength = advice.equals("HIGH") ? 100 : advice.equals("MEDIUM") ? 75 : advice.equals("LOW") ? 50 : 0;
+        try {
+            marker.getParentFile().mkdirs();
+            marker.createNewFile();
+        } catch (IOException e) {
+            return; // couldn't remember it – better not to apply it on every start
+        }
+        if (strength > 0) {
+            com.nexusclient.core.dfr.Dfr dfr = get(com.nexusclient.core.dfr.Dfr.class);
+            dfr.strength.set((double) strength);
+            dfr.setEnabled(true);
+            save();
+            noticeLater("TorcherRig switched on DFR (" + strength + "%) for this PC. Change it in Right Shift → DFR.");
+        }
     }
 
     /**
