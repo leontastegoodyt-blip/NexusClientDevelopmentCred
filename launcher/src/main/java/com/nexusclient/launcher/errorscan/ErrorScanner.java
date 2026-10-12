@@ -38,7 +38,8 @@ public final class ErrorScanner {
     private record KnownErrors(List<KnownError> errors) {}
 
     /** Mod ids that are always there in a Fabric game (Minecraft itself, Java, the loader). */
-    private static final Set<String> BUILT_IN = Set.of("minecraft", "java", "fabricloader", "fabric-loader",
+    private static final Set<String> BUILT_IN = Set.of("minecraft", "java", "fabricloader", "fabric-loader", "forge",
+            "neoforge", "fml", "javafml",
             "mixinextras");
 
     private static List<KnownError> known;
