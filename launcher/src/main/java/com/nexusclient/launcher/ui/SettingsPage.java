@@ -11,6 +11,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -189,6 +190,7 @@ public class SettingsPage extends VBox {
         });
 
         return new VBox(12,
+                heading("Your Nexus profile"), profileSettings(),
                 heading("Streamer mode"), streamer,
                 hint("Covers friends' names, your name and server addresses here, and switches on the in-game "
                         + "Streamer Mode (coordinates and addresses) when you play."),
@@ -201,6 +203,48 @@ public class SettingsPage extends VBox {
                 heading("Mod Rerender"), ModRerenderPage.sharingControls(store),
                 hint("Lets players who search your name copy your mods, mod settings and HUD (never worlds, "
                         + "servers, waypoints or passwords)."));
+    }
+
+    /**
+     * What other players see on your profile card, and your privacy: favourite server, whether friends
+     * see which server you're on, and who can message you. Saved on the Nexus server (PUT /api/me/settings).
+     */
+    private Node profileSettings() {
+        com.nexusclient.launcher.online.NexusOnline online = com.nexusclient.launcher.online.NexusOnline.get();
+        if (!online.signedIn()) {
+            return hint("Sign in to Nexus to set up your profile card.");
+        }
+        TextField favourite = new TextField();
+        favourite.setPromptText("Favourite server, e.g. mc.hypixel.net");
+        favourite.setMaxWidth(320);
+        CheckBox showServer = new CheckBox("Friends can see which server I'm on");
+        CheckBox noMessages = new CheckBox("Nobody can send me messages (otherwise: friends only)");
+        Runnable save = () -> {
+            java.util.Map<String, Object> body = new java.util.HashMap<>();
+            body.put("favouriteServer", favourite.getText().trim());
+            body.put("showServer", showServer.isSelected());
+            body.put("dmPolicy", noMessages.isSelected() ? "NOBODY" : "FRIENDS");
+            Background.run("profile-settings", () -> online.put("/api/me/settings", body),
+                    done -> Toast.info("Profile saved."), error -> Toast.error("Couldn't save: " + error.getMessage()));
+        };
+        // Load what's saved now, then save on every change.
+        Background.run("profile-load", () -> online.get("/api/me").getAsJsonObject(), me -> {
+            var card = me.getAsJsonObject("card");
+            favourite.setText(card.has("favouriteServer") && !card.get("favouriteServer").isJsonNull()
+                    ? card.get("favouriteServer").getAsString() : "");
+            showServer.setSelected(me.get("showServer").getAsBoolean());
+            noMessages.setSelected("NOBODY".equals(me.get("dmPolicy").getAsString()));
+            favourite.setOnAction(event -> save.run());
+            favourite.focusedProperty().addListener((o, was, now) -> {
+                if (!now) {
+                    save.run();
+                }
+            });
+            showServer.setOnAction(event -> save.run());
+            noMessages.setOnAction(event -> save.run());
+        }, error -> favourite.setPromptText("Couldn't load your profile: " + error.getMessage()));
+        return new VBox(10, favourite, showServer, noMessages,
+                hint("Shown on your profile card (click a player anywhere to see theirs)."));
     }
 
     /**

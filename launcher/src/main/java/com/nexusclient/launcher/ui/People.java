@@ -83,6 +83,14 @@ public final class People {
         row.getChildren().add(buttons);
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().addAll("mod-row", "person-card");
+        // Clicking a real player's head or name opens their profile card.
+        if (uuid != null) {
+            for (Node clickable : List.of(headBox, nameLabel)) {
+                clickable.setStyle("-fx-cursor: hand;");
+                clickable.setOnMouseClicked(event -> ProfileCard.show(uuid, name));
+            }
+            Tooltip.install(nameLabel, new Tooltip("Open profile"));
+        }
         return row;
     }
 

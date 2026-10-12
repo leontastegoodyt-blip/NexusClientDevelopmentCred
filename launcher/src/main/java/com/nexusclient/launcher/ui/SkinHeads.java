@@ -140,6 +140,29 @@ public final class SkinHeads {
         return "";
     }
 
+    /**
+     * The whole skin picture of any player (for the 3D preview on profile cards), or null if they have
+     * none / it can't be loaded. Slow (internet) – call it in the background.
+     */
+    public static Image skinFor(String uuid) {
+        String skinUrl = SKIN_URLS.computeIfAbsent(uuid, SkinHeads::lookUpSkinUrl);
+        if (skinUrl.isEmpty()) {
+            return null;
+        }
+        try {
+            Path file = NexusPaths.root().resolve("skins").resolve(fingerprint(skinUrl) + ".png");
+            try (Downloader downloader = new Downloader()) {
+                downloader.download(new Downloader.Job(skinUrl, file, null, 0));
+            }
+            try (InputStream in = Files.newInputStream(file)) {
+                Image skin = new Image(in);
+                return skin.isError() || skin.getWidth() < 64 ? null : skin;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /** Downloads (or reads the cached) skin and cuts the head out of it. Returns null on failure. */
     private static Image loadHead(String skinUrl, int pixels) {
         try {
