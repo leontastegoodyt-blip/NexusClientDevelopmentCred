@@ -236,6 +236,7 @@ public final class UiKit {
 
     /** Cuts text to fit a width, adding "…". */
     public static String fit(Renderer r, String text, int maxWidth) {
+        text = com.nexusclient.core.util.I18n.tr(text); // translate first, so a shortened text is still translated
         if (r.textWidth(text) <= maxWidth) {
             return text;
         }

@@ -173,6 +173,11 @@ public class GameLaunchTask extends Task<Integer> {
             if (dfrAdvice != null) {
                 customJvmArgs += " -Dnexus.dfrRecommendation=" + dfrAdvice;
             }
+            // The in-game Nexus text in the player's language (same translation files as the launcher).
+            Path langFile = translationFile(SettingsStore.get().language);
+            if (langFile != null) {
+                customJvmArgs += " \"-Dnexus.langFile=" + langFile.toAbsolutePath() + "\"";
+            }
             // Streamer mode in the launcher switches on the in-game Streamer Mode too.
             if (SettingsStore.get().streamerMode) {
                 customJvmArgs += " -Dnexus.streamerMode=true";
@@ -329,5 +334,31 @@ public class GameLaunchTask extends Task<Integer> {
                 .getTotalMemorySize() / (1024 * 1024);
         int wanted = javaMajorVersion <= 8 ? 2048 : 4096;
         return (int) Math.max(1024, Math.min(wanted, totalMb / 2));
+    }
+
+    /**
+     * The translation file for the game (null for English): the player's own file in
+     * <Nexus folder>/lang/ if there is one, otherwise the launcher's built-in copy (copied out once).
+     */
+    private static Path translationFile(String language) {
+        if (language == null || language.equals("en")) {
+            return null;
+        }
+        String name = "strings_" + language + ".json";
+        Path own = NexusPaths.root().resolve("lang").resolve(name);
+        if (Files.isRegularFile(own)) {
+            return own;
+        }
+        try (var in = GameLaunchTask.class.getResourceAsStream("/com/nexusclient/launcher/lang/" + name)) {
+            if (in == null) {
+                return null;
+            }
+            Path copy = NexusPaths.root().resolve("lang").resolve(".built-in").resolve(name);
+            Files.createDirectories(copy.getParent());
+            Files.write(copy, in.readAllBytes());
+            return copy;
+        } catch (IOException e) {
+            return null;
+        }
     }
 }

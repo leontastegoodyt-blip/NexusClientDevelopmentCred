@@ -32,6 +32,7 @@ public class HudEditor implements NexusScreen {
 
     @Override
     public void render(Renderer r, int mouseX, int mouseY) {
+        r = com.nexusclient.core.util.I18n.wrap(r); // text in the player's language
         lastRenderer = r;
         r.rect(0, 0, r.width(), r.height(), 0x70050508);
         // Faint centre lines to help line things up.

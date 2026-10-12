@@ -147,6 +147,7 @@ public class ModMenu implements NexusScreen {
 
     @Override
     public void render(Renderer r, int mouseX, int mouseY) {
+        r = com.nexusclient.core.util.I18n.wrap(r); // text in the player's language
         hits.clear();
         footer = "";
         layout(r);
@@ -971,7 +972,7 @@ public class ModMenu implements NexusScreen {
 
     /** Cuts the start of text so its end (what you're typing) fits. */
     private static String fitEnd(Renderer r, String text, int maxWidth) {
-        String shown = text;
+        String shown = com.nexusclient.core.util.I18n.tr(text); // translate first, then shorten
         while (r.textWidth(shown) > maxWidth && shown.length() > 1) {
             shown = shown.substring(1);
         }

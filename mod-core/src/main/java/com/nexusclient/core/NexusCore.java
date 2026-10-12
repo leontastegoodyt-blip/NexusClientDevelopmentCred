@@ -313,6 +313,7 @@ public final class NexusCore {
 
     /** Draws every switched-on HUD mod, then the full-screen overlays. */
     public void renderHud(Renderer renderer) {
+        renderer = com.nexusclient.core.util.I18n.wrap(renderer); // text in the player's language
         FrameTimes.frame(); // for the frame-time graph
         for (HudModule module : hudModules) {
             if (module.isActive()) {
