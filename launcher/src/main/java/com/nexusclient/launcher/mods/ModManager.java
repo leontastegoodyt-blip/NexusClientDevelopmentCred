@@ -311,6 +311,14 @@ public final class ModManager {
             Map.entry("1.20", new NexusModBuild("nexus-client-fabric-1.20.1.jar", true)),
             Map.entry("1.8.9", new NexusModBuild("nexus-client-legacy-1.8.9.jar", false)));
 
+    /** The Forge builds of the Nexus mod (only 26.3 so far: it isn't scrambled, so the Fabric code runs on Forge too). */
+    private static final Map<String, String> NEXUS_FORGE_BUILDS = Map.of("26.3", "nexus-client-forge-26.3.jar");
+
+    /** True if this launcher carries the Forge build of the Nexus mod for that Minecraft version. */
+    public static boolean hasNexusForgeMod(String gameVersion) {
+        return gameVersion != null && NEXUS_FORGE_BUILDS.containsKey(gameVersion);
+    }
+
     /** True if this launcher carries the in-game Nexus mod for that Minecraft version. */
     public static boolean hasNexusMod(String gameVersion) {
         return gameVersion != null && NEXUS_MOD_BUILDS.containsKey(gameVersion);
@@ -326,20 +334,25 @@ public final class ModManager {
 
     /**
      * Puts the in-game Nexus mod (mod menu, HUD, PvP mods…) into Fabric instances it's made for,
-     * plus Fabric API if that build needs it. The mod ships inside the launcher, and is replaced
-     * every launch if the launcher has a newer copy. Problems are printed – the game still starts.
+     * plus Fabric API if that build needs it, and the Forge build into Forge instances (26.3). The
+     * mod ships inside the launcher, and is replaced every launch if the launcher has a newer copy.
+     * Problems are printed – the game still starts.
      */
     public void ensureNexusMod(ProgressListener progress) throws InterruptedException {
-        if (!isFabric() || !hasNexusMod(gameVersion)) {
+        boolean forge = Instance.FORGE.equals(instance.loaderOrVanilla());
+        if (forge ? !hasNexusForgeMod(gameVersion) : !isFabric() || !hasNexusMod(gameVersion)) {
             return;
         }
         try {
             Path mods = dir.resolve("mods");
-            if (!copyNexusMod(mods)) {
+            if (!copyNexusMod(mods, forge ? NEXUS_FORGE_BUILDS.get(gameVersion) : NEXUS_MOD_BUILDS.get(gameVersion).file())) {
                 return;
             }
             // A turned-off copy ("nexus-client.jar.disabled") would clash with the fresh one.
             Files.deleteIfExists(mods.resolve(NEXUS_MOD_FILE + ".disabled"));
+            if (forge) {
+                return; // the Forge build needs nothing else
+            }
 
             if (NEXUS_MOD_BUILDS.get(gameVersion).needsFabricApi() && !hasFabricApi(mods)) {
                 Index index = readIndex();
@@ -367,7 +380,7 @@ public final class ModManager {
         }
         Path folder = NexusPaths.root().resolve("nexus-mod").resolve(gameVersion);
         try {
-            if (!copyNexusMod(folder)) {
+            if (!copyNexusMod(folder, NEXUS_MOD_BUILDS.get(gameVersion).file())) {
                 return null;
             }
             if (NEXUS_MOD_BUILDS.get(gameVersion).needsFabricApi() && !hasFabricApi(folder)) {
@@ -394,10 +407,8 @@ public final class ModManager {
      * Copies the right Nexus mod build out of the launcher into a folder (as nexus-client.jar),
      * unless an identical copy is already there. False if this launcher build doesn't carry it.
      */
-    private boolean copyNexusMod(Path folder) throws IOException {
-        NexusModBuild build = NEXUS_MOD_BUILDS.get(gameVersion);
-        try (InputStream bundled = ModManager.class.getResourceAsStream(
-                "/com/nexusclient/launcher/nexus-mod/" + build.file())) {
+    private boolean copyNexusMod(Path folder, String bundledFile) throws IOException {
+        try (InputStream bundled = ModManager.class.getResourceAsStream("/com/nexusclient/launcher/nexus-mod/" + bundledFile)) {
             if (bundled == null) {
                 System.err.println("This launcher build has no Nexus mod for " + gameVersion);
                 return false;

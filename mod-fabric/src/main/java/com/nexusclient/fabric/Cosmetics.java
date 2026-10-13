@@ -41,7 +41,7 @@ public final class Cosmetics {
         return id == null ? null : loaded.get(id);
     }
 
-    /** Called every tick (from NexusFabric). */
+    /** Called every tick (from NexusGame). */
     public static void tick(Minecraft mc) {
         if (BACKEND == null || mc.getConnection() == null || ++ticks % 400 != 1) {
             return;

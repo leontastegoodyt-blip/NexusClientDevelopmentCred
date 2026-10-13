@@ -88,7 +88,7 @@ public class InstanceSettingsPane extends VBox {
         });
         loaderBox.getStyleClass().add("form-combo");
         loaderBox.setMaxWidth(Double.MAX_VALUE);
-        Label loaderNote = new Label("Fabric gets the Nexus mod (Right Shift menu, HUD). Forge runs Forge mods, without it.");
+        Label loaderNote = new Label("Fabric gets the Nexus mod (Right Shift menu, HUD) on every version; Forge gets it on 26.3.");
         loaderNote.getStyleClass().add("preview-note");
         loaderNote.setWrapText(true);
 

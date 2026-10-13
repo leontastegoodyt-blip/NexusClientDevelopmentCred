@@ -56,6 +56,11 @@ tasks.processResources {
             rename { "nexus-client-fabric-$version.jar" }
         }
     }
+    // The Forge 26.3 build (mod-forge): the same code as the Fabric 26.3 mod, started by Forge.
+    from(project(":mod-forge").tasks.named("jar")) {
+        into("com/nexusclient/launcher/nexus-mod")
+        rename { "nexus-client-forge-26.3.jar" }
+    }
     // The 1.8.9 mod is its own build (mod-legacy), so it's built first and its file copied in.
     dependsOn(gradle.includedBuild("mod-legacy").task(":remapJar"))
     from(rootProject.file("mod-legacy/build/libs/nexus-client-legacy-1.8.9-0.1.0.jar")) {

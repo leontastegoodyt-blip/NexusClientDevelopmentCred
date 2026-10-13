@@ -4,7 +4,6 @@ import com.nexusclient.core.NexusCore;
 import com.nexusclient.core.ui.HudEditor;
 import com.nexusclient.core.ui.ModMenu;
 import com.nexusclient.core.util.SelfTestMods;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -32,7 +31,7 @@ public final class SelfTest {
         return Boolean.getBoolean("nexus.selftest");
     }
 
-    /** Called every tick by NexusFabric. */
+    /** Called every tick by NexusGame. */
     public static void tick(Minecraft mc) {
         if (ticks < 0) {
             if (mc.gui.screen() instanceof TitleScreen) {
@@ -71,8 +70,8 @@ public final class SelfTest {
         switch (ticks) {
             case 100 -> {
                 // Check the keys are really bound to Right Shift and C (Minecraft's own key names).
-                System.out.println("[Nexus] self-test keys: menu = " + NexusFabric.menuKey.getTranslatedKeyMessage().getString()
-                        + ", zoom = " + NexusFabric.zoomKey.getTranslatedKeyMessage().getString());
+                System.out.println("[Nexus] self-test keys: menu = " + NexusGame.menuKey.getTranslatedKeyMessage().getString()
+                        + ", zoom = " + NexusGame.zoomKey.getTranslatedKeyMessage().getString());
                 NexusCore.get().platform().openScreen(new ModMenu());
             }
             case 160 -> Screenshot.grab(mc, false);
@@ -146,7 +145,7 @@ public final class SelfTest {
             Screenshot.grab(mc, false);
         } else if (worldTicks == 70) {
             // The same call Minecraft makes when the player presses the key bound to the menu.
-            KeyMapping.click(KeyMappingHelper.getBoundKeyOf(NexusFabric.menuKey));
+            NexusGame.click(NexusGame.menuKey);
         } else if (worldTicks == 72) {
             boolean opened = mc.gui.screen() instanceof NexusScreenWrapper w && w.screen() instanceof ModMenu;
             System.out.println(opened ? "[Nexus] self-test PASSED: Right Shift opened the mod menu"

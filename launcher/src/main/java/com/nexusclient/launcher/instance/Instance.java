@@ -39,7 +39,7 @@ public record Instance(String id, String name, String version, String loader, St
 
     /** True if the in-game Nexus mod (Right Shift menu, HUD…) loads in this instance on that version. */
     public boolean getsNexusMod(String gameVersion) {
-        return !FORGE.equals(loaderOrVanilla()) && ModManager.hasNexusMod(gameVersion);
+        return FORGE.equals(loaderOrVanilla()) ? ModManager.hasNexusForgeMod(gameVersion) : ModManager.hasNexusMod(gameVersion);
     }
 
     /**

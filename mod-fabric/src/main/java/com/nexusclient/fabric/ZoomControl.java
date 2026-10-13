@@ -13,7 +13,7 @@ public final class ZoomControl {
 
     /** True while the zoom key is held in-game (not in a menu) and the Zoom mod is on. */
     public static boolean zooming() {
-        return NexusFabric.zoomKey != null && NexusFabric.zoomKey.isDown()
+        return NexusGame.zoomKey != null && NexusGame.zoomKey.isDown()
                 && Minecraft.getInstance().gui.screen() == null && NexusCore.get().get(Mods.Zoom.class).isActive();
     }
 
