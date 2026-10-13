@@ -1,6 +1,5 @@
 package com.nexusclient.modern;
 
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -19,8 +18,6 @@ import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
 
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -85,20 +82,6 @@ public final class VersionHooks {
             }
             throw onlyOn1202;
         }
-    }
-
-    /**
-     * Listens for a server's Nexus rules on the "nexusclient:rules" channel (plain JSON text, see
-     * core/server/ServerRules). 1.20.2–1.20.4 still use Fabric's older channel API.
-     */
-    public static void registerRulesChannel(Consumer<String> onRules) {
-        ClientPlayNetworking.registerGlobalReceiver(new ResourceLocation("nexusclient", "rules"),
-                (client, handler, buf, sender) -> {
-                    byte[] bytes = new byte[buf.readableBytes()];
-                    buf.readBytes(bytes);
-                    String json = new String(bytes, StandardCharsets.UTF_8);
-                    client.execute(() -> onRules.accept(json)); // back onto the game thread
-                });
     }
 
     /** The Nexus badge font (assets/nexusclient/font/badges.json) – name-tag badges use it. */

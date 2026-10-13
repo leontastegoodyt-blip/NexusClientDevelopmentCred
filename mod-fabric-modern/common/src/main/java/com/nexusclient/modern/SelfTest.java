@@ -4,7 +4,6 @@ import com.nexusclient.core.NexusCore;
 import com.nexusclient.core.ui.HudEditor;
 import com.nexusclient.core.ui.ModMenu;
 import com.nexusclient.core.util.SelfTestMods;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -30,7 +29,7 @@ public final class SelfTest {
         return Boolean.getBoolean("nexus.selftest");
     }
 
-    /** Called every tick by NexusModern. */
+    /** Called every tick by ModernGame. */
     public static void tick(Minecraft mc) {
         if (ticks < 0) {
             // The game has finished loading once the loading overlay is gone and a menu shows (the
@@ -50,7 +49,7 @@ public final class SelfTest {
         }
         switch (ticks) {
             case 20 -> {
-                log("keys: menu = " + keyName(NexusModern.menuKey) + ", zoom = " + keyName(NexusModern.zoomKey));
+                log("keys: menu = " + keyName(ModernGame.menuKey) + ", zoom = " + keyName(ModernGame.zoomKey));
                 NexusCore.get().platform().openScreen(new ModMenu());
             }
             case 60 -> screenshot(mc, "menu");
@@ -123,8 +122,8 @@ public final class SelfTest {
             screenshot(mc, "in-game HUD");
         } else if (worldTicks == 70) {
             // The same call Minecraft makes when the player presses the key bound to the menu.
-            log("pressing " + keyName(NexusModern.menuKey));
-            KeyMapping.click(KeyBindingHelper.getBoundKeyOf(NexusModern.menuKey));
+            log("pressing " + keyName(ModernGame.menuKey));
+            ModernGame.click(ModernGame.menuKey);
         } else if (worldTicks == 72) {
             boolean opened = mc.screen instanceof NexusScreenWrapper wrapper && wrapper.screen() instanceof ModMenu;
             log(opened ? "PASSED: Right Shift opened the mod menu"

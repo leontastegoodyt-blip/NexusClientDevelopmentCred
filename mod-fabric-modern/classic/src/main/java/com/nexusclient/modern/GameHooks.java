@@ -1,11 +1,7 @@
 package com.nexusclient.modern;
 
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphics;
-
-import java.util.function.Consumer;
 
 /**
  * GameHooks – things that work the same on Minecraft 1.20 up to 1.21.8, but changed in 1.21.9+
@@ -19,14 +15,9 @@ public final class GameHooks {
 
     private GameHooks() {}
 
-    /** Adds a key to Minecraft's Controls menu, under "Nexus Client". */
-    public static KeyMapping registerKey(String name, int defaultKey) {
-        return KeyBindingHelper.registerKeyBinding(new KeyMapping(name, defaultKey, CATEGORY));
-    }
-
-    /** Calls draw every frame, after Minecraft has drawn its own HUD. */
-    public static void registerHud(Consumer<GuiGraphics> draw) {
-        HudRenderCallback.EVENT.register((graphics, delta) -> draw.accept(graphics));
+    /** A key for Minecraft's Controls menu, under "Nexus Client" (the mod loader registers it). */
+    public static KeyMapping newKey(String name, int defaultKey) {
+        return new KeyMapping(name, defaultKey, CATEGORY);
     }
 
     /** Starts drawing moved to (x, y) and scaled (until pop). */

@@ -1,7 +1,5 @@
 package com.nexusclient.modern;
 
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -15,7 +13,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
 
-import java.util.function.Consumer;
 
 /**
  * VersionHooks for Minecraft 1.20.5 – 1.20.6: the few things that are written differently in each
@@ -58,15 +55,6 @@ public final class VersionHooks {
         mc.createWorldOpenFlows().createFreshLevel("Nexus self-test " + System.currentTimeMillis(),
                 MinecraftServer.DEMO_SETTINGS, WorldOptions.DEMO_OPTIONS, WorldPresets::createNormalWorldDimensions,
                 new TitleScreen());
-    }
-
-    /**
-     * Listens for a server's Nexus rules on the "nexusclient:rules" channel (plain JSON text, see
-     * core/server/ServerRules). Since 1.20.5 plugin messages are "payloads" (see RulesPayload).
-     */
-    public static void registerRulesChannel(Consumer<String> onRules) {
-        PayloadTypeRegistry.playS2C().register(RulesPayload.TYPE, RulesPayload.CODEC);
-        ClientPlayNetworking.registerGlobalReceiver(RulesPayload.TYPE, (payload, context) -> onRules.accept(payload.json()));
     }
 
     /** The id of the rules channel. */
