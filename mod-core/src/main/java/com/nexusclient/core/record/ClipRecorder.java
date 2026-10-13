@@ -29,7 +29,8 @@ import java.util.concurrent.TimeUnit;
  * the newest pieces and trims them to the chosen length – nothing is re-encoded, so it's instant.
  *
  * Screen capture: Windows uses Desktop Duplication (ddagrab, GPU based); Mac uses AVFoundation;
- * Linux uses X11 (Wayland isn't supported yet). No sound yet.
+ * Linux uses X11 (Wayland isn't supported yet). Sound (the "Sound" setting): PC sound, microphone or
+ * both, from the devices AudioSources finds; without them (or if they fail) clips are video-only.
  *
  * All slow work happens on a background thread; the player hears about it through notices.
  */
@@ -61,6 +62,7 @@ public final class ClipRecorder {
     private volatile boolean gaveUp;  // FFmpeg couldn't be found/started – stop retrying until turned off and on
     private int ticks;
     private int crashes;
+    private volatile boolean toldAboutSound; // the "no PC sound device" tip is shown once per session
 
     public ClipRecorder(File gameDir, File toolsDir, Notices notices) {
         this.toolsDir = toolsDir;
@@ -76,6 +78,7 @@ public final class ClipRecorder {
         if (!module.isActive()) {
             gaveUp = false;
             crashes = 0;
+            toldAboutSound = false;
             if (!runningSetup.isEmpty()) {
                 runningSetup = "";
                 worker.submit(() -> {
@@ -132,6 +135,7 @@ public final class ClipRecorder {
         final int fps;
         final String quality;
         final int[] area; // x, y, width, height – or null for the whole screen
+        final String sound; // "Off", "PC sound", "Microphone" or "PC sound + mic"
 
         Settings(Mods.ClipRecorder module, GameInfo game) {
             seconds = module.length.intValue();
@@ -140,13 +144,14 @@ public final class ClipRecorder {
             int[] window = game.windowBounds();
             boolean whole = module.area.get().equals("Whole screen") || window == null || game.fullscreen();
             area = whole ? null : window;
+            sound = module.sound.get();
         }
     }
 
     /** Recording restarts when any of these change (settings, or the window moving/resizing). */
     private static String setupKey(Mods.ClipRecorder module, GameInfo game) {
         return module.length.get() + "|" + module.fps.get() + "|" + module.quality.get() + "|"
-                + module.area.get() + Arrays.toString(game.windowBounds()) + game.fullscreen();
+                + module.area.get() + Arrays.toString(game.windowBounds()) + game.fullscreen() + "|" + module.sound.get();
     }
 
     private void start(Settings settings) {
@@ -170,6 +175,7 @@ public final class ClipRecorder {
             }
         }
         List<String> input = captureInput(settings);
+        List<AudioSources.Source> sound = soundSources(ffmpeg, settings.sound);
         List<List<String>> encoders = encoderCache != null ? Arrays.asList(encoderCache) : encoderChoices(settings);
         for (List<String> encoder : encoders) {
             if (encoderCache == null && !works(ffmpeg, input, encoder)) {
@@ -177,7 +183,12 @@ public final class ClipRecorder {
             }
             encoderCache = encoder;
             try {
-                launch(ffmpeg, settings, input, encoder);
+                launch(ffmpeg, settings, input, encoder, sound);
+                // A sound device can refuse to open (in use, unplugged…): then record without sound.
+                if (!sound.isEmpty() && !stillRunningAfter(2500)) {
+                    notices.show("Couldn't record sound from " + names(sound) + " – recording clips without sound.");
+                    launch(ffmpeg, settings, input, encoder, new ArrayList<AudioSources.Source>());
+                }
                 return;
             } catch (IOException e) {
                 notices.show("Couldn't start the clip recorder: " + e.getMessage());
@@ -190,16 +201,31 @@ public final class ClipRecorder {
     }
 
     /** Starts the long-running FFmpeg that fills the rolling buffer. */
-    private void launch(File ffmpeg, Settings settings, List<String> input, List<String> encoder) throws IOException {
+    private void launch(File ffmpeg, Settings settings, List<String> input, List<String> encoder,
+                        List<AudioSources.Source> sound) throws IOException {
+        stop();
         clearBuffer();
         int listSize = (settings.seconds + PIECE_SECONDS - 1) / PIECE_SECONDS + 1;
         wrap = listSize + 4; // spare pieces, so saving never reads a piece that's being overwritten
         List<String> command = new ArrayList<String>();
         command.add(ffmpeg.getPath());
         command.addAll(Arrays.asList("-hide_banner", "-loglevel", "error"));
-        command.addAll(input);
+        command.addAll(input); // input 0: the picture
+        for (AudioSources.Source source : sound) {
+            command.addAll(source.args); // inputs 1 (and 2): sound
+        }
+        if (sound.size() == 1) {
+            command.addAll(Arrays.asList("-map", "0:v", "-map", "1:a"));
+        } else if (sound.size() == 2) {
+            // PC sound + microphone: mixed into one track (amix halves each, so turn it back up).
+            command.addAll(Arrays.asList("-filter_complex", "[1:a][2:a]amix=inputs=2:duration=longest,volume=2[a]",
+                    "-map", "0:v", "-map", "[a]"));
+        }
         command.addAll(encoder);
         command.addAll(bitrate(settings));
+        if (!sound.isEmpty()) {
+            command.addAll(Arrays.asList("-c:a", "aac", "-b:a", "160k"));
+        }
         command.addAll(Arrays.asList("-g", String.valueOf(settings.fps), // a keyframe every second
                 "-f", "segment", "-segment_time", String.valueOf(PIECE_SECONDS),
                 "-segment_wrap", String.valueOf(wrap),
@@ -210,7 +236,50 @@ public final class ClipRecorder {
         builder.redirectErrorStream(true);
         builder.redirectOutput(new File(bufferDir, "ffmpeg.log"));
         process = builder.start();
-        notices.show("Clip recorder on – press F8 to save the last " + settings.seconds + " seconds.");
+        notices.show("Clip recorder on" + (sound.isEmpty() ? "" : " with sound (" + names(sound) + ")")
+                + " – press F8 to save the last " + settings.seconds + " seconds.");
+    }
+
+    /** The sound inputs for the "Sound" setting – only the devices that exist on this PC. */
+    private List<AudioSources.Source> soundSources(File ffmpeg, String choice) {
+        List<AudioSources.Source> sources = new ArrayList<AudioSources.Source>();
+        if (choice.startsWith("PC sound")) {
+            AudioSources.Source pc = AudioSources.pcSound(ffmpeg);
+            if (pc != null) {
+                sources.add(pc);
+            } else if (!toldAboutSound) {
+                toldAboutSound = true;
+                notices.show(AudioSources.tipForPcSound());
+            }
+        }
+        if (choice.equals("Microphone") || choice.endsWith("mic")) {
+            AudioSources.Source mic = AudioSources.microphone(ffmpeg);
+            if (mic != null) {
+                sources.add(mic);
+            } else if (choice.equals("Microphone")) {
+                notices.show("No microphone found – clips are recorded without sound.");
+            }
+        }
+        return sources;
+    }
+
+    /** Waits a moment and says whether FFmpeg is still recording (false = it stopped, e.g. a bad device). */
+    private boolean stillRunningAfter(long millis) {
+        Process running = process;
+        try {
+            return running != null && !running.waitFor(millis, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return true;
+        }
+    }
+
+    private static String names(List<AudioSources.Source> sources) {
+        StringBuilder text = new StringBuilder();
+        for (AudioSources.Source source : sources) {
+            text.append(text.length() > 0 ? " + " : "").append(source.name);
+        }
+        return text.toString();
     }
 
     /** Stops FFmpeg politely ("q" = quit), or forcefully if it doesn't listen. */

@@ -364,6 +364,8 @@ public final class Mods {
         public final ChoiceSetting fps = add(new ChoiceSetting("fps", "Frame rate", "60", "30", "60"));
         public final ChoiceSetting quality = add(new ChoiceSetting("quality", "Quality", "Medium", "Low", "Medium", "High"));
         public final ChoiceSetting area = add(new ChoiceSetting("area", "Record", "Game window", "Game window", "Whole screen"));
+        public final ChoiceSetting sound = add(new ChoiceSetting("sound", "Sound", "PC sound",
+                "Off", "PC sound", "Microphone", "PC sound + mic"));
 
         public ClipRecorder() {
             super("clipRecorder", "Clip Recorder",
