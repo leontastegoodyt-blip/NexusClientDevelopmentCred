@@ -181,6 +181,11 @@ public class LegacyGameInfo implements GameInfo {
     }
 
     @Override
+    public java.util.UUID playerUuid() {
+        return mc.player == null ? null : mc.player.getUuid();
+    }
+
+    @Override
     public int[] windowBounds() {
         return new int[] {Display.getX(), Display.getY(), mc.width, mc.height};
     }

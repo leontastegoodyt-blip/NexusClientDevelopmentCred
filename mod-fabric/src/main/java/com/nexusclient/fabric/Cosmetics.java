@@ -66,6 +66,7 @@ public final class Cosmetics {
     private static void refresh(Minecraft mc, String uuidList) {
         try {
             JsonObject worn = JsonParser.parseString(get("/api/cosmetics/worn?uuids=" + uuidList)).getAsJsonObject();
+            com.nexusclient.core.online.Capes.rememberShapes(worn); // hats and wings (drawn by NexusCosmeticsLayer)
             capes.clear();
             for (Map.Entry<String, JsonElement> entry : worn.entrySet()) {
                 JsonObject items = entry.getValue().getAsJsonObject();

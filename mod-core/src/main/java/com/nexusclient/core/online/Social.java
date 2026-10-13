@@ -26,6 +26,7 @@ import java.util.UUID;
  *   - Party pings: press G to mark the block you look at; everyone in your party sees a marker there
  *     (in the world and on the minimap) for a minute.
  *   - Clan tags after names on name tags (fetched with the badges, see Badges).
+ *   - Emotes: press V to play the emote you wear (Wave) – Nexus players on your server see it (Emotes).
  *   - Your server is shared with friends ("presence"), so they can join you from the launcher.
  *   - The Right Shift menu's Social tab shows all of it (ModMenu).
  *
@@ -148,6 +149,31 @@ public class Social extends Module implements com.nexusclient.core.hud.Overlay {
                 }
             });
         }
+    }
+
+    /**
+     * The emote key was pressed: ask the Nexus server to play our emote (it tells everyone on our
+     * Minecraft server, us included). Developer self-test: plays the wave straight away.
+     */
+    public void emote(com.nexusclient.core.platform.GameInfo game) {
+        if (System.getProperty("nexus.cosmeticTest") != null) {
+            Emotes.play(game.playerUuid(), "wave");
+            return;
+        }
+        final LiveSocket live = socket;
+        if (live == null || !live.isOpen()) {
+            Toasts.show("Emotes need Nexus Social", "Sign in to Nexus and switch on Nexus Social", "!", FRIEND_COLOUR);
+            return;
+        }
+        if (server.isEmpty()) {
+            Toasts.show("Emotes", "Join a server to show your emote to other Nexus players", "!", FRIEND_COLOUR);
+            return;
+        }
+        NexusHttp.async(new Runnable() {
+            public void run() {
+                live.send("{\"type\":\"emote\"}");
+            }
+        });
     }
 
     /** The player joined a server ("" = singleplayer / menu). Friends see where we are. */
@@ -292,6 +318,8 @@ public class Social extends Module implements com.nexusclient.core.hud.Overlay {
             synchronized (this) {
                 remove(friends, uuid(event, "uuid"));
             }
+        } else if (type.equals("emote")) {
+            Emotes.play(uuid(event, "player"), str(event, "emote")); // a player on our server waves
         } else if (type.equals("dm")) {
             String from = str(event, "fromName");
             JsonObject message = event.getAsJsonObject("message");

@@ -5,5 +5,6 @@
   "key.nexusclient.save_clip": "Save clip (last 30 seconds)",
   "key.nexusclient.add_waypoint": "Add waypoint here",
   "key.nexusclient.party_ping": "Party ping",
+  "key.nexusclient.emote": "Emote",
   "key.nexusclient.freelook": "Freelook (hold)"
 }

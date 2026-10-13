@@ -37,6 +37,7 @@ public final class SelfTestMods {
             java.io.File cape = new java.io.File(folder, "backend/src/main/resources/static/cosmetics/nexus_cape.png");
             if (cape.isFile()) {
                 System.setProperty("nexus.capeTest", cape.getAbsolutePath());
+                System.setProperty("nexus.cosmeticTest", "true"); // and the Halo + Neon Wings
                 break;
             }
         }

@@ -130,6 +130,14 @@ public final class SelfTest {
             // name tag with its Nexus badge and DEV tag.
             System.setProperty("nexus.badgeTest", "DEVELOPER");
             mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK); // from behind: cape + name tag
+        } else if (worldTicks == 50) {
+            com.nexusclient.core.NexusCore.get().emoteKey(); // Wave (Emotes), shown from the front at noon
+            com.nexusclient.core.NexusCore.get().get(com.nexusclient.core.module.Mods.TimeChanger.class).time.set(6000.0);
+            mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
+        } else if (worldTicks == 56) {
+            Screenshot.grab(mc, false); // the wave, from the front
+            com.nexusclient.core.NexusCore.get().get(com.nexusclient.core.module.Mods.TimeChanger.class).time.set(18000.0);
+            mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK);
         } else if (worldTicks == 66) {
             mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
         } else if (worldTicks == 69) {

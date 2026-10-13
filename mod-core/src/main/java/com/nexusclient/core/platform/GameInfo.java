@@ -94,6 +94,11 @@ public interface GameInfo {
     /** The player's own name. */
     String playerName();
 
+    /** The player's own Minecraft UUID (null outside a world). */
+    default java.util.UUID playerUuid() {
+        return null;
+    }
+
     /** The game window's position and size on screen, in pixels: {x, y, width, height}. */
     int[] windowBounds();
 

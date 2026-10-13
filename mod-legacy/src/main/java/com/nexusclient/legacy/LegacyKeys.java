@@ -22,6 +22,7 @@ public final class LegacyKeys {
     public static KeyBinding freelook;
     public static KeyBinding waypoint;
     public static KeyBinding ping;
+    public static KeyBinding emote;
 
     private LegacyKeys() {}
 
@@ -34,7 +35,8 @@ public final class LegacyKeys {
             freelook = new KeyBinding("Freelook (hold)", Keyboard.KEY_LMENU, CATEGORY); // Left Alt
             waypoint = new KeyBinding("Add waypoint here", Keyboard.KEY_B, CATEGORY);
             ping = new KeyBinding("Party ping", Keyboard.KEY_G, CATEGORY);
+            emote = new KeyBinding("Emote", Keyboard.KEY_V, CATEGORY);
         }
-        return new KeyBinding[] {menu, zoom, clip, freelook, waypoint, ping};
+        return new KeyBinding[] {menu, zoom, clip, freelook, waypoint, ping, emote};
     }
 }

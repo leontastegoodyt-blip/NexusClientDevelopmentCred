@@ -153,7 +153,7 @@ public class ModMenu implements NexusScreen {
         layout(r);
 
         // Opening animation: the backdrop fades in and the panel glides up a few pixels (180 ms).
-        double t = Math.min(1, (System.currentTimeMillis() - openedAt) / 180.0);
+        double t = Accessibility.reducedMotion() ? 1 : Math.min(1, (System.currentTimeMillis() - openedAt) / 180.0);
         double eased = 1 - Math.pow(1 - t, 3);
         r.rect(0, 0, r.width(), r.height(), ((int) (0xC0 * eased) << 24) | 0x05050A);
         int slide = (int) Math.round((1 - eased) * 8);
@@ -425,8 +425,8 @@ public class ModMenu implements NexusScreen {
             text = UiKit.TEXT_FAINT;
         } else if (module.isBlockedByServer()) {
             label = "BLOCKED";
-            fill = 0x40FF6B5E;
-            text = UiKit.DANGER;
+            fill = 0x40000000 | (Accessibility.bad() & 0xFFFFFF);
+            text = Accessibility.bad();
         } else if (module.isEnabled()) {
             label = "ENABLED";
             fill = barHover ? (0xFF000000 | UiKit.mix(UiKit.accent() & 0xFFFFFF, 0xFFFFFF, 0.25)) : (UiKit.accent() | 0xFF000000);
@@ -515,7 +515,7 @@ public class ModMenu implements NexusScreen {
             y += 18;
         }
         if (module.isBlockedByServer()) {
-            notice(r, contentX, y, right, "This server doesn't allow this mod, so it's switched off here.", UiKit.DANGER);
+            notice(r, contentX, y, right, "This server doesn't allow this mod, so it's switched off here.", Accessibility.bad());
             y += 18;
         }
 
@@ -585,8 +585,8 @@ public class ModMenu implements NexusScreen {
             final int end = right - 8;
             // Delete (×) and show/hide switch.
             boolean deleteHover = UiKit.inside(mouseX, mouseY, end - 12, y + 5, end, y + 17);
-            UiKit.roundBox(r, end - 12, y + 5, end, y + 17, 3, deleteHover ? 0x40FF6B5E : 0xFF181826, deleteHover ? UiKit.DANGER : 0xFF2A2A40);
-            r.text("x", end - 8, y + 7, deleteHover ? UiKit.DANGER : UiKit.TEXT_DIM, false);
+            UiKit.roundBox(r, end - 12, y + 5, end, y + 17, 3, deleteHover ? 0x40000000 | (Accessibility.bad() & 0xFFFFFF) : 0xFF181826, deleteHover ? Accessibility.bad() : 0xFF2A2A40);
+            r.text("x", end - 8, y + 7, deleteHover ? Accessibility.bad() : UiKit.TEXT_DIM, false);
             UiKit.pillToggle(r, end - 40, y + 5, waypoint.visible, rowHover);
             contentHit(end - 12, y + 5, end, y + 17, (mx, my, b) -> {
                 list.remove(waypoint);
@@ -759,7 +759,7 @@ public class ModMenu implements NexusScreen {
 
         // --- Status ---
         boolean online = social.online();
-        int dot = online ? 0xFF5BE49B : social.isActive() ? 0xFFFFB547 : 0xFF6A6A80;
+        int dot = online ? Accessibility.good() : social.isActive() ? Accessibility.warn() : 0xFF6A6A80;
         UiKit.round(r, x, y + 4, x + 6, y + 10, 3, dot);
         String me = NexusCore.get().game().playerName();
         r.text(online ? me : social.status(), x + 10, y + 3, online ? 0xFFFFFFFF : UiKit.TEXT_DIM, false);
@@ -807,7 +807,7 @@ public class ModMenu implements NexusScreen {
             for (Social.Person member : party) {
                 boolean leader = member.uuid.equals(social.partyLeader());
                 String where = member.online ? (member.server.isEmpty() ? "Online" : member.server) : "Offline";
-                y = socialRow(r, x, y, right, member.online ? 0xFF5BE49B : 0xFF4A4A60,
+                y = socialRow(r, x, y, right, member.online ? Accessibility.good() : 0xFF4A4A60,
                         member.name + (leader ? "  (leader)" : ""), where, mouseX, mouseY,
                         null, null, null, null);
             }
@@ -835,7 +835,7 @@ public class ModMenu implements NexusScreen {
         }
         for (final Social.Person friend : friends) {
             String where = friend.online ? (friend.server.isEmpty() ? "Online" : friend.server) : "Offline";
-            y = socialRow(r, x, y, right, friend.online ? 0xFF5BE49B : 0xFF4A4A60, friend.name, where, mouseX, mouseY,
+            y = socialRow(r, x, y, right, friend.online ? Accessibility.good() : 0xFF4A4A60, friend.name, where, mouseX, mouseY,
                     friend.online && !inParty.contains(friend.uuid) ? "Invite" : null,
                     (mx, my, b) -> social.inviteToParty(friend), null, null);
         }

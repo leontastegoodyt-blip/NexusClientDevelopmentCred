@@ -125,6 +125,8 @@ public final class NexusCore {
         com.nexusclient.core.online.DeveloperMode.check(); // are we the Nexus developer? (asks the server)
         get(com.nexusclient.core.map.Waypoints.class).load(configFile.getParentFile());
         applyDfrAdvice();
+        // Colourblind mode / reduced motion switched on in the launcher: on in game too.
+        com.nexusclient.core.ui.Accessibility.applyLauncherSettings(get(com.nexusclient.core.module.NexusSettings.class));
         // Streamer mode switched on in the launcher: Streamer Mode is on in game too (for this session).
         if (Boolean.getBoolean("nexus.streamerMode")) {
             get(Mods.StreamerMode.class).setEnabled(true);
@@ -301,6 +303,11 @@ public final class NexusCore {
     /** The "Party ping" key was pressed (each loader module calls this). */
     public void partyPingKey() {
         get(com.nexusclient.core.online.Social.class).ping(game);
+    }
+
+    /** The "Emote" key was pressed (each loader module calls this). */
+    public void emoteKey() {
+        get(com.nexusclient.core.online.Social.class).emote(game);
     }
 
     /**

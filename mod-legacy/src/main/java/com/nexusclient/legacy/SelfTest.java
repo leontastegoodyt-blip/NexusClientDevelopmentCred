@@ -113,6 +113,19 @@ public final class SelfTest {
             // name tag with its Nexus badge and DEV tag.
             System.setProperty("nexus.badgeTest", "DEVELOPER");
             mc.options.perspective = 1; // from behind: cape + name tag
+        } else if (worldTicks == 62 && mc.player != null) {
+            // Standing still, 1.8.9 doesn't turn the body to match the head; line it up so both wings face the camera.
+            mc.player.bodyYaw = mc.player.prevBodyYaw = mc.player.headYaw = mc.player.prevHeadYaw = mc.player.yaw;
+        } else if (worldTicks == 65) {
+            screenshot(mc, "selftest-cosmetics.png"); // Halo + Neon Wings, once any motion blur trail has faded
+        } else if (worldTicks == 50) {
+            com.nexusclient.core.NexusCore.get().emoteKey(); // Wave (Emotes), shown from the front at noon
+            com.nexusclient.core.NexusCore.get().get(com.nexusclient.core.module.Mods.TimeChanger.class).time.set(6000.0);
+            mc.options.perspective = 2;
+        } else if (worldTicks == 56) {
+            screenshot(mc, "selftest-emote.png");
+            com.nexusclient.core.NexusCore.get().get(com.nexusclient.core.module.Mods.TimeChanger.class).time.set(18000.0);
+            mc.options.perspective = 1;
         } else if (worldTicks == 66) {
             mc.options.perspective = 0;
         } else if (worldTicks == 69) {

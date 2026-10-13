@@ -81,6 +81,12 @@ public final class Toasts {
             double in = Math.min(1, age / (double) SLIDE_MS);
             double out = Math.max(0, (age - STAY_MS) / (double) SLIDE_MS);
             double shown = ease(in) * (1 - ease(out));
+            if (Accessibility.reducedMotion()) {
+                shown = age < STAY_MS ? 1 : 0; // reduced motion: appears and disappears without sliding
+                if (shown == 0) {
+                    continue; // its time is up: leave it out (it's removed once the slide-out time has passed)
+                }
+            }
             int x = (int) Math.round(r.width() - 6 - WIDTH * shown - 6 * (1 - shown));
             drawCard(r, toast, x, y, age);
             y -= HEIGHT + 4;

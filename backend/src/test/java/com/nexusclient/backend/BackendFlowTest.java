@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Runs the real backend (with an in-memory database) and plays through the main features as two
  * test players, Alice and Bob: sign-in, friends, live notifications, DMs (with the chat filter),
- * parties, share codes, blocking and reports.
+ * parties, share codes, emotes, blocking and reports.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("dev")
@@ -87,6 +87,15 @@ class BackendFlowTest {
         String code = json(call("POST", "/api/share", alice, "{\"kind\":\"HUD\",\"data\":\"NXH-abc\"}")).get("code").getAsString();
         assertTrue(code.matches("NX-[A-Z0-9]{4}-[A-Z0-9]{4}"), code);
         assertEquals("NXH-abc", json(call("GET", "/api/share/" + code.toLowerCase(), bob, null)).get("data").getAsString());
+
+        // Emotes: Alice wears Wave and joins Bob's server; pressing the emote key plays it for both.
+        assertEquals(200, call("POST", "/api/cosmetics/equip", alice, "{\"type\":\"EMOTE\",\"id\":\"wave\"}").statusCode());
+        sockets.get(alice).sendText("{\"type\":\"presence\",\"server\":\"mc.hypixel.net\"}", true);
+        sockets.get(alice).sendText("{\"type\":\"emote\"}", true);
+        JsonObject emote = next(bobEvents, "emote");
+        assertEquals(aliceUuid, emote.get("player").getAsString());
+        assertEquals("wave", emote.get("emote").getAsString());
+        assertEquals("wave", next(aliceEvents, "emote").get("emote").getAsString());
 
         // Blocking ends the friendship and stops DMs.
         call("POST", "/api/friends/block", bob, "{\"uuid\":\"" + aliceUuid + "\"}");

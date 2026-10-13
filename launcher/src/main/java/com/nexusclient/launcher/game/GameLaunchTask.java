@@ -182,6 +182,14 @@ public class GameLaunchTask extends Task<Integer> {
             if (SettingsStore.get().streamerMode) {
                 customJvmArgs += " -Dnexus.streamerMode=true";
             }
+            // Accessibility: the launcher's colourblind mode and reduced motion switch on in game too.
+            String colourblind = SettingsStore.get().colourblindMode;
+            if (colourblind != null && colourblind.matches("RED_GREEN|BLUE_YELLOW")) {
+                customJvmArgs += " -Dnexus.colourblind=" + colourblind;
+            }
+            if (SettingsStore.get().reducedMotion) {
+                customJvmArgs += " -Dnexus.reducedMotion=true";
+            }
             // …and where the shared tools folder is (so FFmpeg for clips is downloaded only once).
             customJvmArgs += " \"-Dnexus.toolsDir=" + NexusPaths.tools() + "\"";
             // A secretly-Fabric Vanilla instance loads only the hidden Nexus mods folder, never its own.

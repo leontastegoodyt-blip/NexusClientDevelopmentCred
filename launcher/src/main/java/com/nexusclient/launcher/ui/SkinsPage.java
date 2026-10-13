@@ -216,7 +216,7 @@ public class SkinsPage extends HBox {
 
     /**
      * Nexus cosmetics (capes, wings, hats, emotes) from the Nexus online server. Only other Nexus players
-     * see them. Capes show in-game now; wings, hats and emotes are coming. Everything is free for now.
+     * see them, in game on every version. Emotes play with the V key. Everything is free for now.
      */
     private void showCosmetics() {
         com.nexusclient.launcher.online.NexusOnline online = com.nexusclient.launcher.online.NexusOnline.get();
@@ -226,8 +226,8 @@ public class SkinsPage extends HBox {
             return online.get("/api/cosmetics").getAsJsonArray();
         }, items -> {
             VBox list = new VBox(8);
-            list.getChildren().add(note("Nexus cosmetics are only visible to other Nexus players. Capes show in-game "
-                    + "now; wings, hats and emotes are coming soon. Everything is free for now."));
+            list.getChildren().add(note("Only other Nexus players see Nexus cosmetics. Press V in game to play "
+                    + "your emote. Everything is free for now."));
             for (com.google.gson.JsonElement e : items) {
                 com.google.gson.JsonObject item = e.getAsJsonObject();
                 String id = item.get("id").getAsString();
@@ -246,7 +246,8 @@ public class SkinsPage extends HBox {
                 });
                 Label name = new Label(item.get("name").getAsString());
                 name.getStyleClass().add("mod-title");
-                Label kind = new Label(type.charAt(0) + type.substring(1).toLowerCase() + (equipped ? " · wearing" : ""));
+                Label kind = new Label(type.charAt(0) + type.substring(1).toLowerCase() + (equipped ? " · wearing" : "")
+                        + (type.equals("EMOTE") ? " · press V in game" : ""));
                 kind.getStyleClass().add("mod-meta");
                 VBox text = new VBox(2, name, kind);
                 HBox.setHgrow(text, Priority.ALWAYS);

@@ -79,6 +79,9 @@ public class NexusLegacy implements ClientModInitializer {
         while (LegacyKeys.ping.wasPressed()) {
             core.partyPingKey();
         }
+        while (LegacyKeys.emote.wasPressed()) {
+            core.emoteKey();
+        }
         // 1.7 Animations: clicking while blocking/eating swings the arm, like 1.7 (only on your
         // screen – this just starts the swing animation, nothing is sent to the server).
         if (mc.player != null && mc.player.isUsingItem() && mc.options.attackKey.isPressed()

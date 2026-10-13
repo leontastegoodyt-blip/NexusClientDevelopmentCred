@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * both be connected). The client tells us which server it's on:
  *   {"type": "presence", "server": "mc.hypixel.net"}    ("" = not on a server)
  *   {"type": "ping"}                                     → {"type": "pong"} (keeps the line open)
+ *   {"type": "emote"}                                    → plays their emote for players on the same server
  * Everything else a player does (send a DM, invite to a party…) goes through the normal /api/.
  */
 @Component
@@ -57,6 +58,17 @@ public class LiveHub extends TextWebSocketHandler {
     /** The server they're on ("" if none or offline). */
     public String serverOf(UUID player) {
         return isOnline(player) ? servers.getOrDefault(player, "") : "";
+    }
+
+    /** Everyone whose game is on this Minecraft server right now. */
+    public java.util.List<UUID> playersOn(String server) {
+        java.util.List<UUID> list = new java.util.ArrayList<>();
+        servers.forEach((player, on) -> {
+            if (on.equals(server) && isOnline(player)) {
+                list.add(player);
+            }
+        });
+        return list;
     }
 
     // ------------------------------------------------------------------ sending
@@ -113,6 +125,7 @@ public class LiveHub extends TextWebSocketHandler {
                     events.publishEvent(new PresenceChanged(player, true, server));
                 }
             }
+            case "emote" -> events.publishEvent(new EmoteRequested(player)); // see EmoteRelay
             case "ping" -> {
                 try {
                     session.sendMessage(new TextMessage(Event.of("pong").toJson()));

@@ -11,6 +11,7 @@ import com.nexusclient.core.settings.ChoiceSetting;
 import com.nexusclient.core.settings.ColorSetting;
 import com.nexusclient.core.settings.NumberSetting;
 import com.nexusclient.core.settings.TextSetting;
+import com.nexusclient.core.ui.Accessibility;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -259,7 +260,7 @@ public final class HudMods {
             for (int i = 0; i < bars; i++) {
                 float ms = frames[frames.length - bars + i];
                 int x = 3 + i;
-                int colour = ms <= 16.7f ? 0xFF3DDC97 : ms <= 33.3f ? 0xFFFFB547 : 0xFFFF4D6D; // green / amber / red
+                int colour = ms <= 16.7f ? Accessibility.good() : ms <= 33.3f ? Accessibility.warn() : Accessibility.bad(); // green / amber / red (or colourblind colours)
                 r.rect(x, base - barHeight(ms), x + 1, base, colour);
             }
 
@@ -527,7 +528,7 @@ public final class HudMods {
             String text = item.maxDamage > 0 ? String.valueOf(item.durabilityLeft())
                     : (item.count > 1 ? String.valueOf(item.count) : "");
             if (!text.isEmpty()) {
-                int colour = item.maxDamage > 0 && item.durabilityLeft() < item.maxDamage / 4 ? 0xFFFF6B5E : 0xFFFFFFFF;
+                int colour = item.maxDamage > 0 && item.durabilityLeft() < item.maxDamage / 4 ? Accessibility.bad() : 0xFFFFFFFF;
                 r.text(text, 20, y + 4, colour, true);
                 width = Math.max(width, 20 + r.textWidth(text));
             }

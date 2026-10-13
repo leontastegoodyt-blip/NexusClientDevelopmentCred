@@ -75,6 +75,8 @@ public class NowPlaying extends HudModule {
         int titleW = r.textWidth(title);
         if (titleW <= textW) {
             r.text(title, textX, 5, colour, textShadow.isOn());
+        } else if (com.nexusclient.core.ui.Accessibility.reducedMotion()) {
+            r.text(UiKit.fit(r, title, textW), textX, 5, colour, textShadow.isOn()); // reduced motion: no scrolling
         } else {
             // Slide left and back again, pausing at each end (a "marquee").
             int travel = titleW - textW;

@@ -186,6 +186,11 @@ public class FabricGameInfo implements GameInfo {
     }
 
     @Override
+    public java.util.UUID playerUuid() {
+        return mc.player == null ? null : mc.player.getUUID();
+    }
+
+    @Override
     public int[] windowBounds() {
         var window = mc.getWindow();
         return new int[] {window.getX(), window.getY(), window.getWidth(), window.getHeight()};

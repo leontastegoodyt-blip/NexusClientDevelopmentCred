@@ -1,6 +1,7 @@
 package com.nexusclient.core.module;
 
 import com.nexusclient.core.settings.BooleanSetting;
+import com.nexusclient.core.settings.ChoiceSetting;
 import com.nexusclient.core.settings.ColorSetting;
 
 /**
@@ -21,6 +22,13 @@ public class NexusSettings extends Module {
 
     /** the project brief: settings follow the player between PCs (online/SettingsSync). */
     public final BooleanSetting syncSettings = add(new BooleanSetting("syncSettings", "Sync settings with my Nexus account", true));
+
+    /** Accessibility (ui/Accessibility): colours that mean something stay easy to tell apart. */
+    public final ChoiceSetting colourblind = add(new ChoiceSetting("colourblind", "Colourblind mode", "Off",
+            "Off", "Red-green", "Blue-yellow"));
+
+    /** Accessibility: menus and pop-ups appear without sliding, and long text doesn't scroll. */
+    public final BooleanSetting reducedMotion = add(new BooleanSetting("reducedMotion", "Reduced motion", false));
 
     public NexusSettings() {
         super("nexusSettings", "Nexus Settings", "Settings for the Nexus menus and HUD.", Category.UTILITY, true, false);

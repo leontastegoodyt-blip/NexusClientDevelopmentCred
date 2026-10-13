@@ -14,6 +14,7 @@ import java.util.UUID;
  *   dm
  *   party.invite, party.update, party.left, party.chat, party.waypoint, party.warp
  *   notice (a message from Nexus, e.g. "You've been muted")
+ *   emote (a player near you plays their emote: player, emote)
  */
 public final class Event {
 
