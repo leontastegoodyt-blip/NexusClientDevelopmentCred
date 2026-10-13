@@ -1,0 +1,20 @@
+# The Nexus mod for Forge (Minecraft 1.20.1). Forge reads this file to know what the mod is.
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All-Rights-Reserved"
+
+[[mods]]
+modId="nexusclient"
+version="${version}"
+displayName="Nexus Client"
+authors="Nexus Client"
+description='''
+The Nexus Client in-game mod: mod menu (Right Shift), HUD editor, HUD, PvP, visual, chat and utility mods.
+'''
+
+[[dependencies.nexusclient]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="CLIENT"

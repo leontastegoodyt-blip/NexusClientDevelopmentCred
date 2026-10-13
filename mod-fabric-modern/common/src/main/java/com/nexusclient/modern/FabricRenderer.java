@@ -80,7 +80,7 @@ public class FabricRenderer implements Renderer {
 
     @Override
     public void enableClip(int x1, int y1, int x2, int y2) {
-        graphics.enableScissor(x1, y1, x2, y2);
+        VersionHooks.scissor(graphics, x1, y1, x2, y2); // 1.20.x needs the pose applied by hand
     }
 
     @Override

@@ -42,4 +42,8 @@ for (version in listOf("1.20.1", "1.20.4", "1.20.6", "1.21.4", "1.21.11")) {
 // The 1.8.9 mod (Legacy Fabric) is its own small build, because its build tool needs an older
 // Fabric Loom than mod-fabric uses (see mod-legacy/settings.gradle.kts). Its tasks still run from
 // here, e.g. gradlew :mod-legacy:build
+// The Nexus mod for Forge on Minecraft 1.20.1 (the 1.20.1 Fabric code, renamed to Forge's names).
+include("mod-forge-1.20.1")
+project(":mod-forge-1.20.1").projectDir = file("mod-forge/1.20.1")
+
 includeBuild("mod-legacy")

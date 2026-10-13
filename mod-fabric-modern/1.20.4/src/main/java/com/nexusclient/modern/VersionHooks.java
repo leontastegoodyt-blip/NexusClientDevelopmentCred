@@ -191,7 +191,23 @@ public final class VersionHooks {
             picture.texture.upload();
             picture.version = version;
         }
+        // On 1.20.x, shapes and text wait in a batch while blit draws at once, so the batch (e.g. the
+        // minimap's dark frame) would land ON TOP of the picture. Draw the batch first.
+        graphics.flush();
         graphics.blit(picture.location, x1, y1, x2 - x1, y2 - y1, 0f, 0f, w, h, w, h);
+    }
+
+    /**
+     * Starts clipping to a rectangle. On 1.20.x Minecraft's enableScissor ignores where drawing has been
+     * moved to (the pose), so a moved HUD element would clip in the wrong place – the corners are
+     * moved here first (1.21+ does this itself).
+     */
+    public static void scissor(net.minecraft.client.gui.GuiGraphics graphics, int x1, int y1, int x2, int y2) {
+        org.joml.Matrix4f pose = graphics.pose().last().pose();
+        org.joml.Vector3f a = pose.transformPosition(x1, y1, 0, new org.joml.Vector3f());
+        org.joml.Vector3f b = pose.transformPosition(x2, y2, 0, new org.joml.Vector3f());
+        graphics.enableScissor(Math.round(Math.min(a.x, b.x)), Math.round(Math.min(a.y, b.y)),
+                Math.round(Math.max(a.x, b.x)), Math.round(Math.max(a.y, b.y)));
     }
 
     /** Minecraft's main picture (the world, before the HUD is drawn on it): {OpenGL texture, width, height}. */

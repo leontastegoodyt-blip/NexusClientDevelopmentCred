@@ -61,6 +61,11 @@ tasks.processResources {
         into("com/nexusclient/launcher/nexus-mod")
         rename { "nexus-client-forge-26.3.jar" }
     }
+    // The Forge 1.20.1 build (mod-forge/1.20.1): the 1.20.1 code renamed to Forge's names.
+    from(project(":mod-forge-1.20.1").tasks.named("remapForgeJar")) {
+        into("com/nexusclient/launcher/nexus-mod")
+        rename { "nexus-client-forge-1.20.1.jar" }
+    }
     // The 1.8.9 mod is its own build (mod-legacy), so it's built first and its file copied in.
     dependsOn(gradle.includedBuild("mod-legacy").task(":remapJar"))
     from(rootProject.file("mod-legacy/build/libs/nexus-client-legacy-1.8.9-0.1.0.jar")) {

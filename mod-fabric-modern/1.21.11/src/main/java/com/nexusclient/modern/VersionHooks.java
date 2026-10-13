@@ -172,6 +172,11 @@ public final class VersionHooks {
         graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, picture.location, x1, y1, 0f, 0f, x2 - x1, y2 - y1, w, h, w, h);
     }
 
+    /** Starts clipping to a rectangle (Minecraft applies the current pose itself since 1.21). */
+    public static void scissor(net.minecraft.client.gui.GuiGraphics graphics, int x1, int y1, int x2, int y2) {
+        graphics.enableScissor(x1, y1, x2, y2);
+    }
+
     /** Minecraft's main picture (the world, before the HUD is drawn on it): {OpenGL texture, width, height}. */
     public static int[] mainPicture() {
         com.mojang.blaze3d.pipeline.RenderTarget target = Minecraft.getInstance().getMainRenderTarget();

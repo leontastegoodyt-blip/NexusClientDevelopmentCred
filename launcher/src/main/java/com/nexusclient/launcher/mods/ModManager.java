@@ -311,8 +311,13 @@ public final class ModManager {
             Map.entry("1.20", new NexusModBuild("nexus-client-fabric-1.20.1.jar", true)),
             Map.entry("1.8.9", new NexusModBuild("nexus-client-legacy-1.8.9.jar", false)));
 
-    /** The Forge builds of the Nexus mod (only 26.3 so far: it isn't scrambled, so the Fabric code runs on Forge too). */
-    private static final Map<String, String> NEXUS_FORGE_BUILDS = Map.of("26.3", "nexus-client-forge-26.3.jar");
+    /**
+     * The Forge builds of the Nexus mod: 26.3 (not scrambled, so the Fabric code runs on Forge as it is)
+     * and 1.20.1 (the Fabric 1.20.1 code renamed to Forge's names – see mod-forge/1.20.1).
+     */
+    private static final Map<String, String> NEXUS_FORGE_BUILDS = Map.of(
+            "26.3", "nexus-client-forge-26.3.jar",
+            "1.20.1", "nexus-client-forge-1.20.1.jar");
 
     /** True if this launcher carries the Forge build of the Nexus mod for that Minecraft version. */
     public static boolean hasNexusForgeMod(String gameVersion) {

@@ -671,7 +671,7 @@ public class HomePage extends BorderPane {
             MinecraftVersion version = instancePanel.resolveVersion(instance);
             if (version != null && !instance.getsNexusMod(version.id())) {
                 status.setText(Instance.FORGE.equals(instance.loaderOrVanilla())
-                        ? "On Forge the Nexus mod (Right Shift menu, HUD) runs on 26.3 only so far."
+                        ? "On Forge the Nexus mod (Right Shift menu, HUD) runs on 1.20.1 and 26.3."
                         : "The Nexus mod isn't ready for " + version.id() + " yet, so this plays without it. Pick "
                                 + ModManager.nexusModVersionsText() + " to get it.");
             }
