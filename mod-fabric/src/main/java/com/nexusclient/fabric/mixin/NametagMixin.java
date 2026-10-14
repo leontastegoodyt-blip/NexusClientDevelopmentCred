@@ -22,7 +22,7 @@ public class NametagMixin {
     private void nexus$ownNametag(CallbackInfoReturnable<Boolean> cir, @Local(argsOnly = true) LivingEntity entity) {
         Mods.Nametags nametags = NexusCore.get().get(Mods.Nametags.class);
         Minecraft mc = Minecraft.getInstance();
-        if (nametags.isActive() && nametags.ownNametag.isOn() && entity == mc.player && !mc.gui.hud.isHidden()) {
+        if (nametags.isActive() && nametags.ownNametag.isOn() && entity == mc.player && !com.nexusclient.fabric.Compat.hudHidden(mc)) {
             cir.setReturnValue(true);
         }
     }

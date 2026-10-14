@@ -23,7 +23,7 @@ public class MouseHandlerMixin {
 
     @Inject(method = "onButton", at = @At("HEAD"))
     private void nexus$countClick(long window, MouseButtonInfo info, int action, CallbackInfo ci) {
-        if (action == 1 && Minecraft.getInstance().gui.screen() == null) { // 1 = pressed
+        if (action == 1 && com.nexusclient.fabric.Compat.screen(Minecraft.getInstance()) == null) { // 1 = pressed
             InputTracker.click(NexusScreenWrapper.toCoreButton(info.button()));
         }
     }

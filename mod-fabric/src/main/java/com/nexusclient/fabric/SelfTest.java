@@ -34,25 +34,27 @@ public final class SelfTest {
     /** Called every tick by NexusGame. */
     public static void tick(Minecraft mc) {
         if (ticks < 0) {
-            if (mc.gui.screen() instanceof TitleScreen) {
+            if (com.nexusclient.fabric.Compat.screen(mc) instanceof TitleScreen) {
                 ticks = 0; // the game has finished loading – start the test
-            } else if (mc.gui.screen() instanceof AccessibilityOnboardingScreen) {
+            } else if (com.nexusclient.fabric.Compat.screen(mc) instanceof AccessibilityOnboardingScreen) {
                 // Minecraft's very-first-start screen doesn't always move on by itself – skip it.
                 mc.setScreenAndShow(new TitleScreen());
             } else if (++waitTicks % 100 == 0) {
-                System.out.println("[Nexus] self-test waiting for the title screen: screen = " + mc.gui.screen());
+                System.out.println("[Nexus] self-test waiting for the title screen: screen = " + com.nexusclient.fabric.Compat.screen(mc));
             }
             return;
         }
         ticks++;
         if (ticks % 20 == 0) {
-            Object screen = mc.gui.screen();
+            Object screen = com.nexusclient.fabric.Compat.screen(mc);
             System.out.println("[Nexus] self-test tick " + ticks + ": screen = "
                     + (screen instanceof NexusScreenWrapper w ? w.screen().getClass().getSimpleName()
                     : screen == null ? "none" : screen.getClass().getSimpleName()));
         }
         com.nexusclient.core.dfr.Dfr dfr = NexusCore.get().get(com.nexusclient.core.dfr.Dfr.class);
         if (ticks == 10) {
+            // Always generate (the test PC may be faster than half the refresh rate, where DFR would rest).
+            System.setProperty("nexus.dfr.force", "true");
             dfr.mode.set("Creative"); // Smooth blending
             dfr.setEnabled(true);
         }
@@ -74,9 +76,9 @@ public final class SelfTest {
                         + ", zoom = " + NexusGame.zoomKey.getTranslatedKeyMessage().getString());
                 NexusCore.get().platform().openScreen(new ModMenu());
             }
-            case 160 -> Screenshot.grab(mc, false);
+            case 160 -> Compat.screenshot(mc);
             case 180 -> NexusCore.get().platform().openScreen(new HudEditor());
-            case 240 -> Screenshot.grab(mc, false);
+            case 240 -> Compat.screenshot(mc);
             case 260 -> {
                 mc.options.pauseOnLostFocus = false; // a pause menu would block the Right Shift check
                 mc.setScreenAndShow(null);
@@ -99,7 +101,7 @@ public final class SelfTest {
     /** The in-world part: waits for the world, then presses Right Shift like a player would. */
     private static void worldTest(Minecraft mc) {
         if (worldTicks < 0) {
-            if (mc.level != null && mc.player != null && mc.gui.screen() == null) {
+            if (mc.level != null && mc.player != null && com.nexusclient.fabric.Compat.screen(mc) == null) {
                 worldTicks = 0;
                 System.out.println("[Nexus] self-test in the test world");
             }
@@ -134,36 +136,36 @@ public final class SelfTest {
             com.nexusclient.core.NexusCore.get().get(com.nexusclient.core.module.Mods.TimeChanger.class).time.set(6000.0);
             mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT);
         } else if (worldTicks == 56) {
-            Screenshot.grab(mc, false); // the wave, from the front
+            Compat.screenshot(mc); // the wave, from the front
             com.nexusclient.core.NexusCore.get().get(com.nexusclient.core.module.Mods.TimeChanger.class).time.set(18000.0);
             mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK);
         } else if (worldTicks == 66) {
             mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
         } else if (worldTicks == 69) {
-            Screenshot.grab(mc, false); // first person: minimap + waypoint marker
+            Compat.screenshot(mc); // first person: minimap + waypoint marker
         } else if (worldTicks == 60) {
-            Screenshot.grab(mc, false);
+            Compat.screenshot(mc);
         } else if (worldTicks == 70) {
             // The same call Minecraft makes when the player presses the key bound to the menu.
             NexusGame.click(NexusGame.menuKey);
         } else if (worldTicks == 72) {
-            boolean opened = mc.gui.screen() instanceof NexusScreenWrapper w && w.screen() instanceof ModMenu;
+            boolean opened = com.nexusclient.fabric.Compat.screen(mc) instanceof NexusScreenWrapper w && w.screen() instanceof ModMenu;
             System.out.println(opened ? "[Nexus] self-test PASSED: Right Shift opened the mod menu"
-                    : "[Nexus] self-test FAILED: Right Shift didn't open the mod menu (" + mc.gui.screen() + ")");
+                    : "[Nexus] self-test FAILED: Right Shift didn't open the mod menu (" + com.nexusclient.fabric.Compat.screen(mc) + ")");
         } else if (worldTicks == 100) {
-            Screenshot.grab(mc, false);
+            Compat.screenshot(mc);
         } else if (worldTicks == 104) {
             // A mod's settings page, for the screenshot below.
             NexusCore.get().platform().openScreen(com.nexusclient.core.ui.ModMenu.forModule(NexusCore.get().module("crosshair")));
         } else if (worldTicks == 114) {
-            Screenshot.grab(mc, false);
+            Compat.screenshot(mc);
         } else if (worldTicks == 118) {
             NexusCore.get().platform().closeScreen();
         } else if (worldTicks > 120 && worldTicks < 136 && mc.player != null) {
             // Motion Blur (switched on by SelfTestMods): spin the camera so the screenshot shows a trail.
             mc.player.setYRot(mc.player.getYRot() + 12);
             if (worldTicks == 135) {
-                Screenshot.grab(mc, false);
+                Compat.screenshot(mc);
             }
         } else if (worldTicks >= 140 && (!com.nexusclient.core.util.SocialSelfTest.wanted()
                 || com.nexusclient.core.util.SocialSelfTest.step(worldTicks - 140))) {

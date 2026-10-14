@@ -26,7 +26,7 @@ public final class ChatCopy {
             return false;
         }
         Minecraft mc = Minecraft.getInstance();
-        ChatComponent chat = mc.gui.hud.getChat();
+        ChatComponent chat = com.nexusclient.fabric.Compat.chat(mc);
         ChatComponentAccessor access = (ChatComponentAccessor) chat;
         List<GuiMessage.Line> lines = access.nexus$lines();
 
@@ -43,7 +43,7 @@ public final class ChatCopy {
             return false;
         }
         mc.keyboardHandler.setClipboard(lines.get(index).parent().content().getString());
-        mc.gui.hud.setOverlayMessage(Component.literal("Copied chat message"), false);
+        com.nexusclient.fabric.Compat.overlayMessage(mc, Component.literal("Copied chat message"));
         return true;
     }
 }

@@ -2,7 +2,6 @@ package com.nexusclient.fabric.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import com.nexusclient.core.NexusCore;
 import com.nexusclient.core.module.Mods;
 import net.minecraft.client.renderer.entity.ItemEntityRenderer;
@@ -36,7 +35,7 @@ public class ItemPhysicsMixin {
             require = 0)
     private void nexus$layFlat(CallbackInfo ci, @Local(argsOnly = true) PoseStack poseStack) {
         if (active()) {
-            poseStack.rotateDegrees(Axis.XP, 90);
+            com.nexusclient.fabric.Compat.rotateX90(poseStack);
         }
     }
 

@@ -56,6 +56,17 @@ tasks.processResources {
             rename { "nexus-client-fabric-$version.jar" }
         }
     }
+    // The older 26.x builds (mod-fabric/<version>, mod-forge/<version>).
+    for (version in listOf("26.2", "26.1.2")) {
+        from(project(":mod-fabric-$version").tasks.named("jar")) {
+            into("com/nexusclient/launcher/nexus-mod")
+            rename { "nexus-client-fabric-$version.jar" }
+        }
+        from(project(":mod-forge-$version").tasks.named("jar")) {
+            into("com/nexusclient/launcher/nexus-mod")
+            rename { "nexus-client-forge-$version.jar" }
+        }
+    }
     // The Forge 26.3 build (mod-forge): the same code as the Fabric 26.3 mod, started by Forge.
     from(project(":mod-forge").tasks.named("jar")) {
         into("com/nexusclient/launcher/nexus-mod")

@@ -18,10 +18,10 @@ import java.util.zip.ZipFile;
  *
  *   LEGACY  – 1.8.9:      fancyGraphics, renderClouds, ao (0/1/2), maxFps
  *   MIDDLE  – 1.16–1.21:  graphicsMode (0/1/2), renderClouds ("true"/"fast"/"false"), ao (true/false), maxFps
- *   NEW     – 26.x:       graphicsPreset ("fast"/"fancy"/"fabulous"), cloudStatus, ambientOcclusion, framerateLimit
+ *   NEW     – 26.x:       graphicsPreset ("fast"/"fancy"/"fabulous"); the rest as MIDDLE
  *
- * (The NEW names were found by looking inside the Minecraft 26.3 game file. Check them in-game if a
- * future version changes them again.)
+ * (The NEW names were checked in options.txt files written by Minecraft 26.1.2, 26.2 and 26.3
+ * themselves. Check again if a future version changes them.)
  *
  * The file also has a "version" line – Minecraft's "data version". If it's missing, Minecraft
  * assumes the file is ancient and tries to convert it, so we always write the right one. It comes
@@ -85,9 +85,13 @@ public final class OptionsFile {
             case NEW -> {
                 options.put("simulationDistance", String.valueOf(plan.simulationDistance()));
                 options.put("graphicsPreset", "\"" + plan.graphics().toLowerCase() + "\"");
-                options.put("cloudStatus", clouds(plan, true));
-                options.put("ambientOcclusion", String.valueOf(plan.smoothLighting()));
-                options.put("framerateLimit", String.valueOf(plan.maxFps()));
+                options.put("renderClouds", clouds(plan, true));
+                options.put("ao", String.valueOf(plan.smoothLighting()));
+                options.put("maxFps", String.valueOf(plan.maxFps()));
+                // Names from an older guess that the game never read – remove them so the file stays clean.
+                options.remove("cloudStatus");
+                options.remove("ambientOcclusion");
+                options.remove("framerateLimit");
             }
         }
         write(file, options);

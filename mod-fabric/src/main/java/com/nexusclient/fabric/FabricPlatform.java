@@ -42,14 +42,14 @@ public class FabricPlatform implements Platform {
     @Override
     public void showNotice(String message) {
         // "[Nexus] message" in chat, only on this player's screen (never sent to the server).
-        mc.gui.hud.getChat().addClientSystemMessage(Component.literal("[Nexus] ")
+        com.nexusclient.fabric.Compat.chat(mc).addClientSystemMessage(Component.literal("[Nexus] ")
                 .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0x3AA8FF)))
                 .append(Component.literal(message).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xC8C8D8)))));
     }
 
     @Override
     public void showChatLine(String tag, int tagRgb, String text) {
-        mc.gui.hud.getChat().addClientSystemMessage(Component.literal(tag)
+        com.nexusclient.fabric.Compat.chat(mc).addClientSystemMessage(Component.literal(tag)
                 .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(tagRgb)))
                 .append(Component.literal(text).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(0xE4E4EE)))));
     }

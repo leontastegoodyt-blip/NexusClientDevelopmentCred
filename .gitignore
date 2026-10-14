@@ -21,8 +21,11 @@ Thumbs.db
 # Keep the Gradle Wrapper's jar file – it is needed to run gradlew
 !gradle/wrapper/gradle-wrapper.jar
 
-# The Fabric mod's test game folder (gradlew :mod-fabric:runClient)
+# The Fabric mod's test game folders (gradlew :mod-fabric:runClient, :mod-fabric-<version>:runClient)
 mod-fabric/run/
+mod-fabric/*/run/
+mod-forge/run/
+mod-forge/*/run/
 
 # The backend's development database (a local file, made by gradlew :backend:bootRun)
 backend/data/

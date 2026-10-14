@@ -88,7 +88,7 @@ public final class NexusGame {
     /** Draws every switched-on HUD mod on top of the normal game HUD. */
     public static void drawHud(GuiGraphicsExtractor graphics) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.gui.screen() instanceof NexusScreenWrapper wrapper && wrapper.screen() instanceof HudEditor) {
+        if (com.nexusclient.fabric.Compat.screen(mc) instanceof NexusScreenWrapper wrapper && wrapper.screen() instanceof HudEditor) {
             return; // the HUD editor draws the HUD itself (so it can be dragged around)
         }
         NexusCore.get().renderHud(new FabricRenderer(graphics));
@@ -141,7 +141,7 @@ public final class NexusGame {
         BadgeText.tick(mc); // Nexus badges in front of names
         GlintTint.tick();   // Enchant Glint Colour
         while (menuKey.consumeClick()) {
-            if (mc.gui.screen() == null) {
+            if (com.nexusclient.fabric.Compat.screen(mc) == null) {
                 core.platform().openScreen(new ModMenu());
             }
         }
@@ -253,7 +253,7 @@ public final class NexusGame {
      */
     private static void freelook(Minecraft mc, NexusCore core) {
         Mods.Freelook freelook = core.get(Mods.Freelook.class);
-        boolean wanted = freelook.isActive() && freelookKey.isDown() && mc.gui.screen() == null && mc.player != null;
+        boolean wanted = freelook.isActive() && freelookKey.isDown() && com.nexusclient.fabric.Compat.screen(mc) == null && mc.player != null;
         if (wanted && !freelook.looking) {
             freelook.start(mc.player.getYRot(), mc.player.getXRot());
             freelook.savedView = mc.options.getCameraType();

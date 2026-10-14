@@ -198,14 +198,12 @@ public class FabricGameInfo implements GameInfo {
 
     @Override
     public boolean fullscreen() {
-        var window = mc.getWindow();
-        return window.isExclusiveFullscreen()
-                || (window.getWidth() >= window.getScreenWidth() && window.getHeight() >= window.getScreenHeight());
+        return Compat.fullscreen(mc.getWindow());
     }
 
     @Override
     public boolean menuOpen() {
-        return mc.gui.screen() != null;
+        return com.nexusclient.fabric.Compat.screen(mc) != null;
     }
 
     // ------------------------------------------------------------------ waypoints and minimap
@@ -303,15 +301,9 @@ public class FabricGameInfo implements GameInfo {
         net.minecraft.world.scores.Scoreboard board = mc.level.getScoreboard();
         net.minecraft.world.scores.Objective objective = null;
         net.minecraft.world.scores.PlayerTeam team = board.getPlayersTeam(mc.player.getScoreboardName());
-        if (team != null) {
-            if (team.getColor().isPresent()) { // a team's own sidebar ("sidebar.team.red" …)
-                String name = "sidebar.team." + team.getColor().get().getSerializedName();
-                for (net.minecraft.world.scores.DisplaySlot slot : net.minecraft.world.scores.DisplaySlot.values()) {
-                    if (slot.getSerializedName().equals(name)) {
-                        objective = board.getDisplayObjective(slot);
-                    }
-                }
-            }
+        net.minecraft.world.scores.DisplaySlot teamSlot = team == null ? null : Compat.teamSidebar(team);
+        if (teamSlot != null) { // a team's own sidebar ("sidebar.team.red" …)
+            objective = board.getDisplayObjective(teamSlot);
         }
         if (objective == null) {
             objective = board.getDisplayObjective(net.minecraft.world.scores.DisplaySlot.SIDEBAR);
@@ -340,7 +332,7 @@ public class FabricGameInfo implements GameInfo {
         if (!inWorld()) {
             return bars;
         }
-        var events = ((com.nexusclient.fabric.mixin.BossHealthOverlayAccessor) mc.gui.hud.getBossOverlay()).nexus$events();
+        var events = ((com.nexusclient.fabric.mixin.BossHealthOverlayAccessor) com.nexusclient.fabric.Compat.bossOverlay(mc)).nexus$events();
         for (net.minecraft.client.gui.components.LerpingBossEvent event : events.values()) {
             bars.add(TextCodes.legacy(event.getName()) + "\t" + event.getProgress() + "\t" + event.getColor().name());
         }

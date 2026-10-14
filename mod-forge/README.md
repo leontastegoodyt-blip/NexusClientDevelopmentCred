@@ -1,8 +1,8 @@
 # mod-forge
 
-The Nexus in-game mod for **Forge**: Minecraft **26.3** (this folder) and **1.20.1** (`1.20.1/`).
-Neither has its own copy of the game code – both reuse the Fabric code and only add a Forge
-start-up class.
+The Nexus in-game mod for **Forge**: Minecraft **26.3** (this folder), **26.2** (`26.2/`),
+**26.1.2** (`26.1.2/`) and **1.20.1** (`1.20.1/`). None has its own copy of the game code – they all
+reuse the Fabric code and only add a Forge start-up class.
 
 ## Forge 26.3 (this folder, project `:mod-forge`)
 
@@ -16,6 +16,13 @@ Fabric. This build reuses the Fabric 26.3 mod's code (`mod-fabric`, including al
   while loading).
 - Forge's Mixin (0.8.7) understands Java levels up to 21, so the build marks the mixin classes as
   Java 21 and sets `"compatibilityLevel": "JAVA_21"` in the mixin config. Everything else is Java 25.
+
+## Forge 26.2 and 26.1.2 (`26.2/`, `26.1.2/`, projects `:mod-forge-26.2` and `:mod-forge-26.1.2`)
+
+The same as Forge 26.3, but built from the matching Fabric version: the build takes files from (most
+specific first) its own `src/`, then `mod-fabric/<version>/src`, then this folder's `src/`, then
+`mod-fabric/src` – a file found earlier wins. Each has its own `pack.mcmeta` (the pack format number
+differs per version: 26.2 = 107, 26.1.2 = 101), and the build sets the version range in `mods.toml`.
 
 ## Forge 1.20.1 (`1.20.1/`, project `:mod-forge-1.20.1`)
 
@@ -36,8 +43,9 @@ use one `@ModifyArg` per argument instead.
 ## Commands (from the project root)
 
 - `gradlew :mod-forge:build` → `mod-forge/build/libs/nexus-client-forge-26.3-0.1.0.jar`
+- `gradlew :mod-forge-26.2:build` / `:mod-forge-26.1.2:build` → `mod-forge/<version>/build/libs/`
 - `gradlew :mod-forge-1.20.1:build` → `mod-forge/1.20.1/build/libs/nexus-client-forge-1.20.1-0.1.0.jar`
 
-The launcher carries both jars and puts the right one into Forge instances
+The launcher carries all four jars and puts the right one into Forge instances
 (`ModManager.NEXUS_FORGE_BUILDS`). Other Forge versions (1.20.2–1.21.x) would work the same way as
 1.20.1 (their own MCPConfig), but aren't set up yet.

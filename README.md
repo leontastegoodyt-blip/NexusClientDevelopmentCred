@@ -12,10 +12,10 @@ smoother gameplay.
 |---|---|
 | `launcher/` | The desktop app players open (Java + JavaFX): instances, Microsoft sign-in, Modrinth mods/packs/shaders, TorcherRig hardware optimiser, Game Error Scan, tools, friends, clans |
 | `mod-core/` | The in-game mod's shared code: Right Shift mod menu, HUD editor, HUD/PvP/visual/chat/utility mods, settings, DFR logic. Written once, used by every Minecraft version |
-| `mod-fabric/` | The in-game mod for Fabric on Minecraft **26.3** (includes DFR and capes) |
+| `mod-fabric/` | The in-game mod for Fabric on Minecraft **26.3, 26.2 and 26.1.2** (see its README) |
 | `mod-fabric-modern/` | The in-game mod for Fabric on Minecraft **1.20 – 1.20.6, 1.21.4 and 1.21.11** (see its README) |
 | `mod-legacy/` | The in-game mod for Minecraft **1.8.9** on Legacy Fabric (its own small Gradle build) |
-| `mod-forge/` | Placeholder – Forge isn't supported yet |
+| `mod-forge/` | The in-game mod for Forge on Minecraft **26.3, 26.2, 26.1.2 and 1.20.1** (reuses the Fabric code; see its README) |
 | `backend/` | The online server (Spring Boot): accounts, friends, DMs, parties, clans, Partner Servers, cosmetics |
 | `docs/` | Release checklist, the guide for server owners (`server-rules.md`), draft privacy policy and terms |
 
@@ -33,7 +33,7 @@ on Windows and `./gradlew` on Mac/Linux.
 |---|---|
 | `gradlew :launcher:run` | Opens the launcher (developer mode: an offline test player if nobody is signed in) |
 | `gradlew assemble` | Builds everything |
-| `gradlew :mod-fabric:runClient` | Opens Minecraft 26.3 with the Nexus mod |
+| `gradlew :mod-fabric:runClient` | Opens Minecraft 26.3 with the Nexus mod (also `:mod-fabric-26.2:`, `:mod-fabric-26.1.2:`) |
 | `gradlew :mod-fabric-1.20.1:runClient` | Same for 1.20.1 (also `-1.20.4`, `-1.20.6`, `-1.21.4`, `-1.21.11`) |
 | `gradlew :mod-legacy:runClient` | Same for 1.8.9 |
 | `gradlew :backend:bootRun` | Starts the online server at http://localhost:8080 |
@@ -48,10 +48,11 @@ HUD editor, joins a test world, presses Right Shift and saves screenshots to tha
 
 | Version | Mod loader | Status |
 |---|---|---|
-| 26.3 (latest) | Fabric | ✅ all built mods + DFR + capes |
+| 26.3 (latest), 26.2, 26.1.2 | Fabric and Forge | ✅ all built mods + DFR + cosmetics |
 | 1.21.11, 1.21.4 | Fabric | ✅ |
 | 1.20 – 1.20.6 | Fabric | ✅ |
 | 1.8.9 | Legacy Fabric | ✅ (1.7 animations coming) |
-| Any version | Forge | ⏳ not yet |
+| 1.20.1 | Forge | ✅ |
+| Other 1.20.x / 1.21.x | Forge | ⏳ the game runs, without the Nexus mod |
 
 See [`docs/release-checklist.md`](docs/release-checklist.md) for what's left before a public release.

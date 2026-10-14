@@ -28,7 +28,7 @@ public final class VersionManifest {
     private static final String LEGACY_VERSION = "1.8.9";
 
     /** Extra popular versions the owner asked for, besides the newest, every 1.20.x, and 1.8.9. */
-    private static final List<String> EXTRA_VERSIONS = List.of("1.21.11", "1.21.4");
+    private static final List<String> EXTRA_VERSIONS = List.of("26.2", "26.1.2", "1.21.11", "1.21.4");
 
     // These two records describe the shape of Mojang's JSON so Gson can read it.
     // The JSON looks like: { "latest": { "release": "26.3", ... }, "versions": [ ... ] }
@@ -41,7 +41,7 @@ public final class VersionManifest {
 
     /**
      * Downloads the version list from Mojang and returns the versions Nexus supports:
-     * the newest release, 1.21.11, 1.21.4, every 1.20.x release, and 1.8.9.
+     * the newest release, 26.2, 26.1.2, 1.21.11, 1.21.4, every 1.20.x release, and 1.8.9.
      *
      * The FIRST entry in the returned list is always the newest release.
      *
@@ -82,7 +82,7 @@ public final class VersionManifest {
         String latestId = manifest.latest().release();
 
         // Mojang lists versions newest first, so our list ends up newest first too:
-        // e.g. 26.3, 1.21.11, 1.21.4, 1.20.6 … 1.20, 1.8.9
+        // e.g. 26.3, 26.2, 26.1.2, 1.21.11, 1.21.4, 1.20.6 … 1.20, 1.8.9
         List<MinecraftVersion> supported = new ArrayList<>();
         for (MinecraftVersion version : manifest.versions()) {
             if (!version.type().equals("release")) {
