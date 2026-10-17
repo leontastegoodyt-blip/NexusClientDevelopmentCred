@@ -15,7 +15,7 @@ smoother gameplay.
 | `mod-fabric/` | The in-game mod for Fabric on Minecraft **26.3, 26.2 and 26.1.2** (see its README) |
 | `mod-fabric-modern/` | The in-game mod for Fabric on Minecraft **1.20 – 1.20.6, 1.21.4 and 1.21.11** (see its README) |
 | `mod-legacy/` | The in-game mod for Minecraft **1.8.9** on Legacy Fabric (its own small Gradle build) |
-| `mod-forge/` | The in-game mod for Forge on Minecraft **26.3, 26.2, 26.1.2 and 1.20.1** (reuses the Fabric code; see its README) |
+| `mod-forge/` | The in-game mod for Forge on Minecraft **26.3, 26.2, 26.1.2, 1.21.11, 1.21.4, 1.20.6, 1.20.4 and 1.20.1** (reuses the Fabric code; see its README) |
 | `backend/` | The online server (Spring Boot): accounts, friends, DMs, parties, clans, Partner Servers, cosmetics |
 | `docs/` | Release checklist, the guide for server owners (`server-rules.md`), draft privacy policy and terms |
 
@@ -52,7 +52,7 @@ HUD editor, joins a test world, presses Right Shift and saves screenshots to tha
 | 1.21.11, 1.21.4 | Fabric | ✅ |
 | 1.20 – 1.20.6 | Fabric | ✅ |
 | 1.8.9 | Legacy Fabric | ✅ (1.7 animations coming) |
-| 1.20.1 | Forge | ✅ |
-| Other 1.20.x / 1.21.x | Forge | ⏳ the game runs, without the Nexus mod |
+| 1.21.11, 1.21.4, 1.20.6, 1.20.4, 1.20.1 | Forge | ✅ |
+| 1.20, 1.20.2, 1.20.3 | Forge | ⏳ the game runs, without the Nexus mod |
 
 See [`docs/release-checklist.md`](docs/release-checklist.md) for what's left before a public release.

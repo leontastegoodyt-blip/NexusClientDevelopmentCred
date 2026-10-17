@@ -1,0 +1,7 @@
+{
+  "pack": {
+    "description": "Nexus Client",
+    "pack_format": 61,
+    "supported_formats": [46, 61]
+  }
+}

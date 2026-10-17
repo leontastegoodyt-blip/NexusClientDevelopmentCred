@@ -1,8 +1,9 @@
 # mod-forge
 
 The Nexus in-game mod for **Forge**: Minecraft **26.3** (this folder), **26.2** (`26.2/`),
-**26.1.2** (`26.1.2/`) and **1.20.1** (`1.20.1/`). None has its own copy of the game code – they all
-reuse the Fabric code and only add a Forge start-up class.
+**26.1.2** (`26.1.2/`), **1.21.11**, **1.21.4**, **1.20.6**, **1.20.4** (`modern/` + a folder each) and
+**1.20.1** (`1.20.1/`). None has its own copy of the game code – they all reuse the Fabric code and
+only add a Forge start-up class.
 
 ## Forge 26.3 (this folder, project `:mod-forge`)
 
@@ -40,12 +41,31 @@ Forge 1.20.1 runs Minecraft with Mojang's class names but scrambled method and f
 Watch out: `@ModifyArgs` doesn't work on Forge (it needs a class Forge's class loader can't make) –
 use one `@ModifyArg` per argument instead.
 
+## Forge 1.20.4, 1.20.6, 1.21.4 and 1.21.11 (`modern/` + `1.20.4/`, `1.20.6/`, `1.21.4/`, `1.21.11/`)
+
+Each builds the Fabric code for the same version (`mod-fabric-modern`: common + its shared folders +
+the version folder, minus the three Fabric-only files) plus the Forge start-up class
+`modern/…/NexusForgeModern`. All four version folders have the same `build.gradle.kts`; what differs
+is in their `gradle.properties`:
+
+| Forge | Names in the game | Mixin | Notes |
+|---|---|---|---|
+| 1.20.4 (49) | SRG, like 1.20.1 | 0.8.5 | the jar is renamed like 1.20.1 (`mcp_config`) |
+| 1.20.6 (50) | Mojang's | 0.8.5 | mixins marked Java 18 (`mixin_java`); no HUD event – `ForgeHudMixin` draws the HUD |
+| 1.21.4 (54) | Mojang's | 0.8.7 | |
+| 1.21.11 (61) | Mojang's | 0.8.7 | EventBus 7 – its own `NexusForgeModern`; includes MixinExtras itself |
+
+1.20.4–1.21.4 don't include MixinExtras, so it's packed inside the jar (`pack_mixinextras`). The only
+per-version Forge code is `ForgeHud` (how to draw on the HUD). Each build is limited to the exact
+version it was tested on (`minecraft_range`).
+
 ## Commands (from the project root)
 
 - `gradlew :mod-forge:build` → `mod-forge/build/libs/nexus-client-forge-26.3-0.1.0.jar`
 - `gradlew :mod-forge-26.2:build` / `:mod-forge-26.1.2:build` → `mod-forge/<version>/build/libs/`
 - `gradlew :mod-forge-1.20.1:build` → `mod-forge/1.20.1/build/libs/nexus-client-forge-1.20.1-0.1.0.jar`
+- `gradlew :mod-forge-1.21.4:forgeJar` (also `-1.20.4`, `-1.20.6`, `-1.21.11`) →
+  `mod-forge/<version>/build/libs/nexus-client-forge-<version>-final.jar`
 
-The launcher carries all four jars and puts the right one into Forge instances
-(`ModManager.NEXUS_FORGE_BUILDS`). Other Forge versions (1.20.2–1.21.x) would work the same way as
-1.20.1 (their own MCPConfig), but aren't set up yet.
+The launcher carries all eight jars and puts the right one into Forge instances
+(`ModManager.NEXUS_FORGE_BUILDS`). Forge on 1.20, 1.20.2 and 1.20.3 isn't covered yet (no build tested there; Forge has no 1.20.5).

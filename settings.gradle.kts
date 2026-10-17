@@ -59,4 +59,11 @@ for (version in listOf("26.2", "26.1.2")) {
 include("mod-forge-1.20.1")
 project(":mod-forge-1.20.1").projectDir = file("mod-forge/1.20.1")
 
+// The Nexus mod for Forge on 1.20.4, 1.20.6, 1.21.4 and 1.21.11 (the Fabric code for the same version +
+// the Forge start-up class in mod-forge/modern; 1.20.4 is renamed to Forge's names like 1.20.1).
+for (version in listOf("1.20.4", "1.20.6", "1.21.4", "1.21.11")) {
+    include("mod-forge-$version")
+    project(":mod-forge-$version").projectDir = file("mod-forge/$version")
+}
+
 includeBuild("mod-legacy")

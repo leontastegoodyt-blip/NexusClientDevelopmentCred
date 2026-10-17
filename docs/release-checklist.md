@@ -22,7 +22,7 @@ Legend: ✅ done · 🟡 partly done / needs a decision · ⛔ needs the owner (
 | Extend the chat filter word list (`backend/.../chat-filter.txt`) | ⛔ |
 | Test Microsoft sign-in end to end | ✅ works (owner tested, 2026-10-07) |
 | Translations: ✅ the whole launcher and the in-game Nexus text can be translated with one strings file per language (`lang/strings_template.json` + `mod-core/.../nexus/lang/mod_strings_template.json`). Still to do: pick languages and get them translated | 🟡 |
-| Mod versions: ✅ Fabric 1.20.x, 1.21.4, 1.21.11, 26.1.2, 26.2, 26.3 and Legacy Fabric 1.8.9 (Vanilla instances secretly use them too); Forge 1.20.1, 26.1.2, 26.2 and 26.3. DFR, cosmetics and every mod on all of them. Still Fabric-only: Forge 1.20.2–1.21.11 (those Forge instances launch without the Nexus mod) | 🟡 |
+| Mod versions: ✅ Fabric 1.20.x, 1.21.4, 1.21.11, 26.1.2, 26.2, 26.3 and Legacy Fabric 1.8.9 (Vanilla instances secretly use them too); Forge 1.20.1, 1.20.4, 1.20.6, 1.21.4, 1.21.11, 26.1.2, 26.2 and 26.3. DFR, cosmetics and every mod on all of them. Not on Forge yet: 1.20, 1.20.2, 1.20.3 (those Forge instances launch without the Nexus mod) | 🟡 |
 | Payments for Nexus Premium (price + provider) | ⛔ |
 
 ## Online features that need the hosted backend to work for everyone
